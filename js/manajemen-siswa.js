@@ -56,7 +56,7 @@ function deleteSelected() {
     document.getElementById('deleteModal').classList.remove('open');
     renderSiswaTable();
     toast(`🗑️ ${names.length} santri berhasil dihapus`);
-    await Promise.all(names.map(n => deleteStudentFromDB(n)));
+    await Promise.all(names.flatMap(n => [deleteStudentFromDB(n), deleteTransactionsByNama(n)]));
   };
   document.getElementById('deleteModal').classList.add('open');
 }
@@ -69,6 +69,7 @@ function deleteSingle(nama) {
     renderSiswaTable();
     toast(`🗑️ ${nama} berhasil dihapus`);
     await deleteStudentFromDB(nama);
+    await deleteTransactionsByNama(nama);
   };
   document.getElementById('deleteModal').classList.add('open');
 }
@@ -179,8 +180,6 @@ function saveNewSiswa() {
   if (existIdx >= 0) {
     const merged = mergeSiswaData(appState.students[existIdx], newSiswa, ta);
     appState.students[existIdx] = merged;
-    const ai = allStudentsAllTA.findIndex(r => r.nama === merged.nama);
-    if (ai >= 0) allStudentsAllTA[ai] = { ...merged };
     appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
     saveSiswa(merged);
     document.getElementById('addSiswaModal').classList.remove('open');
@@ -190,7 +189,6 @@ function saveNewSiswa() {
   }
 
   appState.students.push(newSiswa);
-  allStudentsAllTA.push({ ...newSiswa });
   appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
   saveSiswa(newSiswa);
   document.getElementById('addSiswaModal').classList.remove('open');
@@ -241,16 +239,6 @@ function saveEditPembayaran() {
   appState.students[idx].pangkal       = pangkal;
   appState.students[idx].pangkal_paid  = pangkal_paid;
   appState.students[idx].spp_paid_months = paid_months;
-
-  // Sync ke allStudentsAllTA
-  const ai = allStudentsAllTA.findIndex(r =>
-    r.nama === nama
-  );
-  if (ai >= 0) {
-    allStudentsAllTA[ai].pangkal       = pangkal;
-    allStudentsAllTA[ai].pangkal_paid  = pangkal_paid;
-    allStudentsAllTA[ai].spp_paid_months = paid_months;
-  }
 
   saveSiswa(appState.students[idx]);
   document.getElementById('editPembayaranModal').classList.remove('open');
@@ -314,14 +302,6 @@ function saveEditSiswa() {
   // Update nama di transactions jika berubah
   if (newNama !== origNama) {
     appState.transactions.forEach(t => { if (t.nama === origNama) t.nama = newNama; });
-  }
-
-  // Sync ke allStudentsAllTA
-  const ai = allStudentsAllTA.findIndex(r =>
-    r.nama === origNama
-  );
-  if (ai >= 0) {
-    allStudentsAllTA[ai] = { ...allStudentsAllTA[ai], ...appState.students[idx] };
   }
 
   appState.students.sort((a,b) => a.nama.localeCompare(b.nama));

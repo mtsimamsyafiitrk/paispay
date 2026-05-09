@@ -155,11 +155,6 @@ async function konfirmasiHapusKwt() {
             appState.students[si].spp_paid_months = sppMonths;
             appState.students[si].pangkal_paid    = pangkalPaid;
           }
-          const ai = allStudentsAllTA.findIndex(r => r.nama === kwt.nama);
-          if (ai >= 0) {
-            allStudentsAllTA[ai].spp_paid_months = sppMonths;
-            allStudentsAllTA[ai].pangkal_paid    = pangkalPaid;
-          }
         }
       }
 

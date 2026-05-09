@@ -183,8 +183,6 @@ function confirmImport() {
       // Update NISN jika baru
       if (candidateNisn && !siswa.nisn) siswa.nisn = candidateNisn;
       appState.students[existIdx] = siswa;
-      const ai = allStudentsAllTA.findIndex(r => r.nama === siswa.nama);
-      if (ai >= 0) allStudentsAllTA[ai] = { ...siswa };
       diperbarui++;
     } else {
       // Siswa baru — bangun object dengan spp_history lengkap
@@ -196,7 +194,6 @@ function confirmImport() {
       };
       updateKolomUtamaDariHistory(newSiswa);
       appState.students.push(newSiswa);
-      allStudentsAllTA.push({ ...newSiswa });
       ditambahkan++;
     }
   });

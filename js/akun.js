@@ -9,10 +9,10 @@ function getAkunData() {
   try { return JSON.parse(localStorage.getItem('sipay_akun') || 'null') || { user:'admin', pass:'sipay123', email:'', hp:'' }; }
   catch { return { user:'admin', pass:'sipay123', email:'', hp:'' }; }
 }
-function saveAkunData(data) {
+async function saveAkunData(data) {
   localStorage.setItem('sipay_akun', JSON.stringify(data));
   localStorage.setItem('sipay_admin', JSON.stringify({ user: data.user, pass: data.pass }));
-  saveSettings(); // sync ke Supabase
+  await saveSettings();
 }
 function renderAkunPage() {
   const a = getAkunData();
@@ -30,13 +30,13 @@ function openEditAkun() {
   document.getElementById('akun_hp').value    = a.hp    || '';
   document.getElementById('editAkunModal').classList.add('open');
 }
-function saveEditAkun() {
+async function saveEditAkun() {
   const user  = document.getElementById('akun_user').value.trim();
   const email = document.getElementById('akun_email').value.trim();
   const hp    = document.getElementById('akun_hp').value.trim();
   if (!user) { toast('⚠️ Username tidak boleh kosong'); return; }
   const a = getAkunData();
-  saveAkunData({ ...a, user, email, hp });
+  await saveAkunData({ ...a, user, email, hp });
   document.getElementById('editAkunModal').classList.remove('open');
   renderAkunPage();
   document.getElementById('adminLabel').textContent = user;
@@ -109,7 +109,7 @@ function verifyOTP() {
   document.getElementById('gp_newpass2').value = '';
   document.getElementById('gp_step3_error').style.display = 'none';
 }
-function saveNewPassword() {
+async function saveNewPassword() {
   const p1 = document.getElementById('gp_newpass').value;
   const p2 = document.getElementById('gp_newpass2').value;
   const errEl = document.getElementById('gp_step3_error');
@@ -117,7 +117,7 @@ function saveNewPassword() {
   if (p1.length < 6) { errEl.textContent = '⚠️ Password minimal 6 karakter'; errEl.style.display='block'; return; }
   if (p1 !== p2) { errEl.textContent = '❌ Konfirmasi password tidak cocok'; errEl.style.display='block'; return; }
   const a = getAkunData();
-  saveAkunData({ ...a, pass: p1 });
+  await saveAkunData({ ...a, pass: p1 });
   closeGantiPass();
   toast('✅ Password berhasil diubah! Silakan login ulang.');
   setTimeout(doLogout, 1500);
