@@ -9,6 +9,7 @@ async function loadStudents() {
     pangkal: Number(r.pangkal) || 0,
     pangkal_paid: Number(r.pangkal_paid) || 0,
     spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
+    spp_history: r.spp_history || {},
   }));
 }
 
@@ -23,6 +24,7 @@ async function saveState() {
         spp: s.spp || 0, pangkal: s.pangkal || 0,
         pangkal_paid: s.pangkal_paid || 0,
         spp_paid_months: s.spp_paid_months || [],
+        spp_history: s.spp_history || {},
       })),
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' }
     );
@@ -45,6 +47,7 @@ async function saveSiswa(s) {
         spp: s.spp || 0, pangkal: s.pangkal || 0,
         pangkal_paid: s.pangkal_paid || 0,
         spp_paid_months: s.spp_paid_months || [],
+        spp_history: s.spp_history || {},
       }],
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' }
     );

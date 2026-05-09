@@ -113,7 +113,19 @@ function renderSiswaTable(resetPage = true) {
   const tbody = document.querySelector('#siswaTable tbody');
   tbody.innerHTML = pageList.map((s, i) => {
     const tunggak = totalTunggakan(s);
-    const monthBadges = MONTHS.map(m=>`<span style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${(s.spp_paid_months||[]).includes(m)?'var(--primary)':'#e5e0d8'};color:${(s.spp_paid_months||[]).includes(m)?'#fff':'#999'};">${m}</span>`).join('');
+    const history = s.spp_history || {};
+    const taKeys  = Object.keys(history).sort((a,b) => parseInt(a.split('/')[0]) - parseInt(b.split('/')[0]));
+    let monthBadges;
+    if (taKeys.length > 1) {
+      monthBadges = taKeys.map(ta => {
+        const d = history[ta];
+        const lunas = !d.spp || MONTHS.every(m => (d.spp_paid_months||[]).includes(m));
+        const short = ta.replace(/20(\d\d)\/20(\d\d)/, '$1/$2');
+        return `<span style="font-size:11px;padding:2px 7px;border-radius:5px;margin:1px;background:${lunas?'var(--primary-pale)':'var(--accent-pale)'};color:${lunas?'var(--primary)':'#7a5c10'};">${short}: ${lunas?'✅':'⚠️'}</span>`;
+      }).join('');
+    } else {
+      monthBadges = MONTHS.map(m=>`<span style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${(s.spp_paid_months||[]).includes(m)?'var(--primary)':'#e5e0d8'};color:${(s.spp_paid_months||[]).includes(m)?'#fff':'#999'};">${m}</span>`).join('');
+    }
     const nama_safe = s.nama.replace(/'/g, "\'");
     const no = start + i + 1;
     return `<tr>
@@ -278,15 +290,81 @@ function selectTunggakanStudent(nama) {
 }
 
 function renderTunggakanDetail(s) {
-  const sppT    = sppTunggakan(s);
+  const nameSafe  = s.nama.replace(/'/g, "\\'");
+  const headerBar = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-size:20px;font-weight:800;color:var(--primary);">${s.nama}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">${s.kelas} &nbsp;•&nbsp; NISN: ${s.nisn || '—'}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="quickInput('${nameSafe}')">💳 Bayar Sekarang</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditPembayaran('${nameSafe}')">✏️ Edit Pembayaran</button>
+        <button class="btn btn-outline btn-sm" onclick="showDetail('${nameSafe}')">📋 Detail Lengkap</button>
+      </div>
+    </div>`;
+
+  const history = s.spp_history || {};
+  const taKeys  = Object.keys(history).sort((a,b) => parseInt(a.split('/')[0]) - parseInt(b.split('/')[0]));
+
+  // ── Tampilan multi-TA (spp_history ada isinya) ──
+  if (taKeys.length > 0) {
+    const totalT = sppTunggakan(s) + pangkalTunggakan(s);
+
+    const taCards = taKeys.map(ta => {
+      const d         = history[ta];
+      const sppTA     = d.spp ? MONTHS.filter(m => !(d.spp_paid_months||[]).includes(m)).length * d.spp : 0;
+      const pangkalTA = Math.max(0, (d.pangkal||0) - (d.pangkal_paid||0));
+      const tunggakTA = sppTA + pangkalTA;
+      const lunas     = tunggakTA === 0;
+      const bulanBelum = d.spp ? MONTHS.filter(m => !(d.spp_paid_months||[]).includes(m)) : [];
+      const monthGrid = MONTHS.map(m => {
+        const paid = (d.spp_paid_months||[]).includes(m);
+        return `<div style="padding:4px 2px;border-radius:6px;border:1.5px solid ${paid?'var(--primary)':'var(--border)'};
+          background:${paid?'var(--primary)':'var(--card)'};color:${paid?'#fff':'var(--text-muted)'};
+          font-size:10px;font-weight:600;text-align:center;">${m}</div>`;
+      }).join('');
+
+      return `<div style="border:1.5px solid ${lunas?'var(--primary-light)':'var(--danger)'};border-radius:12px;padding:16px;margin-bottom:12px;background:${lunas?'var(--primary-pale)':'var(--danger-pale)'};">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-weight:800;font-size:14px;color:${lunas?'var(--primary)':'var(--danger)'};">TA ${ta} — Kelas ${d.kelas||'?'} ${lunas?'✅':'⚠️'}</div>
+          <div style="font-size:12px;font-weight:700;color:${lunas?'var(--primary-light)':'var(--danger)'};">${lunas?'Lunas':'Tunggak '+rp(tunggakTA)}</div>
+        </div>
+        ${d.spp ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">SPP: ${rp(d.spp)}/bln</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:6px;">${monthGrid}</div>
+        <div style="font-size:11px;margin-bottom:4px;">
+          <span style="font-weight:600;">${(d.spp_paid_months||[]).length}/12 bulan lunas</span>
+          ${bulanBelum.length ? ` &nbsp;• Belum: <span style="color:var(--danger);">${bulanBelum.join(', ')}</span>` : ''}
+        </div>` : ''}
+        ${d.pangkal ? `<div style="font-size:12px;margin-top:6px;">
+          Pangkal: ${rp(d.pangkal_paid)} / ${rp(d.pangkal)}
+          ${pangkalTA <= 0
+            ? '<span style="color:var(--primary-light);font-weight:600;"> ✅ Lunas</span>'
+            : `<span style="color:var(--danger);font-weight:600;"> Sisa ${rp(pangkalTA)}</span>`}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+
+    const totalBanner = `<div style="background:${totalT>0?'var(--danger-pale)':'var(--primary-pale)'};border-left:4px solid ${totalT>0?'var(--danger)':'var(--primary-light)'};border-radius:10px;padding:14px 16px;margin-top:4px;">
+      <div style="font-weight:800;font-size:15px;color:${totalT>0?'var(--danger)':'var(--primary-light)'};">
+        ${totalT>0 ? '⚠️ TOTAL TUNGGAKAN: '+rp(totalT) : '✅ Semua Pembayaran Lunas'}
+      </div>
+    </div>`;
+
+    document.getElementById('tunggakanDetail').innerHTML =
+      `<div class="card">${headerBar}${taCards}${totalBanner}</div>`;
+    return;
+  }
+
+  // ── Tampilan fallback (siswa lama tanpa spp_history) ──
+  const sppT     = sppTunggakan(s);
   const pangkalT = pangkalTunggakan(s);
-  const crossT  = crossTATunggakan(s);
-  const totalT  = sppT + pangkalT + crossT;
-  const bulanBelum = MONTHS.filter(m => !s.spp_paid_months.includes(m) && s.spp > 0);
-  const bulanLunas = MONTHS.filter(m => s.spp_paid_months.includes(m));
+  const totalT   = sppT + pangkalT;
+  const bulanBelum = MONTHS.filter(m => !(s.spp_paid_months||[]).includes(m) && s.spp > 0);
+  const bulanLunas = MONTHS.filter(m => (s.spp_paid_months||[]).includes(m));
 
   const monthGrid = MONTHS.map(m => {
-    const paid = (s.spp_paid_months || []).includes(m);
+    const paid = (s.spp_paid_months||[]).includes(m);
     return `<div style="padding:5px 2px;border-radius:8px;border:1.5px solid ${paid?'var(--primary)':'var(--border)'};
       background:${paid?'var(--primary)':'var(--card)'};color:${paid?'#fff':'var(--text-muted)'};
       font-size:11px;font-weight:600;text-align:center;">${m}</div>`;
@@ -295,9 +373,8 @@ function renderTunggakanDetail(s) {
   const statusBanner = totalT > 0
     ? `<div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-weight:800;font-size:15px;color:var(--danger);">⚠️ Total Tunggakan: ${rp(totalT)}</div>
-        ${sppT > 0    ? `<div style="font-size:13px;color:var(--text);margin-top:4px;">SPP TA ini: ${rp(sppT)} (${bulanBelum.length} bulan)</div>` : ''}
-        ${pangkalT > 0 ? `<div style="font-size:13px;color:var(--text);margin-top:2px;">Pangkal TA ini: ${rp(pangkalT)}</div>` : ''}
-        ${crossT > 0  ? `<div style="font-size:13px;color:var(--danger);margin-top:2px;font-weight:600;">Lintas TA: ${rp(crossT)}</div>` : ''}
+        ${sppT > 0     ? `<div style="font-size:13px;color:var(--text);margin-top:4px;">SPP: ${rp(sppT)} (${bulanBelum.length} bulan)</div>` : ''}
+        ${pangkalT > 0 ? `<div style="font-size:13px;color:var(--text);margin-top:2px;">Pangkal: ${rp(pangkalT)}</div>` : ''}
       </div>`
     : `<div style="background:var(--primary-pale);border-left:4px solid var(--primary-light);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-weight:800;font-size:15px;color:var(--primary-light);">✅ Semua Pembayaran Lunas</div>
@@ -305,20 +382,8 @@ function renderTunggakanDetail(s) {
 
   document.getElementById('tunggakanDetail').innerHTML = `
     <div class="card">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-        <div>
-          <div style="font-size:20px;font-weight:800;color:var(--primary);">${s.nama}</div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">${s.kelas} &nbsp;•&nbsp; NISN: ${s.nisn || '—'}</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-primary btn-sm" onclick="quickInput('${s.nama.replace(/'/g,"\\'")}')">💳 Bayar Sekarang</button>
-          <button class="btn btn-outline btn-sm" onclick="openEditPembayaran('${s.nama.replace(/'/g,"\\'")}')">✏️ Edit Pembayaran</button>
-          <button class="btn btn-outline btn-sm" onclick="showDetail('${s.nama.replace(/'/g,"\\'")}')">📋 Detail Lengkap</button>
-        </div>
-      </div>
-
+      ${headerBar}
       ${statusBanner}
-
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
           <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">SPP / Bulan</div>
@@ -333,10 +398,8 @@ function renderTunggakanDetail(s) {
           <div style="font-size:18px;font-weight:800;color:${pangkalT>0?'var(--danger)':'var(--primary-light)'};">${pct(s.pangkal_paid,s.pangkal)}%</div>
         </div>
       </div>
-
-      <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">📅 Status SPP TA Ini per Bulan</div>
+      <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">📅 Status SPP per Bulan</div>
       <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:20px;">${monthGrid}</div>
-
       ${s.pangkal > 0 ? `
       <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">🏫 Uang Pangkal</div>
       <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:20px;">
@@ -350,8 +413,7 @@ function renderTunggakanDetail(s) {
           <div class="progress-bar ${pct(s.pangkal_paid,s.pangkal)>=100?'green':'yellow'}" style="width:${pct(s.pangkal_paid,s.pangkal)}%"></div>
         </div>
       </div>` : ''}
-    </div>
-  `;
+    </div>`;
 }
 
 // Close tunggakan dropdown when clicking outside
