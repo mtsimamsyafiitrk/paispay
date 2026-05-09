@@ -187,13 +187,28 @@ function detectDuplicateNames() {
 }
 
 function sppTunggakan(s) {
+  const history = s.spp_history || {};
+  if (Object.keys(history).length > 0) {
+    return Object.values(history).reduce((total, taData) => {
+      if (!taData.spp || taData.spp === 0) return total;
+      const belum = MONTHS.filter(m => !(taData.spp_paid_months||[]).includes(m)).length;
+      return total + belum * taData.spp;
+    }, 0);
+  }
   if (!s.spp || s.spp === 0) return 0;
-  return MONTHS.filter(m => !s.spp_paid_months.includes(m)).length * s.spp;
+  return MONTHS.filter(m => !(s.spp_paid_months||[]).includes(m)).length * s.spp;
 }
 function pangkalTunggakan(s) {
+  const history = s.spp_history || {};
+  if (Object.keys(history).length > 0) {
+    return Object.values(history).reduce((total, taData) => {
+      return total + Math.max(0, (taData.pangkal||0) - (taData.pangkal_paid||0));
+    }, 0);
+  }
   if (!s.pangkal || s.pangkal === 0) return 0;
   return Math.max(0, s.pangkal - (s.pangkal_paid || 0));
 }
+function crossTATunggakan(s) { return 0; }
 function totalTunggakan(s) { return sppTunggakan(s) + pangkalTunggakan(s); }
 
 // ── DASHBOARD ──

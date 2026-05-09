@@ -72,6 +72,7 @@ function parseRows(rows) {
     NAMA: ['NAMA','NAME','NAMA LENGKAP','NAMA_LENGKAP'],
     KELAS: ['KELAS','CLASS','GRADE','TINGKAT - ROMBEL','TINGKAT_ROMBEL','ROMBEL'],
     NISN: ['NISN'],
+    TA: ['TAHUN_AJARAN','TA','TAHUN AJARAN','YEAR'],
     SPP: ['SPP','SPP_BULANAN','SPP BULANAN'],
     PANGKAL: ['PANGKAL','UANG_PANGKAL','UANG PANGKAL','UANGPANGKAL'],
     PANGKAL_PAID: ['PANGKAL_PAID','SUDAH_BAYAR_PANGKAL','BAYAR_PANGKAL','SUDAH BAYAR PANGKAL']
@@ -111,66 +112,119 @@ function parseRows(rows) {
       }
     });
 
+    const nisn = String(findKey(row, MAP.NISN)||'').trim().replace(/'/g,'');
+    const spp  = Number(String(findKey(row, MAP.SPP)||'0').replace(/[^0-9]/g,''))||0;
+    const pangkal = Number(String(findKey(row, MAP.PANGKAL)||'0').replace(/[^0-9]/g,''))||0;
+    const pangkal_paid = Number(String(findKey(row, MAP.PANGKAL_PAID)||'0').replace(/[^0-9]/g,''))||0;
+    const ta   = String(findKey(row, MAP.TA)||'').trim() || (getProfil ? getProfil().ta : '') || '';
     importBuffer.push({
-      nama,
-      kelas,
-      nisn: String(findKey(row, MAP.NISN)||'').trim().replace(/'/g,''),
-      spp: Number(String(findKey(row, MAP.SPP)||'0').replace(/[^0-9]/g,''))||0,
-      pangkal: Number(String(findKey(row, MAP.PANGKAL)||'0').replace(/[^0-9]/g,''))||0,
-      pangkal_paid: Number(String(findKey(row, MAP.PANGKAL_PAID)||'0').replace(/[^0-9]/g,''))||0,
-      spp_paid_months,
+      nama, kelas, nisn, spp, pangkal, pangkal_paid, spp_paid_months, ta,
+      spp_history: ta ? { [ta]: { kelas, spp, pangkal, pangkal_paid, spp_paid_months } } : {},
     });
   });
   if (!importBuffer.length) { toast('⚠️ Tidak ada data valid ditemukan di file'); return; }
+  // Update header tabel: tambah kolom TA
+  const thead = document.querySelector('#importPreviewTable thead tr');
+  if (thead && !thead.querySelector('.col-ta')) {
+    const th = document.createElement('th');
+    th.className = 'col-ta';
+    th.textContent = 'TA';
+    thead.insertBefore(th, thead.children[2]);
+  }
   const tbody = document.querySelector('#importPreviewTable tbody');
   tbody.innerHTML = importBuffer.map((s,i) => {
     const bulanLabel = s.spp_paid_months.length
       ? `<span style="color:var(--primary);font-weight:600;">${s.spp_paid_months.length} bln</span> <span style="font-size:10px;color:var(--text-muted);">(${s.spp_paid_months.join(', ')})</span>`
       : '<span style="color:var(--text-muted);">—</span>';
-    return `<tr><td>${i+1}</td><td>${s.nama}</td><td>${s.kelas||'—'}</td><td>${s.nisn||'—'}</td><td>${rp(s.spp)}</td><td>${rp(s.pangkal)}</td><td>${bulanLabel}</td></tr>`;
+    return `<tr><td>${i+1}</td><td>${s.nama}</td><td>${s.ta||'—'}</td><td>${s.kelas||'—'}</td><td>${s.nisn||'—'}</td><td>${rp(s.spp)}</td><td>${rp(s.pangkal)}</td><td>${bulanLabel}</td></tr>`;
   }).join('');
   document.getElementById('importPreviewLabel').textContent = `✅ ${importBuffer.length} data santri siap diimport`;
   impGoStep(3);
 }
 
 function confirmImport() {
-  let added = 0, updated = 0;
-  importBuffer.forEach(s => {
-    const existIdx = findExistingSiswaIdx(s);
-    if (existIdx >= 0) {
-      const merged = mergeSiswaData(appState.students[existIdx], s);
-      appState.students[existIdx] = merged;
-      const ai = allStudentsAllTA.findIndex(r => r.nama === merged.nama);
-      if (ai >= 0) allStudentsAllTA[ai] = { ...merged };
-      updated++;
-    } else {
-      appState.students.push(s);
-      allStudentsAllTA.push({ ...s });
-      added++;
+  let ditambahkan = 0, diperbarui = 0;
+
+  // Group baris berdasarkan NISN (jika ada) atau nama ternormalisasi
+  const groups = {};
+  importBuffer.forEach(row => {
+    const key = (row.nisn && row.nisn.trim())
+      ? 'nisn:' + row.nisn.trim()
+      : 'nama:' + normNama(row.nama);
+    if (!groups[key]) groups[key] = { base: row, taMap: {} };
+    const ta = row.ta || '';
+    if (ta) {
+      if (!groups[key].taMap[ta]) {
+        groups[key].taMap[ta] = { kelas: row.kelas, spp: row.spp, pangkal: row.pangkal,
+          pangkal_paid: row.pangkal_paid, spp_paid_months: [...row.spp_paid_months] };
+      } else {
+        // Merge baris TA yang sama dalam satu grup
+        const ex = groups[key].taMap[ta];
+        ex.spp_paid_months = [...new Set([...ex.spp_paid_months, ...row.spp_paid_months])];
+        ex.pangkal_paid    = Math.max(ex.pangkal_paid, row.pangkal_paid);
+        ex.pangkal         = Math.max(ex.pangkal, row.pangkal);
+        if (row.spp > 0) ex.spp = row.spp;
+        ex.kelas = row.kelas;
+      }
     }
   });
+
+  Object.values(groups).forEach(({ base, taMap }) => {
+    const candidateNisn = base.nisn || '';
+    const existIdx = findExistingSiswaIdx({ nama: base.nama, nisn: candidateNisn });
+
+    if (existIdx >= 0) {
+      // Siswa sudah ada — merge tiap TA
+      let siswa = appState.students[existIdx];
+      Object.entries(taMap).forEach(([ta, taData]) => {
+        siswa = mergeSiswaData(siswa,
+          { ...taData, nama: siswa.nama, nisn: candidateNisn }, ta);
+      });
+      // Update NISN jika baru
+      if (candidateNisn && !siswa.nisn) siswa.nisn = candidateNisn;
+      appState.students[existIdx] = siswa;
+      const ai = allStudentsAllTA.findIndex(r => r.nama === siswa.nama);
+      if (ai >= 0) allStudentsAllTA[ai] = { ...siswa };
+      diperbarui++;
+    } else {
+      // Siswa baru — bangun object dengan spp_history lengkap
+      const newSiswa = {
+        nama: base.nama, nisn: candidateNisn,
+        kelas: base.kelas, spp: base.spp, pangkal: base.pangkal,
+        pangkal_paid: base.pangkal_paid, spp_paid_months: base.spp_paid_months,
+        spp_history: taMap,
+      };
+      updateKolomUtamaDariHistory(newSiswa);
+      appState.students.push(newSiswa);
+      allStudentsAllTA.push({ ...newSiswa });
+      ditambahkan++;
+    }
+  });
+
   appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
   saveState();
   document.getElementById('importModal').classList.remove('open');
   renderSiswaTable();
   renderTunggakan();
   renderDashboard();
-  toast(`✅ Import: ${added} ditambahkan, ${updated} diperbarui/digabung`);
+  toast(`✅ Import: ${ditambahkan} ditambahkan, ${diperbarui} diperbarui/digabung`);
 }
 
 function downloadTemplate() {
   if (typeof XLSX !== 'undefined') {
-    const headers = ['NAMA','KELAS','NISN','SPP','PANGKAL','PANGKAL_PAID',
+    const headers = ['NAMA','KELAS','TAHUN_AJARAN','NISN','SPP','PANGKAL','PANGKAL_PAID',
       'SPP_Jul','SPP_Agt','SPP_Sep','SPP_Okt','SPP_Nov','SPP_Des',
       'SPP_Jan','SPP_Feb','SPP_Mar','SPP_Apr','SPP_Mei','SPP_Jun'];
-    const contoh1 = ['CONTOH NAMA SANTRI','7','1234567890',700000,5000000,0, 1,1,1,0,0,0, 0,0,0,0,0,0];
-    const contoh2 = ['NAMA SANTRI DUA',   '8','',500000,3000000,1000000, 1,1,1,1,1,1, 0,0,0,0,0,0];
-    const contoh3 = ['NAMA SANTRI TIGA',  '9', '',600000,3000000,0,        0,0,0,0,0,0, 0,0,0,0,0,0];
-    const wsData = [headers, contoh1, contoh2, contoh3];
+    // Contoh satu siswa 3 TA berbeda
+    const c1a = ['AHMAD FAUZI','7','2023/2024','1234567890',450000,5000000,5000000, 1,1,1,1,1,1, 1,1,1,1,1,1];
+    const c1b = ['AHMAD FAUZI','8','2024/2025','1234567890',500000,0,0, 1,1,1,1,1,0, 0,0,0,0,0,0];
+    const c1c = ['AHMAD FAUZI','9','2025/2026','1234567890',600000,0,0, 1,0,0,0,0,0, 0,0,0,0,0,0];
+    const c2  = ['NAMA SANTRI DUA','8','2024/2025','',500000,3000000,1000000, 1,1,1,1,1,1, 0,0,0,0,0,0];
+    const c3  = ['NAMA SANTRI TIGA','9','2025/2026','',600000,3000000,0, 0,0,0,0,0,0, 0,0,0,0,0,0];
+    const wsData = [headers, c1a, c1b, c1c, c2, c3];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    // Lebar kolom
     ws['!cols'] = [
-      {wch:30},{wch:12},{wch:14},{wch:12},{wch:12},{wch:14},
+      {wch:30},{wch:8},{wch:14},{wch:14},{wch:12},{wch:12},{wch:14},
       {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
       {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
     ];
@@ -180,7 +234,7 @@ function downloadTemplate() {
     toast('📋 Template Excel berhasil didownload');
   } else {
     const months = 'SPP_Jul,SPP_Agt,SPP_Sep,SPP_Okt,SPP_Nov,SPP_Des,SPP_Jan,SPP_Feb,SPP_Mar,SPP_Apr,SPP_Mei,SPP_Jun';
-    const csv = `NAMA,KELAS,NISN,SPP,PANGKAL,PANGKAL_PAID,${months}\nCONTOH NAMA SANTRI,7,1234567890,700000,5000000,0,1,1,1,0,0,0,0,0,0,0,0,0\n`;
+    const csv = `NAMA,KELAS,TAHUN_AJARAN,NISN,SPP,PANGKAL,PANGKAL_PAID,${months}\nAHMAD FAUZI,7,2023/2024,1234567890,450000,5000000,5000000,1,1,1,1,1,1,1,1,1,1,1,1\nAHMAD FAUZI,8,2024/2025,1234567890,500000,0,0,1,1,1,1,1,0,0,0,0,0,0,0\n`;
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
     a.download = 'template_import_santri.csv';
