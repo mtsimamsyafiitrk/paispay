@@ -138,12 +138,8 @@ function canonicalKey(s) {
   return 'nama:' + normNama(s.nama);
 }
 
-// Semua siswa digabung — tidak ada pemisahan TA
-let allStudentsAllTA = []; // alias ke appState.students
-
 async function loadAllStudentsIndex() {
-  // Tidak diperlukan lagi — data sudah di appState.students
-  allStudentsAllTA = appState.students;
+  // Tidak diperlukan lagi — semua data ada di appState.students
 }
 
 function buildStudentIndex() {

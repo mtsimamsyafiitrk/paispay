@@ -77,13 +77,13 @@ function saveEditItem(idx) {
   appState.payItems[idx].type   = document.getElementById('ei_type').value;
   appState.payItems[idx].kelas  = kelas;
   editingItemIdx = -1;
-  saveState(); saveSettings(); renderItemList();
+  saveSettings(); renderItemList();
   toast('✅ Item berhasil diperbarui!');
 }
 
 function toggleItem(idx) {
   appState.payItems[idx].active = !appState.payItems[idx].active;
-  saveState(); saveSettings(); renderItemList();
+  saveSettings(); renderItemList();
   toast(appState.payItems[idx].active ? '✅ Item diaktifkan' : '⭕ Item dinonaktifkan');
 }
 function confirmRemoveItem(idx) {
@@ -92,7 +92,7 @@ function confirmRemoveItem(idx) {
   document.getElementById('deleteConfirmBtn').onclick = function() {
     appState.payItems.splice(idx,1);
     if (editingItemIdx === idx) editingItemIdx = -1;
-    saveState();
+    saveSettings();
     document.getElementById('deleteModal').classList.remove('open');
     renderItemList();
     toast('🗑️ Item "' + name + '" dihapus');
@@ -107,7 +107,7 @@ function addItem() {
   if (!name) { toast('⚠️ Nama item tidak boleh kosong!'); return; }
   if (!kelas.length) { toast('⚠️ Pilih minimal 1 kelas!'); return; }
   appState.payItems.push({ id: 'custom_'+Date.now(), name, amount, type, active: true, kelas });
-  saveState(); saveSettings(); renderItemList();
+  saveSettings(); renderItemList();
   document.getElementById('newItemName').value='';
   document.getElementById('newItemAmount').value='';
   ['7','8','9'].forEach(k => { const el = document.getElementById('newItemKelas'+k); if(el) el.checked = true; });

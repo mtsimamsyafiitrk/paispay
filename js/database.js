@@ -64,6 +64,12 @@ async function deleteStudentFromDB(nama) {
   } catch(e) { console.error('deleteStudentFromDB error:', e); }
 }
 
+async function deleteTransactionsByNama(nama) {
+  try {
+    await sb('transactions?nama=eq.' + encodeURIComponent(nama), 'DELETE', null, { 'Prefer': 'return=minimal' });
+  } catch(e) { console.error('deleteTransactionsByNama error:', e); }
+}
+
 // ══ TRANSACTIONS ══
 async function loadTransactions() {
   const rows = await sb('transactions?select=*&order=created_at');
@@ -88,7 +94,7 @@ async function loadSettings() {
     const rows = await sb('settings?select=*');
     const map = {};
     rows.forEach(r => { map[r.key] = r.value; });
-    if (map.payItems?.length) appState.payItems = map.payItems;
+    if (Array.isArray(map.payItems)) appState.payItems = map.payItems;
     if (map.profil && Object.keys(map.profil).length) {
       localStorage.setItem('sipay_profil', JSON.stringify(map.profil));
     }

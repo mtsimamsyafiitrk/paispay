@@ -270,11 +270,6 @@ async function prosesKoreksi() {
       appState.students[si].spp_paid_months = sppMonths;
       appState.students[si].pangkal_paid    = pangkalPaid;
     }
-    const ai = allStudentsAllTA.findIndex(r => r.nama === kwt.nama);
-    if (ai >= 0) {
-      allStudentsAllTA[ai].spp_paid_months = sppMonths;
-      allStudentsAllTA[ai].pangkal_paid    = pangkalPaid;
-    }
     await sb('students?nama=eq.' + encodeURIComponent(kwt.nama),
       'PATCH', { spp_paid_months: sppMonths, pangkal_paid: pangkalPaid }, { 'Prefer': 'return=minimal' });
 
