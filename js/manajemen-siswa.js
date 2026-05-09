@@ -93,12 +93,48 @@ function openAddSiswaModal() {
   document.querySelectorAll('#ns_months_wrap input[type=checkbox]').forEach(c => c.checked = false);
   document.getElementById('addSiswaModal').classList.add('open');
 }
+// Cari index siswa yang cocok berdasarkan NISN → nama eksak → fuzzy
+// Return index di appState.students, atau -1 jika tidak ditemukan
+function findExistingSiswaIdx(kandidat) {
+  const students = appState.students;
+  // Prioritas 1: NISN sama (keduanya tidak kosong)
+  if (kandidat.nisn && kandidat.nisn.trim()) {
+    const idx = students.findIndex(s => s.nisn && s.nisn.trim() === kandidat.nisn.trim());
+    if (idx >= 0) return idx;
+  }
+  // Prioritas 2: Nama persis setelah normNama()
+  const normK = normNama(kandidat.nama);
+  const idx2 = students.findIndex(s => normNama(s.nama) === normK);
+  if (idx2 >= 0) return idx2;
+  // Prioritas 3: Fuzzy similarity >= 0.85, hanya jika salah satu tidak punya NISN
+  for (let i = 0; i < students.length; i++) {
+    const s = students[i];
+    if (!kandidat.nisn || !s.nisn) {
+      if (nameSimilarity(kandidat.nama, s.nama) >= 0.85) return i;
+    }
+  }
+  return -1;
+}
+
+// Merge data siswa sesuai aturan: pertahankan nama lama, union bulan, ambil nilai terbesar, dll.
+function mergeSiswaData(lama, baru) {
+  const spp_paid_months = [...new Set([...(lama.spp_paid_months || []), ...(baru.spp_paid_months || [])])];
+  return {
+    nama:            lama.nama,
+    kelas:           baru.kelas,
+    nisn:            (baru.nisn && baru.nisn.trim()) ? baru.nisn.trim() : (lama.nisn || ''),
+    spp:             (baru.spp > 0) ? baru.spp : (lama.spp || 0),
+    pangkal:         Math.max(lama.pangkal || 0, baru.pangkal || 0),
+    pangkal_paid:    Math.max(lama.pangkal_paid || 0, baru.pangkal_paid || 0),
+    spp_paid_months,
+  };
+}
+
 function saveNewSiswa() {
   const nama = document.getElementById('ns_nama').value.trim().toUpperCase();
   const kelas = document.getElementById('ns_kelas').value;
   if (!nama) { toast('⚠️ Nama santri wajib diisi!'); return; }
   if (!kelas) { toast('⚠️ Kelas wajib dipilih!'); return; }
-  if (appState.students.find(s => s.nama === nama)) { toast('⚠️ Nama santri sudah ada!'); return; }
   const paid_months = [...document.querySelectorAll('#ns_months_wrap input[type=checkbox]:checked')].map(c => c.value);
   const newSiswa = {
     nama, kelas,
@@ -108,8 +144,24 @@ function saveNewSiswa() {
     pangkal: Number(document.getElementById('ns_pangkal').value)||0,
     pangkal_paid: Number(document.getElementById('ns_pangkal_paid').value)||0,
   };
+
+  const existIdx = findExistingSiswaIdx(newSiswa);
+  if (existIdx >= 0) {
+    const merged = mergeSiswaData(appState.students[existIdx], newSiswa);
+    appState.students[existIdx] = merged;
+    const ai = allStudentsAllTA.findIndex(r => r.nama === merged.nama);
+    if (ai >= 0) allStudentsAllTA[ai] = { ...merged };
+    appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
+    saveSiswa(merged);
+    document.getElementById('addSiswaModal').classList.remove('open');
+    renderSiswaTable();
+    renderTunggakan();
+    renderDashboard();
+    toast(`🔄 Data ${merged.nama} diperbarui & digabung!`);
+    return;
+  }
+
   appState.students.push(newSiswa);
-  // Sync ke allStudentsAllTA
   allStudentsAllTA.push({ ...newSiswa });
   appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
   saveSiswa(newSiswa);
