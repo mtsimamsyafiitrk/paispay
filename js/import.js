@@ -134,16 +134,28 @@ function parseRows(rows) {
 }
 
 function confirmImport() {
-  let added = 0, skipped = 0;
+  let added = 0, updated = 0;
   importBuffer.forEach(s => {
-    if (appState.students.find(x => x.nama === s.nama)) { skipped++; return; }
-    appState.students.push(s); added++;
+    const existIdx = findExistingSiswaIdx(s);
+    if (existIdx >= 0) {
+      const merged = mergeSiswaData(appState.students[existIdx], s);
+      appState.students[existIdx] = merged;
+      const ai = allStudentsAllTA.findIndex(r => r.nama === merged.nama);
+      if (ai >= 0) allStudentsAllTA[ai] = { ...merged };
+      updated++;
+    } else {
+      appState.students.push(s);
+      allStudentsAllTA.push({ ...s });
+      added++;
+    }
   });
   appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
   saveState();
   document.getElementById('importModal').classList.remove('open');
   renderSiswaTable();
-  toast(`✅ Import selesai: ${added} ditambahkan, ${skipped} dilewati (duplikat)`);
+  renderTunggakan();
+  renderDashboard();
+  toast(`✅ Import: ${added} ditambahkan, ${updated} diperbarui/digabung`);
 }
 
 function downloadTemplate() {
