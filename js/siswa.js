@@ -92,15 +92,24 @@ function logGoPage(page) {
 let siswaPage = 1;
 const SISWA_PER_PAGE = 50;
 
+const STATUS_KELULUSAN_BADGE = {
+  lulus:  { label: 'Lulus',  cls: 'badge-green',  icon: '🎓' },
+  pindah: { label: 'Pindah', cls: 'badge-yellow', icon: '🔄' },
+  keluar: { label: 'Keluar', cls: 'badge-red',    icon: '🚪' },
+};
+
 function renderSiswaTable(resetPage = true) {
   if (resetPage) siswaPage = 1;
   const q = document.getElementById('searchSiswa').value.toLowerCase();
   const sFilter = document.getElementById('filterStatus').value;
+  const skFilter = document.getElementById('filterStatusKelulusan')?.value || '';
   let list = appState.students.filter(s => {
     if (q && !s.nama.toLowerCase().includes(q) && !s.nisn?.includes(q)) return false;
     if (activeKelasFilter && s.kelas !== activeKelasFilter) return false;
     if (sFilter === 'lunas' && totalTunggakan(s) > 0) return false;
     if (sFilter === 'tunggak' && totalTunggakan(s) === 0) return false;
+    if (skFilter === 'aktif' && s.status_kelulusan) return false;
+    if (skFilter && skFilter !== 'aktif' && s.status_kelulusan !== skFilter) return false;
     return true;
   });
   clearSelection();
@@ -128,10 +137,15 @@ function renderSiswaTable(resetPage = true) {
     }
     const nama_safe = s.nama.replace(/'/g, "\'");
     const no = start + i + 1;
-    return `<tr>
+    const sk = s.status_kelulusan || '';
+    const skBadge = sk && STATUS_KELULUSAN_BADGE[sk]
+      ? `<span class="badge ${STATUS_KELULUSAN_BADGE[sk].cls}" style="margin-left:4px;">${STATUS_KELULUSAN_BADGE[sk].icon} ${STATUS_KELULUSAN_BADGE[sk].label}</span>`
+      : '';
+    const rowStyle = sk ? 'opacity:0.65;' : '';
+    return `<tr style="${rowStyle}">
       <td class="chk-col"><input type="checkbox" class="row-chk" data-nama="${s.nama}" onchange="toggleRowSelect(this)"></td>
       <td>${no}</td>
-      <td><strong>${s.nama}</strong></td>
+      <td><strong>${s.nama}</strong>${skBadge}</td>
       <td>${s.kelas}</td>
       <td>${rp(s.spp)}</td>
       <td><div style="line-height:1.6;">${monthBadges}</div></td>

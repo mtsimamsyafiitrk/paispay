@@ -404,6 +404,13 @@
           <option value="lunas">SPP Lunas</option>
           <option value="tunggak">Ada Tunggakan</option>
         </select>
+        <select id="filterStatusKelulusan" onchange="renderSiswaTable()" style="max-width:180px;">
+          <option value="">Semua Keadaan</option>
+          <option value="aktif">✅ Aktif</option>
+          <option value="lulus">🎓 Lulus</option>
+          <option value="pindah">🔄 Pindah</option>
+          <option value="keluar">🚪 Keluar</option>
+        </select>
         <button class="btn btn-primary btn-sm" onclick="openTambahChoice()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Tambah Santri
@@ -417,6 +424,7 @@
     <!-- Bulk action bar -->
     <div class="bulk-bar" id="bulkBar">
       <span id="bulkCount">0 dipilih</span>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);" onclick="openBulkStatusModal()">📋 Ubah Status</button>
       <button class="btn btn-danger btn-sm" onclick="deleteSelected()">🗑️ Hapus Terpilih</button>
       <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4);" onclick="clearSelection()">✕ Batal</button>
     </div>
@@ -1525,6 +1533,39 @@
         <button class="btn btn-outline" onclick="closeGantiPass()">Batal</button>
         <button class="btn btn-primary" onclick="saveNewPassword()">🔐 Simpan Password Baru</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BULK STATUS MODAL ═══ -->
+<div class="modal-overlay" id="bulkStatusModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">📋 Ubah Status Santri</div>
+      <button class="modal-close" onclick="document.getElementById('bulkStatusModal').classList.remove('open')">✕</button>
+    </div>
+    <p id="bulkStatusMsg" style="font-size:14px;color:var(--text);margin-bottom:16px;line-height:1.6;"></p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+      <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;font-size:14px;" onclick="selectBulkStatus('aktif')">
+        <input type="radio" name="bulkStatus" value="aktif" style="accent-color:var(--primary);">
+        <span>✅ <strong>Aktif</strong> — Santri masih terdaftar aktif</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;font-size:14px;" onclick="selectBulkStatus('lulus')">
+        <input type="radio" name="bulkStatus" value="lulus" style="accent-color:var(--primary);">
+        <span>🎓 <strong>Lulus</strong> — Santri telah menyelesaikan pendidikan</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;font-size:14px;" onclick="selectBulkStatus('pindah')">
+        <input type="radio" name="bulkStatus" value="pindah" style="accent-color:var(--primary);">
+        <span>🔄 <strong>Pindah</strong> — Santri pindah ke sekolah lain</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;font-size:14px;" onclick="selectBulkStatus('keluar')">
+        <input type="radio" name="bulkStatus" value="keluar" style="accent-color:var(--primary);">
+        <span>🚪 <strong>Keluar</strong> — Santri mengundurkan diri</span>
+      </label>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="document.getElementById('bulkStatusModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" id="bulkStatusConfirmBtn" disabled onclick="confirmBulkStatus()">✔ Simpan Status</button>
     </div>
   </div>
 </div>

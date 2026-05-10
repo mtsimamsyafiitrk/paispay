@@ -10,6 +10,7 @@ async function loadStudents() {
     pangkal_paid: Number(r.pangkal_paid) || 0,
     spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
     spp_history: r.spp_history || {},
+    status_kelulusan: r.status_kelulusan || '',
   }));
 }
 
@@ -25,6 +26,7 @@ async function saveState() {
         pangkal_paid: s.pangkal_paid || 0,
         spp_paid_months: s.spp_paid_months || [],
         spp_history: s.spp_history || {},
+        status_kelulusan: s.status_kelulusan || '',
       })),
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' }
     );
@@ -48,6 +50,7 @@ async function saveSiswa(s) {
         pangkal_paid: s.pangkal_paid || 0,
         spp_paid_months: s.spp_paid_months || [],
         spp_history: s.spp_history || {},
+        status_kelulusan: s.status_kelulusan || '',
       }],
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' }
     );
