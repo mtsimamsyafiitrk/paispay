@@ -1,5 +1,25 @@
 // ── SiPay · Database Layer (Supabase) — No TA separation ──
 
+// Flag: apakah kolom status_kelulusan sudah ada di DB (auto-detect)
+let _skColExists = null;
+
+function _buildStudentRow(s, includeStatus) {
+  const row = {
+    nama: s.nama, kelas: s.kelas, nisn: s.nisn || '',
+    spp: s.spp || 0, pangkal: s.pangkal || 0,
+    pangkal_paid: s.pangkal_paid || 0,
+    spp_paid_months: s.spp_paid_months || [],
+    spp_history: s.spp_history || {},
+  };
+  if (includeStatus) row.status_kelulusan = s.status_kelulusan || '';
+  return row;
+}
+
+async function _sbStudentsUpsert(payload) {
+  return sb('students?on_conflict=nama', 'POST', payload,
+    { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
+}
+
 // ══ STUDENTS ══
 async function loadStudents() {
   const rows = await sb('students?select=*&order=nama');
@@ -16,22 +36,30 @@ async function loadStudents() {
 
 async function saveState() {
   showSyncIndicator('💾 Menyimpan...');
+  const withSK  = appState.students.map(s => _buildStudentRow(s, true));
+  const withoutSK = () => appState.students.map(s => _buildStudentRow(s, false));
   try {
-    await sb(
-      'students?on_conflict=nama',
-      'POST',
-      appState.students.map(s => ({
-        nama: s.nama, kelas: s.kelas, nisn: s.nisn || '',
-        spp: s.spp || 0, pangkal: s.pangkal || 0,
-        pangkal_paid: s.pangkal_paid || 0,
-        spp_paid_months: s.spp_paid_months || [],
-        spp_history: s.spp_history || {},
-        status_kelulusan: s.status_kelulusan || '',
-      })),
-      { 'Prefer': 'resolution=merge-duplicates,return=minimal' }
-    );
+    if (_skColExists === false) {
+      await _sbStudentsUpsert(withoutSK());
+    } else {
+      await _sbStudentsUpsert(withSK);
+      _skColExists = true;
+    }
     showSyncIndicator('✅ Tersimpan', 2000);
   } catch(e) {
+    if (_skColExists !== false && e.message?.includes('status_kelulusan')) {
+      _skColExists = false;
+      try {
+        await _sbStudentsUpsert(withoutSK());
+        showSyncIndicator('✅ Tersimpan', 2000);
+        console.warn('Kolom status_kelulusan belum ada di DB — jalankan migrasi Supabase');
+        return;
+      } catch(e2) {
+        console.error('saveState fallback error:', e2);
+        showSyncIndicator('⚠️ Gagal simpan: ' + e2.message, 3000);
+        return;
+      }
+    }
     console.error('saveState error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
   }
@@ -40,22 +68,29 @@ async function saveState() {
 async function saveSiswa(s) {
   if (!s) return;
   showSyncIndicator('💾 Menyimpan...');
+  const rowWith    = [_buildStudentRow(s, true)];
+  const rowWithout = [_buildStudentRow(s, false)];
   try {
-    await sb(
-      'students?on_conflict=nama',
-      'POST',
-      [{
-        nama: s.nama, kelas: s.kelas, nisn: s.nisn || '',
-        spp: s.spp || 0, pangkal: s.pangkal || 0,
-        pangkal_paid: s.pangkal_paid || 0,
-        spp_paid_months: s.spp_paid_months || [],
-        spp_history: s.spp_history || {},
-        status_kelulusan: s.status_kelulusan || '',
-      }],
-      { 'Prefer': 'resolution=merge-duplicates,return=minimal' }
-    );
+    if (_skColExists === false) {
+      await _sbStudentsUpsert(rowWithout);
+    } else {
+      await _sbStudentsUpsert(rowWith);
+      _skColExists = true;
+    }
     showSyncIndicator('✅ Tersimpan', 1500);
   } catch(e) {
+    if (_skColExists !== false && e.message?.includes('status_kelulusan')) {
+      _skColExists = false;
+      try {
+        await _sbStudentsUpsert(rowWithout);
+        showSyncIndicator('✅ Tersimpan', 1500);
+        return;
+      } catch(e2) {
+        console.error('saveSiswa fallback error:', e2);
+        showSyncIndicator('⚠️ Gagal simpan: ' + e2.message, 3000);
+        return;
+      }
+    }
     console.error('saveSiswa error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
   }
