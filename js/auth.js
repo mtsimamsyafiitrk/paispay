@@ -9,7 +9,7 @@ function getAdminCreds() {
   catch { return DEFAULT_ADMIN; }
 }
 function isLoggedIn() {
-  return sessionStorage.getItem('sipay_auth') === 'admin';
+  return localStorage.getItem('sipay_auth') === 'admin';
 }function switchLoginMode(mode) {
   document.getElementById('tabAdmin').classList.toggle('active', mode === 'admin');
   document.getElementById('tabGuest').classList.toggle('active', mode === 'guest');
@@ -24,7 +24,7 @@ function doLogin() {
   const p = document.getElementById('loginPass').value;
   const creds = getAdminCreds();
   if (u === creds.user && p === creds.pass) {
-    sessionStorage.setItem('sipay_auth', 'admin');
+    localStorage.setItem('sipay_auth', 'admin');
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminLabel').textContent = u;
     showPage('dashboard');

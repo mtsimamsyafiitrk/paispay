@@ -169,6 +169,17 @@ async function loadDataForTA() {
     const [students, transactions] = await Promise.all([loadStudents(), loadTransactions()]);
     appState.students     = students;
     appState.transactions = transactions;
+    // Cache ke localStorage untuk fallback offline
+    if (students.length < 500) {
+      try {
+        localStorage.setItem('sipay_state', JSON.stringify({
+          students:     appState.students,
+          transactions: appState.transactions,
+          payItems:     appState.payItems,
+          savedAt:      new Date().toISOString(),
+        }));
+      } catch { /* quota exceeded — abaikan */ }
+    }
     showSyncIndicator('✅ Data dimuat', 2000);
     const gi = document.getElementById('gasIcon'); if(gi) gi.textContent='🟢';
     const gl = document.getElementById('gasLabel'); if(gl) gl.textContent='Terhubung';

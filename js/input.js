@@ -344,6 +344,7 @@ async function submitPayment() {
       return [{ name: i.name, amount: i.amount, bulan: i.bulan||null }];
     }),
     total: totalAmt, catatan: txn.catatan, dicetak: false,
+    ta_label: getProfil().ta || '',
   };
   try {
     const res = await sb('kuitansi', 'POST', kwtData, {'Prefer':'return=representation'});

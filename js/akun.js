@@ -129,58 +129,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (em) em.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
   const gm = document.getElementById('gantiPassModal');
   if (gm) gm.addEventListener('click', function(e) { if(e.target===this) closeGantiPass(); });
-});
-
-document.addEventListener('DOMContentLoaded', () => {
   const gasModal = document.getElementById('gasSetupModal');
-  if (gasModal) gasModal.addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('open');
-  });
+  if (gasModal) gasModal.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
 
   // Sync nama madrasah & logo ke halaman login
   const p = getProfil();
-  document.getElementById('loginTitle').textContent = p.nama || 'SiPay';
-  document.getElementById('loginSub').textContent = 'Sistem Pembayaran Santri';
+  const loginTitle = document.getElementById('loginTitle');
+  if (loginTitle) loginTitle.textContent = p.nama || 'SiPay';
+  const loginSub = document.getElementById('loginSub');
+  if (loginSub) loginSub.textContent = 'Sistem Pembayaran Santri';
   const logo = getLogo();
   if (logo) {
-    document.getElementById('loginLogo').innerHTML = `<img src="${logo}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
-  }
-  // Jika session masih aktif, langsung masuk tanpa login ulang
-  if (isLoggedIn()) {
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('adminLabel').textContent = getAdminCreds().user;
-    showPage('dashboard');
-  } else if (isGuest()) {
-    // Session guest masih aktif — reload data siswa dan tampilkan halaman pengunjung
-    const g = JSON.parse(sessionStorage.getItem('sipay_guest') || '{}');
-    if (g.nama) {
-      document.getElementById('loginScreen').classList.add('hidden');
-      Promise.all([
-        sb('students?select=*&nama=eq.' + encodeURIComponent(g.nama)),
-        sb('transactions?select=*&nama=eq.' + encodeURIComponent(g.nama) + '&order=created_at.desc'),
-      ]).then(([allSiswa, txns]) => {
-        if (!allSiswa.length) throw new Error('Santri tidak ditemukan');
-        const siswa = allSiswa[0];
-        siswa.spp_paid_months = Array.isArray(siswa.spp_paid_months) ? siswa.spp_paid_months : [];
-        guestData = { siswa, txns };
-        document.getElementById('adminLabel').textContent = siswa.nama;
-        document.getElementById('guestSidebarSiswa').textContent = siswa.nama;
-        document.getElementById('guestSidebarKelas').textContent = 'Kelas ' + siswa.kelas;
-        const profil = JSON.parse(localStorage.getItem('sipay_profil') || '{}');
-        if (profil.nama) document.getElementById('guestSidebarNama').textContent = profil.nama;
-        showPage('pengunjung');
-      }).catch(() => {
-        sessionStorage.removeItem('sipay_auth');
-        sessionStorage.removeItem('sipay_guest');
-        document.getElementById('loginScreen').classList.remove('hidden');
-      });
-    } else {
-      sessionStorage.removeItem('sipay_auth');
-      sessionStorage.removeItem('sipay_guest');
-      setTimeout(() => document.getElementById('loginUser').focus(), 150);
-    }
-  } else {
-    setTimeout(() => document.getElementById('loginUser').focus(), 150);
+    const loginLogo = document.getElementById('loginLogo');
+    if (loginLogo) loginLogo.innerHTML = `<img src="${logo}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
   }
 });
 

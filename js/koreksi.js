@@ -295,6 +295,7 @@ async function prosesKoreksi() {
       is_koreksi: true,
       ref_no_kuitansi: kwt.no_kuitansi,
       dicetak: false,
+      ta_label: getProfil().ta || '',
     }, { 'Prefer': 'return=representation' });
 
     // === 3. Tandai kuitansi lama sebagai "dikoreksi" ===
