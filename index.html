@@ -387,13 +387,18 @@
     <!-- Tab: Daftar Siswa -->
     <div id="tabSiswaDaftar">
     <div class="card" style="margin-bottom:16px;">
-      <!-- Filter Chips Kelas -->
-      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Filter Kelas</div>
-      <div class="kelas-chips" id="kelasChips">
-        <div class="kchip active" data-kelas="" onclick="setKelasChip(this)">Semua</div>
-        <div class="kchip" data-kelas="7" onclick="setKelasChip(this)">7</div>
-        <div class="kchip" data-kelas="8" onclick="setKelasChip(this)">8</div>
-        <div class="kchip" data-kelas="9" onclick="setKelasChip(this)">9</div>
+      <!-- Filter Chips Kelas + Promosi -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-accent btn-sm" onclick="openPromosiKelasModal()" style="font-weight:700;letter-spacing:.3px;white-space:nowrap;">🎓 PROMOSI KELAS</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Filter Kelas</span>
+          <div class="kelas-chips" id="kelasChips" style="margin-bottom:0;">
+            <div class="kchip active" data-kelas="" onclick="setKelasChip(this)">Semua</div>
+            <div class="kchip" data-kelas="7" onclick="setKelasChip(this)">7</div>
+            <div class="kchip" data-kelas="8" onclick="setKelasChip(this)">8</div>
+            <div class="kchip" data-kelas="9" onclick="setKelasChip(this)">9</div>
+          </div>
+        </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <div class="search-bar" style="flex:1;min-width:200px;">
@@ -1532,6 +1537,38 @@
       <div style="display:flex;gap:10px;justify-content:flex-end;">
         <button class="btn btn-outline" onclick="closeGantiPass()">Batal</button>
         <button class="btn btn-primary" onclick="saveNewPassword()">🔐 Simpan Password Baru</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROMOSI KELAS MODAL ═══ -->
+<div class="modal-overlay" id="promosiKelasModal">
+  <div class="modal" style="max-width:660px;max-height:88vh;display:flex;flex-direction:column;padding:0;">
+    <div class="modal-header" style="padding:18px 20px 14px;flex-shrink:0;">
+      <div class="modal-title">🎓 Promosi Kelas</div>
+      <button class="modal-close" onclick="document.getElementById('promosiKelasModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="padding:0 20px 10px;font-size:13px;color:var(--text-muted);flex-shrink:0;">
+      Tahun Ajaran: <strong id="promosiTaLabel">—</strong>. Data SPP tahun ini akan diarsipkan ke riwayat sebelum kelas dinaikkan.
+    </div>
+    <!-- Bulk select by kelas -->
+    <div style="padding:8px 20px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-shrink:0;">
+      <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;">Pilih semua:</span>
+      <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('7')">Kelas 7</button>
+      <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('8')">Kelas 8</button>
+      <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('9')">Kelas 9</button>
+      <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('all')">Semua Aktif</button>
+      <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('none')" style="margin-left:auto;">Reset</button>
+    </div>
+    <!-- Student list -->
+    <div style="flex:1;overflow-y:auto;padding:0 20px;" id="promosiStudentList"></div>
+    <!-- Summary + action -->
+    <div style="padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;">
+      <div id="promosiSummary" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Belum ada santri dipilih.</div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-outline" onclick="document.getElementById('promosiKelasModal').classList.remove('open')">Batal</button>
+        <button class="btn btn-primary" id="promosiConfirmBtn" onclick="confirmPromosiKelas()" disabled>✅ Konfirmasi Promosi</button>
       </div>
     </div>
   </div>

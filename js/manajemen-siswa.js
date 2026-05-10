@@ -1,4 +1,164 @@
 // ── SiPay · Manajemen Siswa (Tambah/Edit/Hapus/Bulk) ──
+
+// ══════════════════════════════════════════
+// PROMOSI KELAS
+// ══════════════════════════════════════════
+let promosiMap = new Map(); // nama -> 'naik' | 'tinggal'
+
+function openPromosiKelasModal() {
+  promosiMap = new Map();
+  const ta = getProfil().ta || '—';
+  document.getElementById('promosiTaLabel').textContent = ta;
+  renderPromosiStudentList();
+  updatePromosiSummary();
+  document.getElementById('promosiKelasModal').classList.add('open');
+}
+
+function renderPromosiStudentList() {
+  const students = appState.students
+    .filter(s => !s.status_kelulusan)
+    .sort((a, b) => a.kelas.localeCompare(b.kelas) || a.nama.localeCompare(b.nama));
+
+  const list = document.getElementById('promosiStudentList');
+  if (!students.length) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);">Tidak ada santri aktif.</div>';
+    return;
+  }
+
+  let html = '';
+  let lastKelas = '';
+
+  students.forEach((s, i) => {
+    if (s.kelas !== lastKelas) {
+      lastKelas = s.kelas;
+      html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-pale);margin-top:${i>0?'8px':'0'};">
+        Kelas ${s.kelas}
+      </div>`;
+    }
+
+    const sel     = promosiMap.has(s.nama);
+    const action  = promosiMap.get(s.nama) || 'naik';
+    const nameSafe = s.nama.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const nextKelas = s.kelas === '7' ? '8' : s.kelas === '8' ? '9' : null;
+    const nextLabel = nextKelas
+      ? `<span style="color:var(--primary);font-weight:600;">→ Kelas ${nextKelas}</span>`
+      : `<span style="color:var(--accent);font-weight:600;">→ Lulus 🎓</span>`;
+
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <input type="checkbox" ${sel?'checked':''} onchange="togglePromosiStudent('${nameSafe}',this.checked)"
+        style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:13px;">${s.nama}</div>
+        <div style="font-size:11px;color:var(--text-muted);">Kelas ${s.kelas}</div>
+      </div>
+      ${sel ? `
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 9px;border-radius:6px;
+          ${action==='naik'?'background:var(--primary-pale);color:var(--primary);font-weight:600;':'color:var(--text-muted);'}">
+          <input type="radio" name="pa${i}" value="naik" ${action==='naik'?'checked':''}
+            onchange="setStudentPromosiAction('${nameSafe}','naik')" style="accent-color:var(--primary);"> Naik Kelas
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 9px;border-radius:6px;
+          ${action==='tinggal'?'background:#fee2e2;color:var(--danger);font-weight:600;':'color:var(--text-muted);'}">
+          <input type="radio" name="pa${i}" value="tinggal" ${action==='tinggal'?'checked':''}
+            onchange="setStudentPromosiAction('${nameSafe}','tinggal')" style="accent-color:var(--danger);"> Tinggal Kelas
+        </label>
+        <div style="font-size:12px;min-width:90px;text-align:right;">
+          ${action==='naik' ? nextLabel : `<span style="color:var(--text-muted);">Tetap Kls ${s.kelas}</span>`}
+        </div>
+      ` : `<div style="font-size:11px;color:var(--border);min-width:200px;text-align:right;">—</div>`}
+    </div>`;
+  });
+
+  list.innerHTML = html;
+}
+
+function togglePromosiStudent(nama, checked) {
+  if (checked) promosiMap.set(nama, 'naik');
+  else promosiMap.delete(nama);
+  renderPromosiStudentList();
+  updatePromosiSummary();
+}
+
+function setStudentPromosiAction(nama, action) {
+  if (promosiMap.has(nama)) promosiMap.set(nama, action);
+  renderPromosiStudentList();
+  updatePromosiSummary();
+}
+
+function selectKelasGroup(kelas) {
+  const aktif = appState.students.filter(s => !s.status_kelulusan);
+  if (kelas === 'none') {
+    promosiMap.clear();
+  } else if (kelas === 'all') {
+    aktif.forEach(s => promosiMap.set(s.nama, 'naik'));
+  } else {
+    aktif.filter(s => s.kelas === kelas).forEach(s => promosiMap.set(s.nama, 'naik'));
+  }
+  renderPromosiStudentList();
+  updatePromosiSummary();
+}
+
+function updatePromosiSummary() {
+  const naik    = [...promosiMap].filter(([,a]) => a === 'naik').length;
+  const tinggal = [...promosiMap].filter(([,a]) => a === 'tinggal').length;
+  const lulus   = [...promosiMap].filter(([nama, a]) => {
+    const s = appState.students.find(x => x.nama === nama);
+    return a === 'naik' && s && s.kelas === '9';
+  }).length;
+  const el  = document.getElementById('promosiSummary');
+  const btn = document.getElementById('promosiConfirmBtn');
+  if (!promosiMap.size) {
+    el.textContent = 'Belum ada santri dipilih.';
+    btn.disabled = true;
+    return;
+  }
+  el.innerHTML = `<strong>${promosiMap.size} santri</strong> dipilih — `
+    + `<span style="color:var(--primary);">${naik} naik kelas</span>`
+    + (lulus ? ` <span style="color:var(--accent);">(${lulus} di antaranya lulus 🎓)</span>` : '')
+    + (tinggal ? `, <span style="color:var(--danger);">${tinggal} tinggal kelas</span>` : '');
+  btn.disabled = false;
+}
+
+async function confirmPromosiKelas() {
+  if (!promosiMap.size) return;
+  const ta = getProfil().ta || '';
+  let count = 0;
+
+  for (const [nama, action] of promosiMap) {
+    const idx = appState.students.findIndex(s => s.nama === nama);
+    if (idx < 0) continue;
+    const s = appState.students[idx];
+
+    // Arsipkan data SPP tahun berjalan ke spp_history
+    if (ta) {
+      if (!s.spp_history) s.spp_history = {};
+      s.spp_history[ta] = {
+        spp:            s.spp || 0,
+        spp_paid_months: [...(s.spp_paid_months || [])],
+      };
+    }
+
+    // Reset bulan SPP untuk tahun ajaran baru
+    s.spp_paid_months = [];
+
+    if (action === 'naik') {
+      if      (s.kelas === '7') s.kelas = '8';
+      else if (s.kelas === '8') s.kelas = '9';
+      else if (s.kelas === '9') s.status_kelulusan = 'lulus';
+    }
+    // tinggal kelas: kelas tetap, data sudah direset
+
+    count++;
+  }
+
+  document.getElementById('promosiKelasModal').classList.remove('open');
+  promosiMap.clear();
+  renderSiswaTable();
+  renderDashboard();
+  toast(`✅ Promosi kelas selesai — ${count} santri diproses`);
+  await saveState();
+}
+
 // KELAS CHIP FILTER
 // ══════════════════════════════════════════
 let activeKelasFilter = '';
