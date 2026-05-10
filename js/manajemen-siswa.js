@@ -45,6 +45,40 @@ function clearSelection() {
   if (ca) ca.checked = false;
   updateBulkBar();
 }
+let _selectedBulkStatus = '';
+function openBulkStatusModal() {
+  if (!selectedRows.size) return;
+  const names = [...selectedRows];
+  document.getElementById('bulkStatusMsg').textContent =
+    `Pilih status baru untuk ${names.length} santri: ${names.slice(0,3).join(', ')}${names.length > 3 ? ' dan ' + (names.length - 3) + ' lainnya' : ''}.`;
+  document.querySelectorAll('input[name="bulkStatus"]').forEach(r => r.checked = false);
+  _selectedBulkStatus = '';
+  document.getElementById('bulkStatusConfirmBtn').disabled = true;
+  document.getElementById('bulkStatusModal').classList.add('open');
+}
+function selectBulkStatus(val) {
+  _selectedBulkStatus = val;
+  const radio = document.querySelector(`input[name="bulkStatus"][value="${val}"]`);
+  if (radio) radio.checked = true;
+  document.getElementById('bulkStatusConfirmBtn').disabled = false;
+}
+async function confirmBulkStatus() {
+  if (!_selectedBulkStatus || !selectedRows.size) return;
+  const names = [...selectedRows];
+  const statusVal = _selectedBulkStatus === 'aktif' ? '' : _selectedBulkStatus;
+  names.forEach(nama => {
+    const idx = appState.students.findIndex(s => s.nama === nama);
+    if (idx >= 0) appState.students[idx].status_kelulusan = statusVal;
+  });
+  document.getElementById('bulkStatusModal').classList.remove('open');
+  clearSelection();
+  renderSiswaTable();
+  renderDashboard();
+  const label = { '': 'Aktif', 'lulus': 'Lulus', 'pindah': 'Pindah', 'keluar': 'Keluar' }[statusVal];
+  toast(`✅ ${names.length} santri diubah statusnya menjadi ${label}`);
+  await saveState();
+}
+
 function deleteSelected() {
   if (!selectedRows.size) return;
   const names = [...selectedRows];
