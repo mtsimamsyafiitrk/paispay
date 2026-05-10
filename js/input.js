@@ -155,7 +155,7 @@ function renderPaymentItems(student) {
   // ── Item bayar utama (TA aktif) ──
   let html = activeItems.map(item => {
     let amount = item.amount;
-    if (item.id === 'spp' && student) amount = student.spp || 0;
+    if (item.id === 'spp' && student) amount = student.spp || item.amount || 0;
     if (item.id === 'pangkal' && student) amount = pangkalTunggakan(student);
     let extra = '';
 
@@ -174,7 +174,7 @@ function renderPaymentItems(student) {
         </div>`;
       }
     }
-    if (item.type === 'bulanan' && student && student.spp > 0) {
+    if (item.type === 'bulanan' && student && amount > 0) {
       const unpaid = MONTHS.filter(m => !student.spp_paid_months.includes(m));
       if (unpaid.length === 0) {
         extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Semua bulan sudah lunas</div>`;
@@ -256,7 +256,8 @@ function calcTotal() {
       total += Number(inp?.value||0);
     } else if (item.id === 'spp' && student) {
       const bulanDipilih = getSppMonthsSelected();
-      total += (student.spp||0) * Math.max(1, bulanDipilih.length);
+      const sppRate = student.spp || item.amount || 0;
+      total += sppRate * Math.max(1, bulanDipilih.length);
     } else if (item.id === 'pangkal' && student) {
       total += pangkalTunggakan(student);
     } else {
