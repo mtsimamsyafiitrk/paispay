@@ -18,7 +18,7 @@ function showCetakForStudent(nama) {
 function onCetakStudentSelect() {
   const nama = document.getElementById('cetakNama').value;
   const s = getStudent(nama);
-  document.getElementById('cetakKelas').textContent = s ? s.kelas : '—';
+  document.getElementById('cetakKelas').textContent = s ? kelasLabel(s) : '—';
   document.getElementById('cetakNISN').textContent = s ? (s.nisn||'—') : '—';
 }
 

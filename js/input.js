@@ -55,7 +55,7 @@ function onInputNamaSearch() {
       style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">
       <div>
         <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Kelas ${s.kelas}${s.nisn ? ' · NISN ' + s.nisn : ''}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas}${s.nisn ? ' · NISN ' + s.nisn : ''}</div>
       </div>
       ${tunggakBadge(s)}
     </div>`).join('');
@@ -121,7 +121,7 @@ function onStudentSelect() {
     renderPaymentItems();
     return;
   }
-  document.getElementById('inputKelas').textContent = s.kelas;
+  document.getElementById('inputKelas').textContent = kelasLabel(s);
   document.getElementById('inputNISN').textContent = s.nisn || '(belum diisi)';
   const tunggakSPP = sppTunggakan(s);
   const tunggakPangkal = pangkalTunggakan(s);
@@ -155,7 +155,7 @@ function renderPaymentItems(student) {
   // ── Item bayar utama (TA aktif) ──
   let html = activeItems.map(item => {
     let amount = item.amount;
-    if (item.id === 'spp' && student) amount = student.spp || item.amount || 0;
+    if (item.type === 'bulanan' && student) amount = student.spp || item.amount || 0;
     if (item.id === 'pangkal' && student) amount = pangkalTunggakan(student);
     let extra = '';
 
@@ -254,7 +254,7 @@ function calcTotal() {
     if (item.type === 'custom') {
       const inp = document.getElementById('custom_'+item.id);
       total += Number(inp?.value||0);
-    } else if (item.id === 'spp' && student) {
+    } else if (item.type === 'bulanan' && student) {
       const bulanDipilih = getSppMonthsSelected();
       const sppRate = student.spp || item.amount || 0;
       total += sppRate * Math.max(1, bulanDipilih.length);
@@ -279,8 +279,8 @@ async function submitPayment() {
     if (item.type === 'custom') {
       const inp = document.getElementById('custom_'+item.id);
       amount = Number(inp?.value||0);
-    } else if (item.id === 'spp' && student) {
-      amount = student.spp||0;
+    } else if (item.type === 'bulanan' && student) {
+      amount = student.spp || item.amount || 0;
     } else if (item.id === 'pangkal' && student) {
       amount = pangkalTunggakan(student);
     }
@@ -290,7 +290,7 @@ async function submitPayment() {
       // Ambil semua bulan yang dipilih
       const bulanDipilih = getSppMonthsSelected();
       if (!bulanDipilih.length) { toast('⚠️ Pilih minimal 1 bulan SPP!'); items.length = 0; return; }
-      const totalSPP = (student.spp||0) * bulanDipilih.length;
+      const totalSPP = (student.spp || item.amount || 0) * bulanDipilih.length;
       items.push({ id: item.id, name: item.name, amount: totalSPP, bulanList: bulanDipilih });
     } else {
       items.push({ id: item.id, name: item.name, amount, bulan: null });
@@ -303,7 +303,7 @@ async function submitPayment() {
   // Update student data
   const si = appState.students.findIndex(s=>s.nama===nama);
   items.forEach(it => {
-    if (it.id === 'spp' && it.bulanList?.length) {
+    if (it.bulanList?.length) {
       it.bulanList.forEach(b => {
         if (!appState.students[si].spp_paid_months.includes(b))
           appState.students[si].spp_paid_months.push(b);
@@ -340,7 +340,7 @@ async function submitPayment() {
     nama, kelas: student.kelas, nisn: student.nisn||'',
 
     items: items.flatMap(i => {
-      if (i.bulanList?.length) return i.bulanList.map(b => ({ name: i.name, amount: student.spp||0, bulan: b }));
+      if (i.bulanList?.length) return i.bulanList.map(b => ({ name: i.name, amount: i.amount / i.bulanList.length, bulan: b }));
       if (i.crossItem) return [{ name: i.name, amount: i.amount, bulan: i.crossItem.bulan||null }];
       return [{ name: i.name, amount: i.amount, bulan: i.bulan||null }];
     }),

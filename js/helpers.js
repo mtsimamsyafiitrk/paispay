@@ -2,6 +2,14 @@
 const rp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
 const pct = (a,b) => b ? Math.round(a/b*100) : 0;
 
+function kelasLabel(s) {
+  const sk = s.status_kelulusan || '';
+  if (sk === 'lulus')  return 'Lulus';
+  if (sk === 'pindah') return 'Pindah';
+  if (sk === 'keluar') return 'Keluar';
+  return s.kelas;
+}
+
 function terbilang(n) {
   n = Math.floor(n);
   if (n === 0) return '';

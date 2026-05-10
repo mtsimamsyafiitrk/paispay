@@ -148,7 +148,7 @@ function renderSiswaTable(resetPage = true) {
       <td class="chk-col"><input type="checkbox" class="row-chk" data-nama="${s.nama}" onchange="toggleRowSelect(this)"></td>
       <td>${no}</td>
       <td><strong>${s.nama}</strong>${skBadge}</td>
-      <td>${s.kelas}</td>
+      <td>${kelasLabel(s)}</td>
       <td>${rp(s.spp)}</td>
       <td><div style="line-height:1.6;">${monthBadges}</div></td>
       <td>
@@ -258,7 +258,7 @@ function onTunggakanSearch() {
       style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;">
       <div>
         <div style="font-weight:600;font-size:13.5px;">${s.nama}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${s.kelas}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${kelasLabel(s)}</div>
       </div>
       ${badge}
     </div>`;
@@ -311,7 +311,7 @@ function renderTunggakanDetail(s) {
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <div>
         <div style="font-size:20px;font-weight:800;color:var(--primary);">${s.nama}</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">${s.kelas} &nbsp;•&nbsp; NISN: ${s.nisn || '—'}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">${kelasLabel(s)} &nbsp;•&nbsp; NISN: ${s.nisn || '—'}</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" onclick="quickInput('${nameSafe}')">💳 Bayar Sekarang</button>
