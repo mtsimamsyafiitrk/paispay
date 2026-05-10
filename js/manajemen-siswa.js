@@ -239,7 +239,7 @@ function openEditPembayaran(nama) {
   const s = getStudent(nama);
   if (!s) return;
   document.getElementById('ep_nama').value = nama;
-  document.getElementById('ep_namaLabel').textContent = nama + ' — Kelas ' + s.kelas;
+  document.getElementById('ep_namaLabel').textContent = nama + ' — ' + kelasLabel(s);
   document.getElementById('ep_pangkal').value = s.pangkal || '';
   document.getElementById('ep_pangkal_paid').value = s.pangkal_paid || '';
   document.querySelectorAll('#ep_months_wrap input[type=checkbox]').forEach(c => {

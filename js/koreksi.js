@@ -55,7 +55,7 @@ function onKoreksiNamaSearch() {
       onmouseenter="this.style.background='var(--primary-pale)'" onmouseleave="this.style.background=''"
       style="padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;">
       <div style="font-weight:600;">${s.nama}</div>
-      <div style="font-size:11px;color:var(--text-muted);">Kelas ${s.kelas}${s.nisn?' · NISN '+s.nisn:''}</div>
+      <div style="font-size:11px;color:var(--text-muted);">${s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas}${s.nisn?' · NISN '+s.nisn:''}</div>
     </div>`).join('');
   dd.style.display = 'block';
 }

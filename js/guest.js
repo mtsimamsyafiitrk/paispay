@@ -7,12 +7,13 @@ async function initGuestLogin() {
   if (!sel) return;
   sel.innerHTML = '<option value="">Memuat daftar santri...</option>';
   try {
-    const rows = await sb('students?select=nama,kelas&order=nama');
+    const rows = await sb('students?select=nama,kelas,status_kelulusan&order=nama');
     sel.innerHTML = '<option value="">-- Pilih nama santri --</option>';
     rows.forEach(r => {
       const opt = document.createElement('option');
       opt.value = r.nama;
-      opt.textContent = r.nama + ' (Kelas ' + r.kelas + ')';
+      const kelasText = r.status_kelulusan ? kelasLabel(r) : 'Kelas ' + r.kelas;
+      opt.textContent = r.nama + ' (' + kelasText + ')';
       sel.appendChild(opt);
     });
   } catch(e) {
@@ -44,7 +45,7 @@ async function doLoginGuest() {
     localStorage.setItem('sipay_guest', JSON.stringify({ nama }));
 
     document.getElementById('guestSidebarSiswa').textContent = siswa.nama;
-    document.getElementById('guestSidebarKelas').textContent = 'Kelas ' + siswa.kelas;
+    document.getElementById('guestSidebarKelas').textContent = siswa.status_kelulusan ? kelasLabel(siswa) : 'Kelas ' + siswa.kelas;
     const profil = JSON.parse(localStorage.getItem('sipay_profil') || '{}');
     if (profil.nama) document.getElementById('guestSidebarNama').textContent = profil.nama;
 
@@ -69,7 +70,7 @@ function renderGuestPage() {
   const MONTHS_FULL = {Jul:'Juli',Agt:'Agustus',Sep:'September',Okt:'Oktober',Nov:'November',Des:'Desember',Jan:'Januari',Feb:'Februari',Mar:'Maret',Apr:'April',Mei:'Mei',Jun:'Juni'};
 
   document.getElementById('guestNama').textContent  = siswa.nama;
-  document.getElementById('guestKelas').textContent = 'Kelas ' + siswa.kelas;
+  document.getElementById('guestKelas').textContent = siswa.status_kelulusan ? kelasLabel(siswa) : 'Kelas ' + siswa.kelas;
   const taLabelEl = document.getElementById('guestTALabel');
   if (taLabelEl) taLabelEl.textContent = '';
 
