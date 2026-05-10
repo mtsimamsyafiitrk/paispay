@@ -108,8 +108,10 @@ function renderSiswaTable(resetPage = true) {
     if (activeKelasFilter && s.kelas !== activeKelasFilter) return false;
     if (sFilter === 'lunas' && totalTunggakan(s) > 0) return false;
     if (sFilter === 'tunggak' && totalTunggakan(s) === 0) return false;
+    // Default: sembunyikan siswa tidak aktif kecuali filter eksplisit dipilih
+    if (skFilter === '' && s.status_kelulusan) return false;
     if (skFilter === 'aktif' && s.status_kelulusan) return false;
-    if (skFilter && skFilter !== 'aktif' && s.status_kelulusan !== skFilter) return false;
+    if (skFilter && skFilter !== 'aktif' && skFilter !== 'semua' && s.status_kelulusan !== skFilter) return false;
     return true;
   });
   clearSelection();
