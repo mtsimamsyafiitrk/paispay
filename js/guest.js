@@ -40,8 +40,8 @@ async function doLoginGuest() {
     const txns = await sb('transactions?select=*&nama=eq.' + encodeURIComponent(nama) + '&order=created_at.desc');
 
     guestData = { siswa, txns };
-    sessionStorage.setItem('sipay_auth', 'guest');
-    sessionStorage.setItem('sipay_guest', JSON.stringify({ nama }));
+    localStorage.setItem('sipay_auth', 'guest');
+    localStorage.setItem('sipay_guest', JSON.stringify({ nama }));
 
     document.getElementById('guestSidebarSiswa').textContent = siswa.nama;
     document.getElementById('guestSidebarKelas').textContent = 'Kelas ' + siswa.kelas;
@@ -188,8 +188,8 @@ function closeLogoutConfirm() {
 }
 function doLogout() {
   closeLogoutConfirm();
-  sessionStorage.removeItem('sipay_auth');
-  sessionStorage.removeItem('sipay_guest');
+  localStorage.removeItem('sipay_auth');
+  localStorage.removeItem('sipay_guest');
   guestData = { siswa: null, txns: [] };
   showPage('dashboard');
   document.getElementById('loginUser').value = '';
