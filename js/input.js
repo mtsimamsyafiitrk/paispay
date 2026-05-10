@@ -6,6 +6,8 @@ function renderInputPage() {
   const searchEl = document.getElementById('inputNamaSearch');
   if (searchEl) searchEl.value = '';
   document.getElementById('inputNama').value = '';
+  const chk = document.getElementById('inputShowNonAktif');
+  if (chk) chk.checked = false;
   hideInputNamaDropdown();
   renderPaymentItems();
 }
@@ -16,14 +18,19 @@ function onInputNamaSearch() {
   const dd = document.getElementById('inputNamaDropdown');
   if (!dd) return;
 
-  // Tampilkan semua jika kosong, filter jika ada query
+  // Default: hanya santri aktif; centang toggle untuk tampilkan non-aktif
+  const showNonAktif = document.getElementById('inputShowNonAktif')?.checked;
+  const base = showNonAktif
+    ? appState.students
+    : appState.students.filter(s => !s.status_kelulusan);
+
   const list = q
-    ? appState.students.filter(s =>
+    ? base.filter(s =>
         s.nama.toLowerCase().includes(q) ||
         (s.nisn && s.nisn.includes(q)) ||
         s.kelas.includes(q)
       )
-    : appState.students;
+    : base;
 
   if (!list.length) {
     dd.innerHTML = `<div style="padding:14px 16px;font-size:13px;color:var(--text-muted);">Tidak ditemukan</div>`;
