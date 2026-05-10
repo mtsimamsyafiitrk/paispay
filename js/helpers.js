@@ -192,15 +192,19 @@ function detectDuplicateNames() {
 
 function sppTunggakan(s) {
   const history = s.spp_history || {};
-  if (Object.keys(history).length > 0) {
-    return Object.values(history).reduce((total, taData) => {
-      if (!taData.spp || taData.spp === 0) return total;
-      const belum = MONTHS.filter(m => !(taData.spp_paid_months||[]).includes(m)).length;
-      return total + belum * taData.spp;
-    }, 0);
+  let total = 0;
+  // Tunggakan tahun-tahun lalu dari spp_history
+  Object.values(history).forEach(taData => {
+    if (!taData.spp || taData.spp === 0) return;
+    const belum = MONTHS.filter(m => !(taData.spp_paid_months||[]).includes(m)).length;
+    total += belum * taData.spp;
+  });
+  // Tunggakan tahun berjalan (main field)
+  if (s.spp && s.spp > 0) {
+    const belum = MONTHS.filter(m => !(s.spp_paid_months||[]).includes(m)).length;
+    total += belum * s.spp;
   }
-  if (!s.spp || s.spp === 0) return 0;
-  return MONTHS.filter(m => !(s.spp_paid_months||[]).includes(m)).length * s.spp;
+  return total;
 }
 function pangkalTunggakan(s) {
   const history = s.spp_history || {};
