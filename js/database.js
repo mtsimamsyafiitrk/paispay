@@ -16,8 +16,34 @@ function _buildStudentRow(s, includeStatus) {
 }
 
 async function _sbStudentsUpsert(payload) {
-  return sb('students?on_conflict=nama', 'POST', payload,
-    { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
+  try {
+    return await sb(
+      'students?on_conflict=nama',
+      'POST',
+      payload,
+      { 'Prefer': 'resolution=merge-duplicates,return=minimal' }
+    );
+  } catch(e) {
+    // Fallback jika UNIQUE constraint belum ada di tabel students
+    if (e.message && e.message.includes('42P10')) {
+      console.warn(
+        'Unique constraint belum ada. Jalankan supabase_migration.sql di Supabase SQL Editor. ' +
+        'Menggunakan fallback PATCH/POST satu per satu sementara.'
+      );
+      const existing = await sb('students?select=nama');
+      const existingNames = new Set(existing.map(r => r.nama));
+      for (const row of payload) {
+        if (existingNames.has(row.nama)) {
+          await sb('students?nama=eq.' + encodeURIComponent(row.nama), 'PATCH', row,
+            { 'Prefer': 'return=minimal' });
+        } else {
+          await sb('students', 'POST', row, { 'Prefer': 'return=minimal' });
+        }
+      }
+      return [];
+    }
+    throw e;
+  }
 }
 
 // ══ STUDENTS ══
