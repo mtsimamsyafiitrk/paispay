@@ -2,18 +2,22 @@
 
 // Flag: apakah kolom status_kelulusan sudah ada di DB (auto-detect)
 let _skColExists = null;
+// Flag: apakah kolom uang_pendaftaran sudah ada di DB (auto-detect)
+let _upColExists = null;
 
-function _buildStudentRow(s, includeStatus) {
+function _buildStudentRow(s, includeStatus, includeUP = true) {
   const row = {
     nama: s.nama, kelas: s.kelas, nisn: s.nisn || '',
     spp: s.spp || 0, pangkal: s.pangkal || 0,
     pangkal_paid: s.pangkal_paid || 0,
     spp_paid_months: s.spp_paid_months || [],
     spp_history: s.spp_history || {},
-    uang_pendaftaran: s.uang_pendaftaran || 0,
-    uang_pendaftaran_paid: s.uang_pendaftaran_paid || 0,
   };
   if (includeStatus) row.status_kelulusan = s.status_kelulusan || '';
+  if (includeUP) {
+    row.uang_pendaftaran = s.uang_pendaftaran || 0;
+    row.uang_pendaftaran_paid = s.uang_pendaftaran_paid || 0;
+  }
   return row;
 }
 
@@ -66,25 +70,26 @@ async function loadStudents() {
 
 async function saveState() {
   showSyncIndicator('💾 Menyimpan...');
-  const withSK  = appState.students.map(s => _buildStudentRow(s, true));
-  const withoutSK = () => appState.students.map(s => _buildStudentRow(s, false));
+  const _rows = (sk, up) => appState.students.map(s => _buildStudentRow(s, sk, up));
+  const _sk = () => _skColExists !== false;
+  const _up = () => _upColExists !== false;
   try {
-    if (_skColExists === false) {
-      await _sbStudentsUpsert(withoutSK());
-    } else {
-      await _sbStudentsUpsert(withSK);
-      _skColExists = true;
-    }
+    await _sbStudentsUpsert(_rows(_sk(), _up()));
+    if (_sk()) _skColExists = true;
+    if (_up()) _upColExists = true;
     showSyncIndicator('✅ Tersimpan', 2000);
   } catch(e) {
-    if (_skColExists !== false && e.message?.includes('status_kelulusan')) {
-      _skColExists = false;
+    let changed = false;
+    if (e.message?.includes('uang_pendaftaran')) { _upColExists = false; changed = true; console.warn('Kolom uang_pendaftaran belum ada — jalankan supabase_migration.sql'); }
+    if (e.message?.includes('status_kelulusan')) { _skColExists = false; changed = true; console.warn('Kolom status_kelulusan belum ada — jalankan supabase_migration.sql'); }
+    if (changed) {
       try {
-        await _sbStudentsUpsert(withoutSK());
+        await _sbStudentsUpsert(_rows(_sk(), _up()));
         showSyncIndicator('✅ Tersimpan', 2000);
-        console.warn('Kolom status_kelulusan belum ada di DB — jalankan migrasi Supabase');
         return;
       } catch(e2) {
+        // Last resort: hanya kolom dasar
+        try { await _sbStudentsUpsert(_rows(false, false)); showSyncIndicator('✅ Tersimpan', 2000); return; } catch(e3) {}
         console.error('saveState fallback error:', e2);
         showSyncIndicator('⚠️ Gagal simpan: ' + e2.message, 3000);
         return;
@@ -98,24 +103,26 @@ async function saveState() {
 async function saveSiswa(s) {
   if (!s) return;
   showSyncIndicator('💾 Menyimpan...');
-  const rowWith    = [_buildStudentRow(s, true)];
-  const rowWithout = [_buildStudentRow(s, false)];
+  const _row = (sk, up) => [_buildStudentRow(s, sk, up)];
+  const _sk = () => _skColExists !== false;
+  const _up = () => _upColExists !== false;
   try {
-    if (_skColExists === false) {
-      await _sbStudentsUpsert(rowWithout);
-    } else {
-      await _sbStudentsUpsert(rowWith);
-      _skColExists = true;
-    }
+    await _sbStudentsUpsert(_row(_sk(), _up()));
+    if (_sk()) _skColExists = true;
+    if (_up()) _upColExists = true;
     showSyncIndicator('✅ Tersimpan', 1500);
   } catch(e) {
-    if (_skColExists !== false && e.message?.includes('status_kelulusan')) {
-      _skColExists = false;
+    let changed = false;
+    if (e.message?.includes('uang_pendaftaran')) { _upColExists = false; changed = true; console.warn('Kolom uang_pendaftaran belum ada — jalankan supabase_migration.sql'); }
+    if (e.message?.includes('status_kelulusan')) { _skColExists = false; changed = true; }
+    if (changed) {
       try {
-        await _sbStudentsUpsert(rowWithout);
+        await _sbStudentsUpsert(_row(_sk(), _up()));
         showSyncIndicator('✅ Tersimpan', 1500);
         return;
       } catch(e2) {
+        // Last resort: hanya kolom dasar
+        try { await _sbStudentsUpsert(_row(false, false)); showSyncIndicator('✅ Tersimpan', 1500); return; } catch(e3) {}
         console.error('saveSiswa fallback error:', e2);
         showSyncIndicator('⚠️ Gagal simpan: ' + e2.message, 3000);
         return;
