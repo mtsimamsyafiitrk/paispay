@@ -3,7 +3,8 @@ let editingItemIdx = -1;
 
 function renderItemList() {
   const cont = document.getElementById('itemList');
-  const KELAS_ALL = ['7','8','9'];
+  const KELAS_ALL = ['7','8','9','calon'];
+  const kelasLabel = k => k === 'calon' ? 'Kls Calon' : 'Kelas ' + k;
   cont.innerHTML = appState.payItems.map((item,idx) => {
     const typeLabel = item.type==='bulanan'?'Bulanan (SPP)':item.type==='custom'?'Custom':'Tetap';
     const isDefault = idx < 6;
@@ -34,7 +35,7 @@ function renderItemList() {
             <div style="display:flex;gap:10px;margin-top:6px;">
               ${KELAS_ALL.map(k => `<label style="display:flex;align-items:center;gap:5px;font-size:13px;font-weight:500;cursor:pointer;">
                 <input type="checkbox" id="ei_kelas_${k}" value="${k}" ${(item.kelas||[]).includes(k)?'checked':''} style="accent-color:var(--primary);width:15px;height:15px;">
-                Kelas ${k}
+                ${kelasLabel(k)}
               </label>`).join('')}
             </div>
           </div>
@@ -47,8 +48,9 @@ function renderItemList() {
     }
 
     // Badge kelas
+    const _klsLabel = k => k === 'calon' ? 'Kls Calon' : 'Kls ' + k;
     const kelasBadge = itemKelas.length
-      ? itemKelas.map(k => `<span style="background:var(--primary-pale);color:var(--primary);border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">Kls ${k}</span>`).join(' ')
+      ? itemKelas.map(k => `<span style="background:${k==='calon'?'var(--accent-pale)':'var(--primary-pale)'};color:${k==='calon'?'var(--accent)':'var(--primary)'};border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">${_klsLabel(k)}</span>`).join(' ')
       : `<span style="background:#fee2e2;color:#dc2626;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">Tidak ada kelas</span>`;
 
     return `<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);">
@@ -70,7 +72,7 @@ function cancelEditItem() { editingItemIdx = -1; renderItemList(); }
 function saveEditItem(idx) {
   const name = document.getElementById('ei_name').value.trim();
   if (!name) { toast('⚠️ Nama item tidak boleh kosong!'); return; }
-  const kelas = ['7','8','9'].filter(k => document.getElementById('ei_kelas_'+k)?.checked);
+  const kelas = ['7','8','9','calon'].filter(k => document.getElementById('ei_kelas_'+k)?.checked);
   if (!kelas.length) { toast('⚠️ Pilih minimal 1 kelas!'); return; }
   appState.payItems[idx].name   = name;
   appState.payItems[idx].amount = Number(document.getElementById('ei_amount').value)||0;
@@ -103,7 +105,7 @@ function addItem() {
   const name = document.getElementById('newItemName').value.trim();
   const amount = Number(document.getElementById('newItemAmount').value)||0;
   const type = document.getElementById('newItemType').value;
-  const kelas = ['7','8','9'].filter(k => document.getElementById('newItemKelas'+k)?.checked);
+  const kelas = ['7','8','9','calon'].filter(k => document.getElementById('newItemKelas'+k)?.checked);
   if (!name) { toast('⚠️ Nama item tidak boleh kosong!'); return; }
   if (!kelas.length) { toast('⚠️ Pilih minimal 1 kelas!'); return; }
   appState.payItems.push({ id: 'custom_'+Date.now(), name, amount, type, active: true, kelas });
@@ -111,6 +113,7 @@ function addItem() {
   document.getElementById('newItemName').value='';
   document.getElementById('newItemAmount').value='';
   ['7','8','9'].forEach(k => { const el = document.getElementById('newItemKelas'+k); if(el) el.checked = true; });
+  const elCalon = document.getElementById('newItemKelasCalon'); if(elCalon) elCalon.checked = false;
   toast('✅ Item berhasil ditambahkan!');
 }
 
