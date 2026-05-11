@@ -84,6 +84,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Data Siswa
     </a>
+    <a class="nav-item" onclick="showPage('spmb')" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      SPMB
+    </a>
     <a class="nav-item" onclick="showPage('tunggakan')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       Tunggakan
@@ -454,6 +458,64 @@
     </div><!-- end tabSiswaDaftar -->
 
     <!-- Tab Log Aktivitas telah dihapus -->
+
+  </div>
+
+  <!-- ═════════ SPMB ═════════ -->
+  <div class="page" id="page-spmb">
+
+    <!-- Stats calon santri -->
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;" id="spmbStats"></div>
+
+    <!-- Search & Aksi -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+        <div class="search-bar" style="flex:1;min-width:200px;">
+          <input type="text" id="searchSpmb" placeholder="Cari nama calon santri..." oninput="renderSpmbPage()">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="openImportCalonModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import Excel
+          </button>
+          <button class="btn btn-accent btn-sm" id="spmbPromoteBtn" onclick="promoteSelectedCalon()" disabled>🎓 Promosikan Terpilih</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddCalonModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah Calon
+          </button>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;line-height:1.5;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Catat pembayaran Uang Pendaftaran & Pangkal via menu <strong>Input Pembayaran</strong>. Klik <strong>Promosikan</strong> ketika tahun ajaran baru dimulai untuk memindahkan ke Data Siswa aktif.
+      </div>
+    </div>
+
+    <!-- Bulk action bar -->
+    <div class="bulk-bar" id="spmbBulkBar">
+      <span id="spmbBulkCount">0 dipilih</span>
+      <button class="btn btn-accent btn-sm" onclick="promoteSelectedCalon()">🎓 Promosikan</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteSelectedCalon()">🗑️ Hapus Terpilih</button>
+      <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4);" onclick="clearSpmbSelection()">✕ Batal</button>
+    </div>
+
+    <!-- Tabel calon santri -->
+    <div class="card">
+      <div class="table-wrap">
+        <table id="spmbTable">
+          <thead><tr>
+            <th class="chk-col"><input type="checkbox" id="spmbChkAll" onchange="toggleSpmbSelectAll(this)" style="width:16px;height:16px;accent-color:#fff;cursor:pointer;"></th>
+            <th>No</th>
+            <th>Nama</th>
+            <th>Kelas Target</th>
+            <th>Uang Pendaftaran</th>
+            <th>Pangkal</th>
+            <th>Aksi</th>
+          </tr></thead>
+          <tbody id="spmbTableBody"></tbody>
+        </table>
+      </div>
+    </div>
 
   </div>
 
@@ -1630,6 +1692,183 @@
 </div>
 
 
+<!-- ═══ TAMBAH CALON SANTRI MODAL ═══ -->
+<div class="modal-overlay" id="addCalonModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">⭐ Tambah Calon Santri SPMB</div>
+      <button class="modal-close" onclick="document.getElementById('addCalonModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Nama Lengkap <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="calon_nama" placeholder="Nama calon santri (akan dikapitalkan)" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label>NISN</label>
+        <input type="text" id="calon_nisn" placeholder="Opsional">
+      </div>
+      <div class="form-group">
+        <label>Kelas Target <span style="color:var(--danger);">*</span></label>
+        <select id="calon_kelas">
+          <option value="">-- Pilih kelas --</option>
+          <option value="7">Kelas 7</option>
+          <option value="8">Kelas 8</option>
+          <option value="9">Kelas 9</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Uang Pendaftaran (Rp)</label>
+        <input type="number" id="calon_pendaftaran" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>Uang Pangkal (Rp)</label>
+        <input type="number" id="calon_pangkal" placeholder="0" min="0">
+      </div>
+    </div>
+    <div style="background:var(--primary-pale);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--primary);margin-bottom:16px;margin-top:4px;">
+      💡 Pembayaran Uang Pendaftaran & Pangkal dicatat via menu <strong>Input Pembayaran</strong> setelah calon santri ditambahkan.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="document.getElementById('addCalonModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" onclick="saveCalonSantri()">✅ Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDIT CALON SANTRI MODAL ═══ -->
+<div class="modal-overlay" id="editCalonModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Edit Calon Santri</div>
+      <button class="modal-close" onclick="document.getElementById('editCalonModal').classList.remove('open')">✕</button>
+    </div>
+    <input type="hidden" id="edit_calon_original_nama">
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Nama Lengkap <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="edit_calon_nama" style="text-transform:uppercase;">
+      </div>
+      <div class="form-group">
+        <label>NISN</label>
+        <input type="text" id="edit_calon_nisn" placeholder="Opsional">
+      </div>
+      <div class="form-group">
+        <label>Kelas Target <span style="color:var(--danger);">*</span></label>
+        <select id="edit_calon_kelas">
+          <option value="">-- Pilih kelas --</option>
+          <option value="7">Kelas 7</option>
+          <option value="8">Kelas 8</option>
+          <option value="9">Kelas 9</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Uang Pendaftaran (Rp)</label>
+        <input type="number" id="edit_calon_pendaftaran" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>Uang Pangkal (Rp)</label>
+        <input type="number" id="edit_calon_pangkal" placeholder="0" min="0">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-outline" onclick="document.getElementById('editCalonModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" onclick="saveEditCalonSantri()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROMOSI SINGLE CALON MODAL ═══ -->
+<div class="modal-overlay" id="promosiCalonModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">🎓 Promosikan Calon Santri</div>
+      <button class="modal-close" onclick="document.getElementById('promosiCalonModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="background:var(--primary-pale);border-radius:12px;padding:14px 16px;margin-bottom:18px;">
+      <div style="font-size:13px;color:var(--primary);font-weight:700;" id="promosiCalonNama">—</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">akan dipindahkan ke <strong>Kelas <span id="promosiCalonKelas">—</span></strong> sebagai santri aktif</div>
+    </div>
+    <div class="form-group" style="margin-bottom:18px;">
+      <label>SPP/bulan untuk TA baru (Rp) <span style="font-size:11px;color:var(--text-muted);">(opsional, bisa diatur nanti)</span></label>
+      <input type="number" id="promosiCalonSppInput" placeholder="Contoh: 500000" min="0">
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
+      Data pembayaran (Pangkal & Uang Pendaftaran) yang sudah tercatat akan tetap tersimpan di riwayat santri.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="document.getElementById('promosiCalonModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-accent" id="promosiCalonBtn" style="font-weight:700;">🎓 Ya, Promosikan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROMOSI MASSAL CALON MODAL ═══ -->
+<div class="modal-overlay" id="promosiMassalModal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">🎓 Promosi Massal Calon Santri</div>
+      <button class="modal-close" onclick="document.getElementById('promosiMassalModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="background:var(--primary-pale);border-radius:12px;padding:14px 16px;margin-bottom:18px;">
+      <div style="font-size:13px;color:var(--primary);font-weight:700;margin-bottom:4px;"><span id="promosiMassalCount">0</span> calon santri akan dipromosikan:</div>
+      <div style="font-size:12px;color:var(--text-muted);" id="promosiMassalNames">—</div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>SPP/bulan untuk TA baru (Rp) <span style="font-size:11px;color:var(--text-muted);">(berlaku untuk semua, bisa diubah per-siswa nanti)</span></label>
+      <input type="number" id="promosiMassalSppInput" placeholder="Contoh: 500000" min="0">
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
+      Semua calon terpilih akan dipindahkan ke Data Siswa aktif sesuai kelas target masing-masing.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="document.getElementById('promosiMassalModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-accent" id="promosiMassalBtn" style="font-weight:700;">🎓 Promosikan Semua</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ IMPORT CALON SPMB MODAL ═══ -->
+<div class="modal-overlay" id="importCalonModal">
+  <div class="modal" style="max-width:640px;max-height:88vh;display:flex;flex-direction:column;padding:0;">
+    <div class="modal-header" style="padding:18px 20px 14px;flex-shrink:0;">
+      <div class="modal-title">📂 Import Calon Santri SPMB</div>
+      <button class="modal-close" onclick="document.getElementById('importCalonModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:20px;">
+
+      <!-- Step 1: Upload -->
+      <div id="spmbImportStep1">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">
+          Upload file Excel (.xlsx) atau CSV dengan kolom: <strong>NAMA, KELAS, NISN, UANG_PENDAFTARAN, PANGKAL</strong>
+        </div>
+        <label style="display:block;border:2px dashed var(--border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;background:var(--bg);transition:.2s;" id="spmbImportZone">
+          <div style="font-size:32px;margin-bottom:8px;">📂</div>
+          <div style="font-size:14px;font-weight:600;color:var(--primary);margin-bottom:4px;">Klik atau drag file ke sini</div>
+          <div style="font-size:12px;color:var(--text-muted);">Format: .xlsx atau .csv</div>
+          <input type="file" id="spmbImportFile" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleSpmbImportFile(this)">
+        </label>
+        <div style="margin-top:12px;text-align:center;">
+          <button class="btn btn-outline btn-sm" onclick="downloadTemplateCalonExcel()">📋 Download Template Excel</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Preview -->
+      <div id="spmbImportStep2" style="display:none;">
+        <div id="spmbImportPreview"></div>
+        <div style="margin-top:12px;">
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('spmbImportStep1').style.display='block';document.getElementById('spmbImportStep2').style.display='none';">← Upload Ulang</button>
+        </div>
+      </div>
+
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-outline" onclick="document.getElementById('importCalonModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" onclick="confirmSpmbImport()" id="spmbImportConfirmBtn">✅ Import Sekarang</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/database.js"></script>
 <script src="js/tahun-ajaran.js"></script>
@@ -1650,6 +1889,7 @@
 <script src="js/koreksi.js"></script>
 <script src="js/template-kuitansi.js"></script>
 <script src="js/lapor.js"></script>
+<script src="js/spmb.js"></script>
 <script src="js/init.js"></script>
 </body>
 </html>
