@@ -5,6 +5,21 @@ let _skColExists = null;
 // Flag: apakah kolom uang_pendaftaran sudah ada di DB (auto-detect)
 let _upColExists = null;
 
+// Deteksi kolom opsional di awal sebelum ada operasi save
+async function _detectOptionalColumns() {
+  try {
+    await sb('students?select=status_kelulusan,uang_pendaftaran,uang_pendaftaran_paid&limit=0');
+    _skColExists = true;
+    _upColExists = true;
+  } catch(_) {
+    // Tes masing-masing kolom secara terpisah
+    try { await sb('students?select=status_kelulusan&limit=0'); _skColExists = true; }
+    catch(_) { _skColExists = false; }
+    try { await sb('students?select=uang_pendaftaran&limit=0'); _upColExists = true; }
+    catch(_) { _upColExists = false; }
+  }
+}
+
 function _buildStudentRow(s, includeStatus, includeUP = true) {
   const row = {
     nama: s.nama, kelas: s.kelas, nisn: s.nisn || '',
@@ -238,6 +253,8 @@ async function loadDataForTA() {
 
 async function initApp() {
   showSyncIndicator('⏳ Memuat data...');
+  // Deteksi kolom opsional sebelum operasi save apapun
+  await _detectOptionalColumns().catch(() => {});
   // Load settings
   try {
     await loadSettings();
