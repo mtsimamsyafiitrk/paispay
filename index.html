@@ -508,6 +508,7 @@
             <th>No</th>
             <th>Nama</th>
             <th>Kelas Target</th>
+            <th>SPP/bln</th>
             <th>Uang Pendaftaran</th>
             <th>Pangkal</th>
             <th>Aksi</th>
@@ -1718,6 +1719,10 @@
         </select>
       </div>
       <div class="form-group">
+        <label>SPP Bulanan (Rp)</label>
+        <input type="number" id="calon_spp" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
         <label>Uang Pendaftaran (Rp)</label>
         <input type="number" id="calon_pendaftaran" placeholder="0" min="0">
       </div>
@@ -1763,6 +1768,10 @@
         </select>
       </div>
       <div class="form-group">
+        <label>SPP Bulanan (Rp)</label>
+        <input type="number" id="edit_calon_spp" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
         <label>Uang Pendaftaran (Rp)</label>
         <input type="number" id="edit_calon_pendaftaran" placeholder="0" min="0">
       </div>
@@ -1790,11 +1799,12 @@
       <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">akan dipindahkan ke <strong>Kelas <span id="promosiCalonKelas">—</span></strong> sebagai santri aktif</div>
     </div>
     <div class="form-group" style="margin-bottom:18px;">
-      <label>SPP/bulan untuk TA baru (Rp) <span style="font-size:11px;color:var(--text-muted);">(opsional, bisa diatur nanti)</span></label>
-      <input type="number" id="promosiCalonSppInput" placeholder="Contoh: 500000" min="0">
+      <label>SPP/bulan (Rp) <span style="font-size:11px;color:var(--text-muted);">— sesuai nominal yang didaftarkan, bisa diubah</span></label>
+      <input type="number" id="promosiCalonSppInput" placeholder="0" min="0">
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="promosiCalonSppHint"></div>
     </div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
-      Data pembayaran (Pangkal & Uang Pendaftaran) yang sudah tercatat akan tetap tersimpan di riwayat santri.
+      SPP ini akan langsung sinkron dengan item <strong>SPP Bulanan</strong> di menu Input Pembayaran. Data pembayaran Pangkal &amp; Uang Pendaftaran yang sudah tercatat tetap tersimpan.
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn btn-outline" onclick="document.getElementById('promosiCalonModal').classList.remove('open')">Batal</button>
@@ -1815,11 +1825,11 @@
       <div style="font-size:12px;color:var(--text-muted);" id="promosiMassalNames">—</div>
     </div>
     <div class="form-group" style="margin-bottom:16px;">
-      <label>SPP/bulan untuk TA baru (Rp) <span style="font-size:11px;color:var(--text-muted);">(berlaku untuk semua, bisa diubah per-siswa nanti)</span></label>
-      <input type="number" id="promosiMassalSppInput" placeholder="Contoh: 500000" min="0">
+      <label>Override SPP/bulan (Rp) <span style="font-size:11px;color:var(--text-muted);">— kosongkan untuk pakai nominal SPP masing-masing calon</span></label>
+      <input type="number" id="promosiMassalSppInput" placeholder="Kosongkan = pakai SPP per-calon" min="0">
     </div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
-      Semua calon terpilih akan dipindahkan ke Data Siswa aktif sesuai kelas target masing-masing.
+      Semua calon terpilih dipindahkan ke Data Siswa aktif sesuai kelas target. SPP langsung sinkron ke <strong>Input Pembayaran</strong>.
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn btn-outline" onclick="document.getElementById('promosiMassalModal').classList.remove('open')">Batal</button>

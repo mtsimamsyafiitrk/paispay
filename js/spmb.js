@@ -58,7 +58,7 @@ function _renderSpmbTable(list) {
   const tbody = document.getElementById('spmbTableBody');
   if (!tbody) return;
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted);">
       Belum ada calon santri.<br>
       <span style="font-size:12px;">Klik <strong>Tambah Calon</strong> atau <strong>Import Excel</strong> untuk mulai.</span>
     </td></tr>`;
@@ -89,6 +89,10 @@ function _renderSpmbTable(list) {
            <div style="font-size:11px;color:var(--danger);">Sisa ${rp(sisaPangkal)}</div>`)
       : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
 
+    const sppLabel = s.spp > 0
+      ? `<span style="font-weight:600;">${rp(s.spp)}</span>`
+      : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
+
     return `<tr>
       <td><input type="checkbox" class="spmb-row-chk" data-nama="${s.nama.replace(/"/g,'&quot;')}"
         ${sel ? 'checked' : ''} onchange="toggleSpmbRowSelect(this)"
@@ -99,6 +103,7 @@ function _renderSpmbTable(list) {
         ${s.nisn ? `<div style="font-size:11px;color:var(--text-muted);">NISN: ${s.nisn}</div>` : ''}
       </td>
       <td><span style="font-weight:700;font-size:14px;">Kelas ${s.kelas}</span></td>
+      <td>${sppLabel}</td>
       <td>${pendaftaranBadge}</td>
       <td>${pangkalBadge}</td>
       <td style="white-space:nowrap;">
@@ -156,7 +161,7 @@ function clearSpmbSelection() {
 // TAMBAH CALON SANTRI
 // ══════════════════════════════════════════
 function openAddCalonModal() {
-  ['calon_nama','calon_nisn','calon_pendaftaran','calon_pangkal'].forEach(id => {
+  ['calon_nama','calon_nisn','calon_spp','calon_pendaftaran','calon_pangkal'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -176,12 +181,13 @@ function saveCalonSantri() {
   }
 
   const nisn = (document.getElementById('calon_nisn').value || '').trim();
+  const spp = Number(document.getElementById('calon_spp').value) || 0;
   const uang_pendaftaran = Number(document.getElementById('calon_pendaftaran').value) || 0;
   const pangkal = Number(document.getElementById('calon_pangkal').value) || 0;
 
   const newCalon = {
     nama, kelas, nisn,
-    spp: 0, spp_paid_months: [], spp_history: {},
+    spp, spp_paid_months: [], spp_history: {},
     pangkal, pangkal_paid: 0,
     uang_pendaftaran, uang_pendaftaran_paid: 0,
     status_kelulusan: 'calon',
@@ -205,6 +211,7 @@ function openEditCalonModal(nama) {
   document.getElementById('edit_calon_nama').value = s.nama;
   document.getElementById('edit_calon_nisn').value = s.nisn || '';
   document.getElementById('edit_calon_kelas').value = s.kelas;
+  document.getElementById('edit_calon_spp').value = s.spp || '';
   document.getElementById('edit_calon_pendaftaran').value = s.uang_pendaftaran || '';
   document.getElementById('edit_calon_pangkal').value = s.pangkal || '';
   document.getElementById('editCalonModal').classList.add('open');
@@ -229,6 +236,7 @@ function saveEditCalonSantri() {
     nama: newNama,
     kelas,
     nisn: (document.getElementById('edit_calon_nisn').value || '').trim(),
+    spp: Number(document.getElementById('edit_calon_spp').value) || 0,
     uang_pendaftaran: Number(document.getElementById('edit_calon_pendaftaran').value) || 0,
     pangkal: Number(document.getElementById('edit_calon_pangkal').value) || 0,
   };
@@ -288,7 +296,9 @@ function confirmPromoteSingle(nama) {
   if (!s) return;
   document.getElementById('promosiCalonNama').textContent = nama;
   document.getElementById('promosiCalonKelas').textContent = s.kelas;
-  document.getElementById('promosiCalonSppInput').value = '';
+  document.getElementById('promosiCalonSppInput').value = s.spp || '';
+  const hint = document.getElementById('promosiCalonSppHint');
+  if (hint) hint.textContent = s.spp > 0 ? `Nominal dari pendaftaran: ${rp(s.spp)}` : 'Belum diisi saat pendaftaran';
   document.getElementById('promosiCalonBtn').onclick = () => _doPromoteSingle(nama);
   document.getElementById('promosiCalonModal').classList.add('open');
 }
@@ -322,13 +332,15 @@ function promoteSelectedCalon() {
 }
 
 async function _doPromoteMassal(names) {
-  const spp = Number(document.getElementById('promosiMassalSppInput').value) || 0;
+  const overrideSpp = document.getElementById('promosiMassalSppInput').value.trim();
+  const globalSpp = overrideSpp !== '' ? Number(overrideSpp) : null;
   const updated = [];
   names.forEach(nama => {
     const idx = appState.students.findIndex(s => s.nama === nama);
     if (idx < 0) return;
     appState.students[idx].status_kelulusan = '';
-    appState.students[idx].spp = spp;
+    // Pakai override jika diisi, jika tidak pakai SPP masing-masing calon
+    if (globalSpp !== null) appState.students[idx].spp = globalSpp;
     appState.students[idx].spp_paid_months = [];
     appState.students[idx].spp_history = {};
     updated.push(appState.students[idx]);
@@ -420,9 +432,10 @@ function _parseSpmbRows(rows) {
     const kelas = normalizeKelas(findKey(row, ['KELAS','CLASS','GRADE']));
     if (!['7','8','9'].includes(kelas)) return;
     const nisn = String(findKey(row, ['NISN']) || '').trim().replace(/'/g,'');
+    const spp = Number(String(findKey(row, ['SPP','SPP_BULANAN','SPP BULANAN']) || '0').replace(/[^0-9]/g,'')) || 0;
     const uang_pendaftaran = Number(String(findKey(row, ['UANG_PENDAFTARAN','PENDAFTARAN','UANG PENDAFTARAN']) || '0').replace(/[^0-9]/g,'')) || 0;
     const pangkal = Number(String(findKey(row, ['PANGKAL','UANG_PANGKAL','UANG PANGKAL']) || '0').replace(/[^0-9]/g,'')) || 0;
-    spmbImportBuffer.push({ nama, kelas, nisn, uang_pendaftaran, pangkal });
+    spmbImportBuffer.push({ nama, kelas, nisn, spp, uang_pendaftaran, pangkal });
   });
 
   if (!spmbImportBuffer.length) { toast('⚠️ Tidak ada data valid di file'); return; }
@@ -433,7 +446,7 @@ function _parseSpmbRows(rows) {
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>NISN</th><th>Uang Pendaftaran</th><th>Pangkal</th></tr></thead>
+        <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>NISN</th><th>SPP/bln</th><th>Uang Pendaftaran</th><th>Pangkal</th></tr></thead>
         <tbody>
           ${spmbImportBuffer.map((s, i) => `
             <tr>
@@ -441,6 +454,7 @@ function _parseSpmbRows(rows) {
               <td><strong>${s.nama}</strong></td>
               <td>${s.kelas}</td>
               <td>${s.nisn || '—'}</td>
+              <td>${s.spp ? rp(s.spp) : '—'}</td>
               <td>${s.uang_pendaftaran ? rp(s.uang_pendaftaran) : '—'}</td>
               <td>${s.pangkal ? rp(s.pangkal) : '—'}</td>
             </tr>`).join('')}
@@ -458,7 +472,7 @@ async function confirmSpmbImport() {
     if (appState.students.find(s => s.nama === row.nama)) { dilewati++; return; }
     appState.students.push({
       nama: row.nama, kelas: row.kelas, nisn: row.nisn,
-      spp: 0, spp_paid_months: [], spp_history: {},
+      spp: row.spp || 0, spp_paid_months: [], spp_history: {},
       pangkal: row.pangkal, pangkal_paid: 0,
       uang_pendaftaran: row.uang_pendaftaran, uang_pendaftaran_paid: 0,
       status_kelulusan: 'calon',
@@ -475,18 +489,18 @@ async function confirmSpmbImport() {
 
 function downloadTemplateCalonExcel() {
   if (typeof XLSX !== 'undefined') {
-    const headers = ['NAMA', 'KELAS', 'NISN', 'UANG_PENDAFTARAN', 'PANGKAL'];
-    const ex1 = ['AHMAD FAUZI', '7', '1234567890', 500000, 3000000];
-    const ex2 = ['SITI AMINAH', '7', '', 500000, 3000000];
-    const ex3 = ['BUDI SANTOSO', '8', '', 500000, 0];
+    const headers = ['NAMA', 'KELAS', 'NISN', 'SPP', 'UANG_PENDAFTARAN', 'PANGKAL'];
+    const ex1 = ['AHMAD FAUZI', '7', '1234567890', 500000, 400000, 3000000];
+    const ex2 = ['SITI AMINAH', '7', '', 500000, 400000, 3000000];
+    const ex3 = ['BUDI SANTOSO', '8', '', 600000, 400000, 0];
     const ws = XLSX.utils.aoa_to_sheet([headers, ex1, ex2, ex3]);
-    ws['!cols'] = [{wch:30},{wch:8},{wch:14},{wch:18},{wch:14}];
+    ws['!cols'] = [{wch:30},{wch:8},{wch:14},{wch:12},{wch:18},{wch:14}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Calon Santri SPMB');
     XLSX.writeFile(wb, 'template_import_calon_spmb.xlsx');
     toast('📋 Template Excel berhasil didownload');
   } else {
-    const csv = `NAMA,KELAS,NISN,UANG_PENDAFTARAN,PANGKAL\nAHMAD FAUZI,7,1234567890,500000,3000000\nSITI AMINAH,7,,500000,3000000\n`;
+    const csv = `NAMA,KELAS,NISN,SPP,UANG_PENDAFTARAN,PANGKAL\nAHMAD FAUZI,7,1234567890,500000,400000,3000000\nSITI AMINAH,7,,500000,400000,3000000\n`;
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
     a.download = 'template_import_calon_spmb.csv';

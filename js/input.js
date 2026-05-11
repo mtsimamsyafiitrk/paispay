@@ -140,6 +140,7 @@ function onStudentSelect() {
         <span style="font-size:12px;font-weight:700;color:var(--accent);">CALON SANTRI SPMB</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="font-size:12px;color:var(--text-muted);">SPP/bulan</div><div style="font-size:12px;font-weight:600;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);">Belum diisi</span>'}</div>
         <div style="font-size:12px;color:var(--text-muted);">Uang Pendaftaran</div><div style="font-size:12px;font-weight:600;">${rp(s.uang_pendaftaran||0)}</div>
         <div style="font-size:12px;color:var(--text-muted);">Sudah Dibayar</div><div style="font-size:12px;font-weight:600;color:var(--primary-light);">${rp(s.uang_pendaftaran_paid||0)}</div>
         <div style="font-size:12px;color:var(--text-muted);">Sisa Pendaftaran</div><div style="font-size:12px;font-weight:600;color:${sisaPendaftaran>0?'var(--danger)':'var(--primary-light)'};">${rp(sisaPendaftaran)}</div>
