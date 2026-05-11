@@ -4,6 +4,7 @@ const pct = (a,b) => b ? Math.round(a/b*100) : 0;
 
 function kelasLabel(s) {
   const sk = s.status_kelulusan || '';
+  if (sk === 'calon')  return 'Calon Santri';
   if (sk === 'lulus')  return 'Lulus';
   if (sk === 'pindah') return 'Pindah';
   if (sk === 'keluar') return 'Keluar';
@@ -51,6 +52,7 @@ function showPage(id) {
   });
   const titles = {dashboard:['Dashboard','Ringkasan pembayaran santri'],input:['Input Pembayaran','Catat pembayaran santri'],
     'rekap-siswa':['Data Santri','Seluruh data siswa & status bayar'],tunggakan:['Tunggakan','Daftar santri yang belum melunasi'],
+    spmb:['SPMB','Sistem Penerimaan Murid Baru — kelola calon santri'],
     pengaturan:['Kelola Item Bayar','Atur item pembayaran'],cetak:['Cetak / PDF','Export rekap dan surat tagihan'],'tahun-ajaran':['Tahun Ajaran','Kelola & pindah tahun ajaran'],akun:['Akun Admin','Pengaturan akun & keamanan'],
     pengunjung:['Info Pembayaran','Detail pembayaran & tunggakan santri'],
     lapor:['Lapor Pembayaran','Laporkan pembayaran yang belum terdata'],
@@ -78,6 +80,7 @@ function showPage(id) {
   if(id==='dashboard') renderDashboard();
   if(id==='rekap-siswa') renderSiswaTable();
   if(id==='tunggakan') renderTunggakan();
+  if(id==='spmb') renderSpmbPage();
   if(id==='pengaturan') renderItemList();
   if(id==='input') renderInputPage();
   if(id==='cetak') renderCetakPage();
@@ -205,6 +208,9 @@ function sppTunggakan(s) {
     total += belum * s.spp;
   }
   return total;
+}
+function pendaftaranTunggakan(s) {
+  return Math.max(0, (s.uang_pendaftaran || 0) - (s.uang_pendaftaran_paid || 0));
 }
 function pangkalTunggakan(s) {
   const history = s.spp_history || {};

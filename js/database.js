@@ -10,6 +10,8 @@ function _buildStudentRow(s, includeStatus) {
     pangkal_paid: s.pangkal_paid || 0,
     spp_paid_months: s.spp_paid_months || [],
     spp_history: s.spp_history || {},
+    uang_pendaftaran: s.uang_pendaftaran || 0,
+    uang_pendaftaran_paid: s.uang_pendaftaran_paid || 0,
   };
   if (includeStatus) row.status_kelulusan = s.status_kelulusan || '';
   return row;
@@ -57,6 +59,8 @@ async function loadStudents() {
     spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
     spp_history: r.spp_history || {},
     status_kelulusan: r.status_kelulusan || '',
+    uang_pendaftaran: Number(r.uang_pendaftaran) || 0,
+    uang_pendaftaran_paid: Number(r.uang_pendaftaran_paid) || 0,
   }));
 }
 
@@ -233,6 +237,18 @@ async function initApp() {
   } catch(e) {
     console.error('loadSettings error:', e);
   }
+  // Migrasi payItems SPMB: pastikan item pendaftaran ada dan pangkal mencakup 'calon'
+  let _spmbMigrated = false;
+  if (!appState.payItems.find(i => i.id === 'pendaftaran')) {
+    appState.payItems.push({ id:'pendaftaran', name:'Uang Pendaftaran', amount:0, type:'tetap', active:true, kelas:['calon'] });
+    _spmbMigrated = true;
+  }
+  const _pangkalItem = appState.payItems.find(i => i.id === 'pangkal');
+  if (_pangkalItem && !_pangkalItem.kelas.includes('calon')) {
+    _pangkalItem.kelas.push('calon');
+    _spmbMigrated = true;
+  }
+  if (_spmbMigrated) { try { await saveSettings(); } catch(e) { console.warn('SPMB migration saveSettings error:', e); } }
   // Load data siswa & transaksi
   try {
     await loadDataForTA();

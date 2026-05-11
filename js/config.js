@@ -21,12 +21,13 @@ const SB_HDR = { 'Content-Type':'application/json', 'apikey': SB_KEY, 'Authoriza
 const defaultState = {
   students: [],
   payItems: [
-    { id:'spp',     name:'SPP Bulanan',     amount:0,       type:'bulanan', active:true,  kelas:['7','8','9'] },
-    { id:'pangkal', name:'Uang Pangkal',     amount:0,       type:'tetap',   active:true,  kelas:['7','8','9'] },
-    { id:'buku',    name:'Uang Buku',        amount:250000,  type:'tetap',   active:false, kelas:['7','8','9'] },
-    { id:'seragam', name:'Uang Seragam',     amount:350000,  type:'tetap',   active:false, kelas:['7','8','9'] },
-    { id:'ekskul',  name:'Ekstrakurikuler',  amount:100000,  type:'custom',  active:false, kelas:['7','8','9'] },
-    { id:'lainnya', name:'Biaya Lainnya',    amount:0,       type:'custom',  active:false, kelas:['7','8','9'] },
+    { id:'spp',          name:'SPP Bulanan',       amount:0,       type:'bulanan', active:true,  kelas:['7','8','9'] },
+    { id:'pangkal',      name:'Uang Pangkal',      amount:0,       type:'tetap',   active:true,  kelas:['7','8','9','calon'] },
+    { id:'pendaftaran',  name:'Uang Pendaftaran',  amount:0,       type:'tetap',   active:true,  kelas:['calon'] },
+    { id:'buku',         name:'Uang Buku',         amount:250000,  type:'tetap',   active:false, kelas:['7','8','9'] },
+    { id:'seragam',      name:'Uang Seragam',      amount:350000,  type:'tetap',   active:false, kelas:['7','8','9'] },
+    { id:'ekskul',       name:'Ekstrakurikuler',   amount:100000,  type:'custom',  active:false, kelas:['7','8','9'] },
+    { id:'lainnya',      name:'Biaya Lainnya',     amount:0,       type:'custom',  active:false, kelas:['7','8','9'] },
   ],
   transactions: [],
 };
