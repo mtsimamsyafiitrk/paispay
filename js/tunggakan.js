@@ -83,10 +83,66 @@ function saveEditItem(idx) {
   toast('✅ Item berhasil diperbarui!');
 }
 
-function toggleItem(idx) {
-  appState.payItems[idx].active = !appState.payItems[idx].active;
-  saveSettings(); renderItemList();
-  toast(appState.payItems[idx].active ? '✅ Item diaktifkan' : '⭕ Item dinonaktifkan');
+async function toggleItem(idx) {
+  const item = appState.payItems[idx];
+  const willBeActive = !item.active;
+
+  if (willBeActive) {
+    item.active = true;
+    saveSettings(); renderItemList();
+    if (item.type === 'tetap') {
+      showSyncIndicator('⏳ Membuat tagihan...');
+      try {
+        const n = await createTagihanForItem(item);
+        showSyncIndicator('✅ Tagihan dibuat', 2000);
+        toast(`✅ Item diaktifkan${n > 0 ? ' — ' + n + ' tagihan santri dibuat' : ''}`);
+        renderTunggakan(); renderDashboard();
+      } catch(e) {
+        showSyncIndicator('⚠️ Gagal buat tagihan', 3000);
+        toast('✅ Item diaktifkan (tagihan gagal: ' + e.message + ')');
+      }
+    } else {
+      toast('✅ Item diaktifkan');
+    }
+  } else {
+    _deactivatingIdx = idx;
+    document.getElementById('deactivateItemName').textContent = item.name;
+    const hasTagihan = appState.tagihan.some(t => t.item_id === item.id);
+    document.getElementById('deactivateTagihanWarn').style.display = hasTagihan ? 'block' : 'none';
+    document.getElementById('deactivateModal').classList.add('open');
+  }
+}
+
+let _deactivatingIdx = -1;
+
+function cancelDeactivate() {
+  document.getElementById('deactivateModal').classList.remove('open');
+  _deactivatingIdx = -1;
+  renderItemList();
+}
+
+async function confirmDeactivateKeep() {
+  if (_deactivatingIdx < 0) return;
+  appState.payItems[_deactivatingIdx].active = false;
+  saveSettings(); renderItemList(); renderTunggakan(); renderDashboard();
+  document.getElementById('deactivateModal').classList.remove('open');
+  toast('⭕ Item dinonaktifkan — record tagihan tetap tersimpan');
+  _deactivatingIdx = -1;
+}
+
+async function confirmDeactivateDelete() {
+  if (_deactivatingIdx < 0) return;
+  const item = appState.payItems[_deactivatingIdx];
+  item.active = false;
+  document.getElementById('deactivateModal').classList.remove('open');
+  showSyncIndicator('⏳ Menghapus tagihan...');
+  try {
+    await deleteTagihanByItemId(item.id);
+    showSyncIndicator('✅ Tagihan dihapus', 2000);
+  } catch(e) { showSyncIndicator('⚠️ Gagal hapus tagihan', 3000); }
+  saveSettings(); renderItemList(); renderTunggakan(); renderDashboard();
+  toast('🗑️ Item dinonaktifkan & semua tagihan dihapus');
+  _deactivatingIdx = -1;
 }
 function confirmRemoveItem(idx) {
   const name = appState.payItems[idx].name;

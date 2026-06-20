@@ -131,34 +131,33 @@ function onStudentSelect() {
   document.getElementById('inputKelas').textContent = kelasLabel(s);
   document.getElementById('inputNISN').textContent = s.nisn || '(belum diisi)';
 
-  if (s.status_kelulusan === 'calon') {
-    const sisaPendaftaran = pendaftaranTunggakan(s);
-    const sisaPangkal = pangkalTunggakan(s);
-    document.getElementById('studentSummary').innerHTML = `
-      <div style="background:var(--accent-pale);border-radius:10px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:18px;">⭐</span>
-        <span style="font-size:12px;font-weight:700;color:var(--accent);">CALON SANTRI SPMB</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div style="font-size:12px;color:var(--text-muted);">SPP/bulan</div><div style="font-size:12px;font-weight:600;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);">Belum diisi</span>'}</div>
-        <div style="font-size:12px;color:var(--text-muted);">Uang Pendaftaran</div><div style="font-size:12px;font-weight:600;">${rp(s.uang_pendaftaran||0)}</div>
-        <div style="font-size:12px;color:var(--text-muted);">Sudah Dibayar</div><div style="font-size:12px;font-weight:600;color:var(--primary-light);">${rp(s.uang_pendaftaran_paid||0)}</div>
-        <div style="font-size:12px;color:var(--text-muted);">Sisa Pendaftaran</div><div style="font-size:12px;font-weight:600;color:${sisaPendaftaran>0?'var(--danger)':'var(--primary-light)'};">${rp(sisaPendaftaran)}</div>
-        <div style="font-size:12px;color:var(--text-muted);">Sisa Pangkal</div><div style="font-size:12px;font-weight:600;color:${sisaPangkal>0?'var(--danger)':'var(--primary-light)'};">${rp(sisaPangkal)}</div>
-      </div>
-    `;
-    renderPaymentItems(s);
-    return;
-  }
+  const tunggakSPP   = sppTunggakan(s);
+  const tunggakItem  = itemsTunggakan(s);
+  const totalTungk   = tunggakSPP + tunggakItem;
 
-  const tunggakSPP = sppTunggakan(s);
-  const tunggakPangkal = pangkalTunggakan(s);
+  // Baris tagihan item (tetap) yang masih ada sisa
+  const tagihanRows = appState.tagihan
+    .filter(t => t.nama === s.nama && t.nominal > 0)
+    .map(t => {
+      const sisa = Math.max(0, t.nominal - t.paid_amount);
+      return `<div style="font-size:12px;color:var(--text-muted);">${t.item_name}</div>
+        <div style="font-size:12px;font-weight:600;color:${sisa>0?'var(--danger)':'var(--primary-light)'};">
+          ${sisa > 0 ? rp(sisa) + ' <span style="font-weight:400;font-size:10px;">(sisa)</span>' : '✅ Lunas'}
+        </div>`;
+    }).join('');
+
   document.getElementById('studentSummary').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="font-size:12px;color:var(--text-muted);">SPP/bulan</div><div style="font-size:12px;font-weight:600;">${rp(s.spp)}</div>
-      <div style="font-size:12px;color:var(--text-muted);">Bulan dibayar</div><div style="font-size:12px;font-weight:600;">${(s.spp_paid_months||[]).length} bulan</div>
-      <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP</div><div style="font-size:12px;font-weight:600;color:${tunggakSPP>0?'var(--danger)':'var(--primary-light)'};">${rp(tunggakSPP)}</div>
-      <div style="font-size:12px;color:var(--text-muted);">Pangkal tersisa</div><div style="font-size:12px;font-weight:600;color:${tunggakPangkal>0?'var(--danger)':'var(--primary-light)'};">${rp(tunggakPangkal)}</div>
+      <div style="font-size:12px;color:var(--text-muted);">SPP/bulan</div>
+      <div style="font-size:12px;font-weight:600;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);">Belum diisi</span>'}</div>
+      <div style="font-size:12px;color:var(--text-muted);">Bulan dibayar</div>
+      <div style="font-size:12px;font-weight:600;">${(s.spp_paid_months||[]).length} bulan</div>
+      <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP</div>
+      <div style="font-size:12px;font-weight:600;color:${tunggakSPP>0?'var(--danger)':'var(--primary-light)'};">${rp(tunggakSPP)}</div>
+      ${tagihanRows}
+      ${totalTungk > 0
+        ? `<div style="font-size:12px;font-weight:700;color:var(--danger);grid-column:1/-1;margin-top:4px;padding-top:6px;border-top:1px solid var(--border);">Total Tunggakan: ${rp(totalTungk)}</div>`
+        : `<div style="font-size:12px;font-weight:700;color:var(--primary-light);grid-column:1/-1;margin-top:4px;">✅ Semua pembayaran lunas</div>`}
     </div>
   `;
   renderPaymentItems(s);
@@ -166,67 +165,29 @@ function onStudentSelect() {
 
 function renderPaymentItems(student) {
   const cont = document.getElementById('paymentItems');
-  const _isCalon = student && student.status_kelulusan === 'calon';
   const activeItems = appState.payItems.filter(i => {
     if (!i.active) return false;
     if (!i.kelas || !i.kelas.length) return false;
-    if (student) {
-      if (_isCalon) return i.kelas.includes('calon');
-      // Siswa reguler: tampilkan sesuai kelas, sembunyikan item khusus calon
-      return i.kelas.includes(String(student.kelas)) && !i.kelas.every(k => k === 'calon');
-    }
-    // Belum pilih siswa: sembunyikan item khusus calon
-    return !i.kelas.every(k => k === 'calon');
+    if (student) return (i.kelas || []).includes(String(student.kelas));
+    return true;
   });
   if (!activeItems.length) {
     cont.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">Tidak ada item aktif. Aktifkan di menu "Kelola Item Bayar"</div>';
     return;
   }
 
-  // ── Item bayar utama (TA aktif) ──
   let html = activeItems.map(item => {
     let amount = item.amount;
-    if (item.type === 'bulanan' && student) amount = student.spp || item.amount || 0;
-    if (item.id === 'pangkal' && student) amount = pangkalTunggakan(student);
-    if (item.id === 'pendaftaran' && student) amount = pendaftaranTunggakan(student);
     let extra = '';
+    let disabled = false;
 
-    // Keterangan rincian uang pendaftaran
-    if (item.id === 'pendaftaran' && student && student.uang_pendaftaran > 0) {
-      const sisa = pendaftaranTunggakan(student);
-      const totalPaid = student.uang_pendaftaran_paid || 0;
-      const nominalPendaftaran = student.uang_pendaftaran || 0;
-      if (sisa <= 0) {
-        extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Uang Pendaftaran sudah lunas (${rp(nominalPendaftaran)})</div>`;
-      } else {
-        extra = `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
-          Total: <strong>${rp(nominalPendaftaran)}</strong> &nbsp;|&nbsp;
-          Dibayar: <strong style="color:var(--primary-light);">${rp(totalPaid)}</strong> &nbsp;|&nbsp;
-          <strong style="color:var(--danger);">Sisa: ${rp(sisa)}</strong>
-        </div>`;
-      }
-    }
-
-    // Keterangan rincian pangkal
-    if (item.id === 'pangkal' && student && student.pangkal > 0) {
-      const sisa = pangkalTunggakan(student);
-      const totalPaid = student.pangkal_paid || 0;
-      const nominalPangkal = student.pangkal || 0;
-      if (sisa <= 0) {
-        extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Pangkal sudah lunas (${rp(nominalPangkal)})</div>`;
-      } else {
-        extra = `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
-          Total pangkal: <strong>${rp(nominalPangkal)}</strong> &nbsp;|&nbsp;
-          Sudah dibayar: <strong style="color:var(--primary-light);">${rp(totalPaid)}</strong> &nbsp;|&nbsp;
-          <strong style="color:var(--danger);">Sisa: ${rp(sisa)}</strong>
-        </div>`;
-      }
-    }
-    if (item.type === 'bulanan' && student && amount > 0) {
-      const unpaid = MONTHS.filter(m => !student.spp_paid_months.includes(m));
+    if (item.type === 'bulanan' && student) {
+      amount = student.spp || item.amount || 0;
+      const unpaid = MONTHS.filter(m => !(student.spp_paid_months || []).includes(m));
       if (unpaid.length === 0) {
         extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Semua bulan sudah lunas</div>`;
-      } else {
+        disabled = true;
+      } else if (amount > 0) {
         extra = `<div style="margin-top:8px;">
           <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Pilih bulan (bisa lebih dari 1):</div>
           <div style="display:flex;flex-wrap:wrap;gap:5px;" id="sppMonthWrap">
@@ -240,29 +201,40 @@ function renderPaymentItems(student) {
           <div style="margin-top:6px;font-size:12px;color:var(--text-muted);" id="sppMonthInfo">Belum ada bulan dipilih</div>
         </div>`;
       }
-    }
-    if (item.type === 'custom') {
+    } else if (item.type === 'tetap' && student) {
+      const t = findTagihan(student.nama, item.id);
+      const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : item.amount;
+      amount = sisa;
+      if (t) {
+        if (sisa <= 0) {
+          extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Lunas (${rp(t.nominal)})</div>`;
+          disabled = true;
+        } else {
+          extra = `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
+            Total: <strong>${rp(t.nominal)}</strong> &nbsp;|&nbsp;
+            Dibayar: <strong style="color:var(--primary-light);">${rp(t.paid_amount)}</strong> &nbsp;|&nbsp;
+            <strong style="color:var(--danger);">Sisa: ${rp(sisa)}</strong>
+          </div>`;
+        }
+      }
+    } else if (item.type === 'custom') {
       extra = `<div class="pay-item-custom" style="margin-top:6px;"><input type="number" id="custom_${item.id}" placeholder="Nominal..." value="${amount||''}" oninput="calcTotal()" style="font-size:12px;padding:4px 8px;width:150px;"></div>`;
     }
-    const _pangkalLunas = item.id === 'pangkal' && student && pangkalTunggakan(student) <= 0;
-    const _pendaftaranLunas = item.id === 'pendaftaran' && student && pendaftaranTunggakan(student) <= 0;
-    const _disabled = _pangkalLunas || _pendaftaranLunas;
-    return `<div class="pay-item" ${_disabled ? 'style="opacity:.5;pointer-events:none;"' : ''}>
-      <input type="checkbox" id="chk_${item.id}" onchange="calcTotal()" ${_disabled ? 'disabled' : ''}>
+
+    return `<div class="pay-item" ${disabled ? 'style="opacity:.5;pointer-events:none;"' : ''}>
+      <input type="checkbox" id="chk_${item.id}" onchange="calcTotal()" ${disabled ? 'disabled' : ''}>
       <div class="pay-item-info">
         <div class="pay-item-name">${item.name}</div>
         <div class="pay-item-amount">${
-          item.id === 'pangkal' && student
-            ? (pangkalTunggakan(student) > 0 ? rp(pangkalTunggakan(student)) + ' <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(sisa)</span>' : '✅ Lunas')
-            : item.id === 'pendaftaran' && student
-              ? (pendaftaranTunggakan(student) > 0 ? rp(pendaftaranTunggakan(student)) + ' <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(sisa)</span>' : '✅ Lunas')
-              : item.type==='custom' ? 'Nominal custom' : rp(amount)
+          item.type === 'custom' ? 'Nominal custom'
+          : item.type === 'tetap' && student
+            ? (amount > 0 ? rp(amount) + ' <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(sisa)</span>' : '✅ Lunas')
+            : rp(amount)
         }</div>
         ${extra}
       </div>
     </div>`;
   }).join('');
-
 
   cont.innerHTML = html;
   calcTotal();
@@ -311,10 +283,9 @@ function calcTotal() {
       const bulanDipilih = getSppMonthsSelected();
       const sppRate = student.spp || item.amount || 0;
       total += sppRate * Math.max(1, bulanDipilih.length);
-    } else if (item.id === 'pangkal' && student) {
-      total += pangkalTunggakan(student);
-    } else if (item.id === 'pendaftaran' && student) {
-      total += pendaftaranTunggakan(student);
+    } else if (item.type === 'tetap' && student) {
+      const t = findTagihan(student.nama, item.id);
+      total += t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
     } else {
       total += item.amount||0;
     }
@@ -336,29 +307,28 @@ async function submitPayment() {
       amount = Number(inp?.value||0);
     } else if (item.type === 'bulanan' && student) {
       amount = student.spp || item.amount || 0;
-    } else if (item.id === 'pangkal' && student) {
-      amount = pangkalTunggakan(student);
-    } else if (item.id === 'pendaftaran' && student) {
-      amount = pendaftaranTunggakan(student);
+    } else if (item.type === 'tetap' && student) {
+      const t = findTagihan(student.nama, item.id);
+      amount = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
     }
     if (amount <= 0 && item.type !== 'custom') return;
 
     if (item.type === 'bulanan') {
-      // Ambil semua bulan yang dipilih
       const bulanDipilih = getSppMonthsSelected();
       if (!bulanDipilih.length) { toast('⚠️ Pilih minimal 1 bulan SPP!'); items.length = 0; return; }
       const totalSPP = (student.spp || item.amount || 0) * bulanDipilih.length;
-      items.push({ id: item.id, name: item.name, amount: totalSPP, bulanList: bulanDipilih });
+      items.push({ id: item.id, type: item.type, name: item.name, amount: totalSPP, bulanList: bulanDipilih });
     } else {
-      items.push({ id: item.id, name: item.name, amount, bulan: null });
+      items.push({ id: item.id, type: item.type, name: item.name, amount, bulan: null });
     }
   });
   if (!items.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
 
   if (!items.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
 
-  // Update student data
+  // Update student SPP months & tagihan paid_amount
   const si = appState.students.findIndex(s=>s.nama===nama);
+  const tagihanUpdates = []; // { id, newPaidAmount }
   items.forEach(it => {
     if (it.bulanList?.length) {
       it.bulanList.forEach(b => {
@@ -366,11 +336,13 @@ async function submitPayment() {
           appState.students[si].spp_paid_months.push(b);
       });
     }
-    if (it.id === 'pangkal') {
-      appState.students[si].pangkal_paid = (appState.students[si].pangkal_paid||0) + it.amount;
-    }
-    if (it.id === 'pendaftaran') {
-      appState.students[si].uang_pendaftaran_paid = (appState.students[si].uang_pendaftaran_paid||0) + it.amount;
+    if (it.type === 'tetap') {
+      const t = findTagihan(nama, it.id);
+      if (t) {
+        const newPaid = (t.paid_amount || 0) + it.amount;
+        tagihanUpdates.push({ id: t.id, newPaidAmount: newPaid });
+        t.paid_amount = newPaid; // update appState langsung
+      }
     }
   });
 
@@ -383,8 +355,10 @@ async function submitPayment() {
     nominal: totalAmt, time: timeStr, catatan: document.getElementById('inputCatatan').value
   };
   appState.transactions.push(txn);
-  saveSiswa(appState.students[si]); // hanya simpan siswa yang berubah
+  saveSiswa(appState.students[si]);
   saveTransaction(txn);
+  // Sinkron paid_amount tagihan ke Supabase
+  tagihanUpdates.forEach(u => updateTagihanPaid(u.id, u.newPaidAmount).catch(console.error));
 
   // Render session table
   const tbody = document.querySelector('#sessionTable tbody');
@@ -400,9 +374,8 @@ async function submitPayment() {
     nama, kelas: student.kelas, nisn: student.nisn||'',
 
     items: items.flatMap(i => {
-      if (i.bulanList?.length) return i.bulanList.map(b => ({ name: i.name, amount: i.amount / i.bulanList.length, bulan: b }));
-      if (i.crossItem) return [{ name: i.name, amount: i.amount, bulan: i.crossItem.bulan||null }];
-      return [{ name: i.name, amount: i.amount, bulan: i.bulan||null }];
+      if (i.bulanList?.length) return i.bulanList.map(b => ({ item_id: i.id, name: i.name, amount: i.amount / i.bulanList.length, bulan: b }));
+      return [{ item_id: i.id, name: i.name, amount: i.amount, bulan: i.bulan || null }];
     }),
     total: totalAmt, catatan: txn.catatan, dicetak: false,
     ta_label: getProfil().ta || '',

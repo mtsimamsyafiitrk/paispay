@@ -194,35 +194,20 @@ function detectDuplicateNames() {
 }
 
 function sppTunggakan(s) {
-  const history = s.spp_history || {};
-  let total = 0;
-  // Tunggakan tahun-tahun lalu dari spp_history
-  Object.values(history).forEach(taData => {
-    if (!taData.spp || taData.spp === 0) return;
-    const belum = MONTHS.filter(m => !(taData.spp_paid_months||[]).includes(m)).length;
-    total += belum * taData.spp;
-  });
-  // Tunggakan tahun berjalan (main field)
-  if (s.spp && s.spp > 0) {
-    const belum = MONTHS.filter(m => !(s.spp_paid_months||[]).includes(m)).length;
-    total += belum * s.spp;
-  }
-  return total;
+  if (!s.spp || s.spp === 0) return 0;
+  const belum = MONTHS.filter(m => !(s.spp_paid_months || []).includes(m)).length;
+  return belum * s.spp;
 }
-function pendaftaranTunggakan(s) {
-  return Math.max(0, (s.uang_pendaftaran || 0) - (s.uang_pendaftaran_paid || 0));
+
+// Tunggakan dari tabel tagihan (semua item tetap)
+function itemsTunggakan(s) {
+  return appState.tagihan
+    .filter(t => t.nama === s.nama)
+    .reduce((sum, t) => sum + Math.max(0, t.nominal - t.paid_amount), 0);
 }
-function pangkalTunggakan(s) {
-  const history = s.spp_history || {};
-  if (Object.keys(history).length > 0) {
-    return Object.values(history).reduce((total, taData) => {
-      return total + Math.max(0, (taData.pangkal||0) - (taData.pangkal_paid||0));
-    }, 0);
-  }
-  if (!s.pangkal || s.pangkal === 0) return 0;
-  return Math.max(0, s.pangkal - (s.pangkal_paid || 0));
+
+function totalTunggakan(s) {
+  return sppTunggakan(s) + itemsTunggakan(s);
 }
-function crossTATunggakan(s) { return 0; }
-function totalTunggakan(s) { return sppTunggakan(s) + pangkalTunggakan(s); }
 
 // ── DASHBOARD ──

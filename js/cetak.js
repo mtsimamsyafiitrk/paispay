@@ -48,20 +48,18 @@ function downloadXlsx(wb, filename) {
 
 // Helper: siswa → baris excel
 function siswaToRow(s) {
-  const sisa = Math.max(0, (s.pangkal||0) - (s.pangkal_paid||0));
   const sppBayar = (s.spp_paid_months||[]).length;
   const tunggak = totalTunggakan(s);
   const bulanLunas = MONTHS.filter(m => (s.spp_paid_months||[]).includes(m)).map(m => MONTH_FULL[m]).join(', ');
+  const tkItems = itemsTunggakan(s);
   return {
     'Nama': s.nama,
     'Kelas': s.kelas,
     'NISN': s.nisn || '',
     'SPP/Bulan': s.spp || 0,
-    'Total Pangkal': s.pangkal || 0,
-    'Pangkal Dibayar': s.pangkal_paid || 0,
-    'Sisa Pangkal': sisa,
     'Bulan SPP Lunas': sppBayar,
     'Bulan Lunas (detail)': bulanLunas,
+    'Tunggakan Item': tkItems,
     'Total Tunggakan': tunggak,
     'Status': tunggak > 0 ? 'Belum Lunas' : 'Lunas',
   };
@@ -73,7 +71,7 @@ async function exportSiswaExcel(mode) {
     try {
       const rows = appState.students.map(s => siswaToRow(s));
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws['!cols'] = [24,6,12,10,12,12,12,8,32,12,10].map(w => ({wch: w}));
+      ws['!cols'] = [24,6,12,10,8,32,14,12,10].map(w => ({wch: w}));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Data Santri');
       const tgl = new Date().toISOString().slice(0,10);
@@ -149,7 +147,7 @@ async function exportBackupLengkap() {
           spp_paid_months: Array.isArray(s.spp_paid_months) ? s.spp_paid_months : [],
         }))
       );
-      wsSiswa['!cols'] = [24,6,12,10,12,12,12,8,32,12,10].map(w => ({wch: w}));
+      wsSiswa['!cols'] = [24,6,12,10,8,32,14,12,10].map(w => ({wch: w}));
       XLSX.utils.book_append_sheet(wb, wsSiswa, 'Data Santri');
 
       // Sheet 2: Transaksi
@@ -182,13 +180,12 @@ async function exportBackupLengkap() {
         appState.students.map(s => ({
           'Nama': s.nama, 'Kelas': s.kelas, 'NISN': s.nisn || '',
           'Tunggakan SPP': sppTunggakan(s),
-          'Tunggakan Pangkal': pangkalTunggakan(s),
-          'Tunggakan Lintas TA': crossTATunggakan(s),
+          'Tunggakan Item': itemsTunggakan(s),
           'Total Tunggakan': totalTunggakan(s),
           'Status': totalTunggakan(s) > 0 ? 'Belum Lunas' : 'Lunas',
         }))
       );
-      wsTk['!cols'] = [24,6,12,14,16,16,14,10].map(w => ({wch: w}));
+      wsTk['!cols'] = [24,6,12,14,14,14,10].map(w => ({wch: w}));
       XLSX.utils.book_append_sheet(wb, wsTk, 'Tunggakan');
 
       const tgl = new Date().toISOString().slice(0,10);
@@ -199,12 +196,12 @@ async function exportBackupLengkap() {
 }
 
 function buildSuratHTML(s, tgl) {
-  const sppT = sppTunggakan(s), pangkalT = pangkalTunggakan(s);
-  const totalT = sppT + pangkalT;
+  const sppT  = sppTunggakan(s);
+  const totalT = totalTunggakan(s);
   const tglFmt = new Date(tgl).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   const bulanBelum = MONTHS.filter(m=>!s.spp_paid_months.includes(m)&&s.spp>0);
   const P = getProfil();
-  const taLabel = '';
+  const siswaTagihan = appState.tagihan.filter(t => t.nama === s.nama);
   let no = 0;
   return `
   <div class="pdf-preview" id="suratPreview">
@@ -239,14 +236,17 @@ function buildSuratHTML(s, tgl) {
             <td style="text-align:right">${((s.spp_paid_months||[]).length*s.spp).toLocaleString('id-ID')}</td>
             <td style="text-align:right;${sppT>0?'color:#c0392b;font-weight:bold;':''}">${sppT.toLocaleString('id-ID')}</td>
           </tr>` : ''}
-          ${s.pangkal > 0 ? `<tr>
-            <td style="text-align:center">${++no}</td>
-            <td>Uang Pangkal</td>
-            <td style="font-size:10pt">Terbayar ${rp(s.pangkal_paid||0)}</td>
-            <td style="text-align:right">${s.pangkal.toLocaleString('id-ID')}</td>
-            <td style="text-align:right">${(s.pangkal_paid||0).toLocaleString('id-ID')}</td>
-            <td style="text-align:right;${pangkalT>0?'color:#c0392b;font-weight:bold;':''}">${pangkalT.toLocaleString('id-ID')}</td>
-          </tr>` : ''}
+          ${siswaTagihan.map(t => {
+            const sisa = Math.max(0, t.nominal - t.paid_amount);
+            return `<tr>
+              <td style="text-align:center">${++no}</td>
+              <td>${t.item_name}</td>
+              <td style="font-size:10pt">Terbayar ${t.paid_amount.toLocaleString('id-ID')}</td>
+              <td style="text-align:right">${t.nominal.toLocaleString('id-ID')}</td>
+              <td style="text-align:right">${t.paid_amount.toLocaleString('id-ID')}</td>
+              <td style="text-align:right;${sisa>0?'color:#c0392b;font-weight:bold;':''}">${sisa.toLocaleString('id-ID')}</td>
+            </tr>`;
+          }).join('')}
           <tr style="background:#f0f0f0;">
             <td colspan="3" style="text-align:right;font-weight:bold;">TOTAL TUNGGAKAN</td>
             <td colspan="3" style="text-align:right;font-weight:bold;font-size:13pt;${totalT>0?'color:#c0392b;':''}">${totalT.toLocaleString('id-ID')}</td>
@@ -371,8 +371,7 @@ function buildRekapTotalHTML(kelasFil, tgl) {
   const P2 = getProfil();
   const tglFmt = new Date(tgl).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   let list = appState.students.filter(s => !kelasFil || s.kelas === kelasFil);
-  const totalTagihan = list.reduce((a,s) => a + (s.spp>0?s.spp*12:0) + (s.pangkal||0), 0);
-  const totalBayar = list.reduce((a,s) => a + (s.spp||0)*(s.spp_paid_months||[]).length + (s.pangkal_paid||0), 0);
+  const totalBayar = list.reduce((a,s) => a + (s.spp||0)*(s.spp_paid_months||[]).length, 0);
   const totalTk = list.reduce((a,s)=>a+totalTunggakan(s),0);
   return `
   <div class="pdf-preview" id="suratPreviewTotal">
@@ -388,22 +387,23 @@ function buildRekapTotalHTML(kelasFil, tgl) {
       <p style="margin-bottom:10px;">Tahun Ajaran 2025/2026 &nbsp;|&nbsp; Per Tanggal: ${tglFmt}<br>
       Total Santri: <strong>${list.length}</strong> orang</p>
       <table class="data-table-pdf">
-        <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>SPP Dibayar</th><th>Pangkal Dibayar</th><th>Tunggakan</th></tr></thead>
+        <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>SPP Dibayar</th><th>Item Terbayar</th><th>Tunggakan</th></tr></thead>
         <tbody>
           ${list.map((s,i)=>{
             const tk = totalTunggakan(s);
+            const itemBayar = appState.tagihan.filter(t=>t.nama===s.nama).reduce((a,t)=>a+(t.paid_amount||0),0);
             return `<tr${tk>0?' style="background:#fff5f5;"':''}>
               <td style="text-align:center">${i+1}</td>
               <td>${s.nama}</td><td>${s.kelas}</td>
-              <td style="text-align:right">${((s.spp_paid_months||[]).length*s.spp).toLocaleString('id-ID')}</td>
-              <td style="text-align:right">${(s.pangkal_paid||0).toLocaleString('id-ID')}</td>
+              <td style="text-align:right">${((s.spp_paid_months||[]).length*(s.spp||0)).toLocaleString('id-ID')}</td>
+              <td style="text-align:right">${itemBayar.toLocaleString('id-ID')}</td>
               <td style="text-align:right;${tk>0?'color:#c0392b;font-weight:bold;':''}">${tk>0?tk.toLocaleString('id-ID'):'Lunas'}</td>
             </tr>`;
           }).join('')}
           <tr style="background:#f0f0f0;font-weight:bold;">
             <td colspan="3" style="text-align:right">TOTAL</td>
             <td style="text-align:right">${list.reduce((a,s)=>a+(s.spp||0)*(s.spp_paid_months||[]).length,0).toLocaleString('id-ID')}</td>
-            <td style="text-align:right">${list.reduce((a,s)=>a+(s.pangkal_paid||0),0).toLocaleString('id-ID')}</td>
+            <td style="text-align:right">${appState.tagihan.filter(t=>list.some(s=>s.nama===t.nama)).reduce((a,t)=>a+(t.paid_amount||0),0).toLocaleString('id-ID')}</td>
             <td style="text-align:right;color:#c0392b;">${totalTk.toLocaleString('id-ID')}</td>
           </tr>
         </tbody>

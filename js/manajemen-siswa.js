@@ -129,15 +129,6 @@ async function confirmPromosiKelas() {
     if (idx < 0) continue;
     const s = appState.students[idx];
 
-    // Arsipkan data SPP tahun berjalan ke spp_history
-    if (ta) {
-      if (!s.spp_history) s.spp_history = {};
-      s.spp_history[ta] = {
-        spp:            s.spp || 0,
-        spp_paid_months: [...(s.spp_paid_months || [])],
-      };
-    }
-
     // Reset bulan SPP untuk tahun ajaran baru
     s.spp_paid_months = [];
 
@@ -246,11 +237,12 @@ function deleteSelected() {
   document.getElementById('deleteConfirmBtn').onclick = async function() {
     appState.students = appState.students.filter(s => !selectedRows.has(s.nama));
     appState.transactions = appState.transactions.filter(t => !selectedRows.has(t.nama));
+    appState.tagihan = appState.tagihan.filter(t => !selectedRows.has(t.nama));
     selectedRows.clear(); updateBulkBar();
     document.getElementById('deleteModal').classList.remove('open');
     renderSiswaTable();
     toast(`🗑️ ${names.length} santri berhasil dihapus`);
-    await Promise.all(names.flatMap(n => [deleteStudentFromDB(n), deleteTransactionsByNama(n)]));
+    await Promise.all(names.flatMap(n => [deleteStudentFromDB(n), deleteTransactionsByNama(n), deleteTagihanByNama(n)]));
   };
   document.getElementById('deleteModal').classList.add('open');
 }
@@ -259,11 +251,13 @@ function deleteSingle(nama) {
   document.getElementById('deleteConfirmBtn').onclick = async function() {
     appState.students = appState.students.filter(s => s.nama !== nama);
     appState.transactions = appState.transactions.filter(t => t.nama !== nama);
+    appState.tagihan = appState.tagihan.filter(t => t.nama !== nama);
     document.getElementById('deleteModal').classList.remove('open');
     renderSiswaTable();
     toast(`🗑️ ${nama} berhasil dihapus`);
     await deleteStudentFromDB(nama);
     await deleteTransactionsByNama(nama);
+    await deleteTagihanByNama(nama);
   };
   document.getElementById('deleteModal').classList.add('open');
 }
@@ -283,33 +277,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function openAddSiswaModal() {
   document.getElementById('tambahChoiceModal').classList.remove('open');
-  ['ns_nama','ns_nisn','ns_spp','ns_pangkal','ns_pangkal_paid'].forEach(id => document.getElementById(id).value = '');
+  ['ns_nama','ns_nisn','ns_spp'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('ns_kelas').value = '';
   document.querySelectorAll('#ns_months_wrap input[type=checkbox]').forEach(c => c.checked = false);
   const taInput = document.getElementById('ns_ta');
   if (taInput) taInput.value = getProfil().ta || '';
   document.getElementById('addSiswaModal').classList.add('open');
 }
-// Return TA terbaru dari spp_history siswa (string "YYYY/YYYY" atau '')
-function getLatestTA(siswa) {
-  const keys = Object.keys(siswa.spp_history || {});
-  if (!keys.length) return '';
-  return keys.sort((a, b) => parseInt(b.split('/')[0]) - parseInt(a.split('/')[0]))[0];
-}
-
-// Update kolom utama siswa dari entry TA terbaru di spp_history
-function updateKolomUtamaDariHistory(siswa) {
-  const ta = getLatestTA(siswa);
-  if (!ta) return siswa;
-  const d = siswa.spp_history[ta];
-  siswa.kelas           = d.kelas           || siswa.kelas;
-  siswa.spp             = d.spp             || 0;
-  siswa.pangkal         = d.pangkal         || 0;
-  siswa.pangkal_paid    = d.pangkal_paid    || 0;
-  siswa.spp_paid_months = d.spp_paid_months || [];
-  return siswa;
-}
-
 // Cari index siswa yang cocok berdasarkan NISN → nama eksak → fuzzy
 // Return index di appState.students, atau -1 jika tidak ditemukan
 function findExistingSiswaIdx(kandidat) {
@@ -330,55 +304,32 @@ function findExistingSiswaIdx(kandidat) {
   return -1;
 }
 
-// Merge data baru ke data lama untuk TA tertentu, lalu update kolom utama dari TA terbaru
-function mergeSiswaData(lama, baru, ta) {
-  const history = { ...(lama.spp_history || {}) };
-  if (ta) {
-    const ex = history[ta] || {};
-    history[ta] = {
-      kelas:           baru.kelas || ex.kelas || lama.kelas,
-      spp:             (baru.spp > 0) ? baru.spp : (ex.spp || 0),
-      pangkal:         Math.max(ex.pangkal || 0, baru.pangkal || 0),
-      pangkal_paid:    Math.max(ex.pangkal_paid || 0, baru.pangkal_paid || 0),
-      spp_paid_months: [...new Set([...(ex.spp_paid_months || []), ...(baru.spp_paid_months || [])])],
-    };
-  }
-  const merged = {
-    ...lama,
-    nisn:        (baru.nisn && baru.nisn.trim()) ? baru.nisn.trim() : (lama.nisn || ''),
-    spp_history: history,
-  };
-  return updateKolomUtamaDariHistory(merged);
-}
-
 function saveNewSiswa() {
   const nama = document.getElementById('ns_nama').value.trim().toUpperCase();
   const kelas = document.getElementById('ns_kelas').value;
   if (!nama) { toast('⚠️ Nama santri wajib diisi!'); return; }
   if (!kelas) { toast('⚠️ Kelas wajib dipilih!'); return; }
 
-  const ta          = (document.getElementById('ns_ta')?.value.trim()) || getProfil().ta || '';
   const paid_months = [...document.querySelectorAll('#ns_months_wrap input[type=checkbox]:checked')].map(c => c.value);
-  const spp         = Number(document.getElementById('ns_spp').value) || 0;
-  const pangkal     = Number(document.getElementById('ns_pangkal').value) || 0;
-  const pangkal_paid = Number(document.getElementById('ns_pangkal_paid').value) || 0;
+  const spp = Number(document.getElementById('ns_spp').value) || 0;
 
   const newSiswa = {
     nama, kelas,
     nisn: document.getElementById('ns_nisn').value.trim(),
-    spp, spp_paid_months: paid_months, pangkal, pangkal_paid,
-    spp_history: ta ? { [ta]: { kelas, spp, pangkal, pangkal_paid, spp_paid_months: paid_months } } : {},
+    spp, spp_paid_months: paid_months,
   };
 
   const existIdx = findExistingSiswaIdx(newSiswa);
   if (existIdx >= 0) {
-    const merged = mergeSiswaData(appState.students[existIdx], newSiswa, ta);
-    appState.students[existIdx] = merged;
+    const old = appState.students[existIdx];
+    old.spp = spp || old.spp;
+    old.spp_paid_months = [...new Set([...(old.spp_paid_months||[]), ...paid_months])];
+    if (newSiswa.nisn && !old.nisn) old.nisn = newSiswa.nisn;
     appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
-    saveSiswa(merged);
+    saveSiswa(old);
     document.getElementById('addSiswaModal').classList.remove('open');
     renderSiswaTable(); renderTunggakan(); renderDashboard();
-    toast(`🔄 Data ${merged.nama} diperbarui & digabung!`);
+    toast(`🔄 Data ${old.nama} diperbarui & digabung!`);
     return;
   }
 
@@ -388,6 +339,8 @@ function saveNewSiswa() {
   document.getElementById('addSiswaModal').classList.remove('open');
   renderSiswaTable(); renderTunggakan(); renderDashboard();
   toast(`✅ ${nama} berhasil ditambahkan!`);
+  // Create tagihan for all active tetap items
+  createTagihanForStudent(newSiswa).catch(() => {});
 }
 // [dipindah ke DOMContentLoaded]
 
@@ -400,52 +353,57 @@ function openEditPembayaran(nama) {
   if (!s) return;
   document.getElementById('ep_nama').value = nama;
   document.getElementById('ep_namaLabel').textContent = nama + ' — ' + kelasLabel(s);
-  document.getElementById('ep_pangkal').value = s.pangkal || '';
-  document.getElementById('ep_pangkal_paid').value = s.pangkal_paid || '';
   document.querySelectorAll('#ep_months_wrap input[type=checkbox]').forEach(c => {
     c.checked = (s.spp_paid_months || []).includes(c.value);
   });
-  updateEpPangkalInfo();
+  // Render tagihan items
+  const siswaTagihan = appState.tagihan.filter(t => t.nama === nama);
+  const tagihanWrap = document.getElementById('ep_tagihan_wrap');
+  if (tagihanWrap) {
+    if (!siswaTagihan.length) {
+      tagihanWrap.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Tidak ada tagihan item untuk santri ini.</div>';
+    } else {
+      tagihanWrap.innerHTML = siswaTagihan.map(t => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="flex:1;font-size:13px;font-weight:600;">${t.item_name}</div>
+          <div style="font-size:12px;color:var(--text-muted);">Total: ${rp(t.nominal)}</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label style="font-size:12px;">Terbayar:</label>
+            <input type="number" class="ep_tagihan_paid" data-id="${t.id}" value="${t.paid_amount||0}"
+              style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+          </div>
+        </div>`).join('');
+    }
+  }
   document.getElementById('editPembayaranModal').classList.add('open');
 }
 
-function updateEpPangkalInfo() {
-  const pangkal = Number(document.getElementById('ep_pangkal').value) || 0;
-  const paid    = Number(document.getElementById('ep_pangkal_paid').value) || 0;
-  const sisa    = Math.max(0, pangkal - paid);
-  const el = document.getElementById('ep_pangkal_info');
-  if (!el) return;
-  if (!pangkal) { el.textContent = '—'; return; }
-  el.innerHTML = sisa <= 0
-    ? `<span style="color:var(--primary-light);font-weight:600;">✅ Lunas (${rp(pangkal)})</span>`
-    : `Sisa: <strong style="color:var(--danger);">${rp(sisa)}</strong> dari total ${rp(pangkal)}`;
-}
-
-function saveEditPembayaran() {
+async function saveEditPembayaran() {
   const nama = document.getElementById('ep_nama').value;
   const idx  = appState.students.findIndex(s => s.nama === nama);
   if (idx < 0) { toast('⚠️ Data tidak ditemukan'); return; }
 
-  const pangkal      = Number(document.getElementById('ep_pangkal').value) || 0;
-  const pangkal_paid = Number(document.getElementById('ep_pangkal_paid').value) || 0;
-  const paid_months  = [...document.querySelectorAll('#ep_months_wrap input[type=checkbox]:checked')].map(c => c.value);
-
-  appState.students[idx].pangkal       = pangkal;
-  appState.students[idx].pangkal_paid  = pangkal_paid;
+  const paid_months = [...document.querySelectorAll('#ep_months_wrap input[type=checkbox]:checked')].map(c => c.value);
   appState.students[idx].spp_paid_months = paid_months;
-
   saveSiswa(appState.students[idx]);
-  document.getElementById('editPembayaranModal').classList.remove('open');
 
-  // Refresh semua tampilan
+  // Update tagihan paid amounts
+  const inputs = document.querySelectorAll('.ep_tagihan_paid');
+  for (const inp of inputs) {
+    const tid = inp.dataset.id;
+    const newPaid = Number(inp.value) || 0;
+    const t = appState.tagihan.find(x => x.id === tid);
+    if (t && t.paid_amount !== newPaid) {
+      await updateTagihanPaid(tid, newPaid);
+    }
+  }
+
+  document.getElementById('editPembayaranModal').classList.remove('open');
   renderSiswaTable();
   renderTunggakan();
   renderDashboard();
-
-  // Re-render detail tunggakan jika masih terbuka
   const detailEl = document.getElementById('tunggakanDetail');
   if (detailEl?.innerHTML) selectTunggakanStudent(nama);
-
   toast(`✅ Data pembayaran ${nama} berhasil diperbarui!`);
 }
 
@@ -457,7 +415,6 @@ function openEditSiswa(nama) {
   document.getElementById('ed_nisn').value = s.nisn || '';
   document.getElementById('ed_kelas').value = s.kelas;
   document.getElementById('ed_spp').value = s.spp || '';
-  document.getElementById('ed_pangkal').value = s.pangkal || '';
   document.getElementById('editSiswaModal').classList.add('open');
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -480,17 +437,12 @@ function saveEditSiswa() {
   if (idx < 0) { toast('⚠️ Data tidak ditemukan!'); return; }
 
   const oldData = appState.students[idx];
-
-  // Simpan semua field — pertahankan spp_paid_months & pangkal_paid dari data lama
-  // (field ini sekarang dikelola di menu Tunggakan)
   appState.students[idx] = {
-    nama:             newNama,
+    nama:            newNama,
     kelas,
-    nisn:             document.getElementById('ed_nisn').value.trim(),
-    spp:              Number(document.getElementById('ed_spp').value) || 0,
-    pangkal:          Number(document.getElementById('ed_pangkal').value) || 0,
-    pangkal_paid:     oldData.pangkal_paid || 0,
-    spp_paid_months:  oldData.spp_paid_months || [],
+    nisn:            document.getElementById('ed_nisn').value.trim(),
+    spp:             Number(document.getElementById('ed_spp').value) || 0,
+    spp_paid_months: oldData.spp_paid_months || [],
   };
 
   // Update nama di transactions jika berubah

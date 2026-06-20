@@ -39,8 +39,10 @@ async function doLoginGuest() {
     siswa.spp_paid_months = Array.isArray(siswa.spp_paid_months) ? siswa.spp_paid_months : [];
 
     const txns = await sb('transactions?select=*&nama=eq.' + encodeURIComponent(nama) + '&order=created_at.desc');
+    let tagihan = [];
+    try { tagihan = await sb('tagihan?select=*&nama=eq.' + encodeURIComponent(nama)); } catch {}
 
-    guestData = { siswa, txns };
+    guestData = { siswa, txns, tagihan };
     localStorage.setItem('sipay_auth', 'guest');
     localStorage.setItem('sipay_guest', JSON.stringify({ nama }));
 
@@ -75,10 +77,11 @@ function renderGuestPage() {
   if (taLabelEl) taLabelEl.textContent = '';
 
   // Hitung tunggakan
-  const sisaPangkal    = Math.max(0, (siswa.pangkal||0) - (siswa.pangkal_paid||0));
+  const siswaTagihan   = guestData.tagihan || [];
   const belumBayarSPP  = MONTHS_KEY.filter(m => !(siswa.spp_paid_months||[]).includes(m));
   const sppTunggakan   = belumBayarSPP.length * (siswa.spp||0);
-  const grandTotal     = sisaPangkal + sppTunggakan;
+  const itemTunggakan  = siswaTagihan.reduce((a,t) => a + Math.max(0, t.nominal - (t.paid_amount||0)), 0);
+  const grandTotal     = sppTunggakan + itemTunggakan;
 
   // ── Kartu status ringkas ──
   const statusHtml = `
@@ -104,34 +107,34 @@ function renderGuestPage() {
       <div style="font-size:13px;color:#666;margin-top:4px;">Terima kasih atas kepercayaan Bapak/Ibu.</div>
     </div>`;
   } else {
-    if (sisaPangkal > 0) {
-      const nomPangkal   = siswa.pangkal || 0;
-      const paidPangkal  = siswa.pangkal_paid || 0;
-      const pctPangkal   = nomPangkal ? Math.round(paidPangkal/nomPangkal*100) : 0;
+    // Item tagihan (tetap) yang belum lunas
+    siswaTagihan.filter(t => t.nominal > (t.paid_amount||0)).forEach(t => {
+      const sisa = Math.max(0, t.nominal - (t.paid_amount||0));
+      const pctItem = t.nominal ? Math.round((t.paid_amount||0)/t.nominal*100) : 0;
       tunggakanHtml += `
       <div style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;overflow:hidden;">
         <div style="background:linear-gradient(135deg,#92400e,#b45309);padding:14px 18px;">
-          <div style="font-size:11px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.5px;">Uang Pangkal</div>
-          <div style="font-size:16px;font-weight:800;color:#fff;">🏫 Biaya Pendaftaran / Pangkal</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.5px;">${t.item_name}</div>
+          <div style="font-size:16px;font-weight:800;color:#fff;">🏫 ${t.item_name}</div>
         </div>
         <div style="padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div>
-              <div style="font-size:12px;color:#666;">Total pangkal: ${rp(nomPangkal)}</div>
-              <div style="font-size:12px;color:#666;">Sudah dibayar: ${rp(paidPangkal)}</div>
+              <div style="font-size:12px;color:#666;">Total tagihan: ${rp(t.nominal)}</div>
+              <div style="font-size:12px;color:#666;">Sudah dibayar: ${rp(t.paid_amount||0)}</div>
             </div>
             <div style="text-align:right;">
-              <div style="font-size:16px;font-weight:800;color:#b45309;">${rp(sisaPangkal)}</div>
+              <div style="font-size:16px;font-weight:800;color:#b45309;">${rp(sisa)}</div>
               <div style="font-size:11px;color:#b45309;">sisa belum lunas</div>
             </div>
           </div>
           <div style="margin-top:10px;background:#fef3c7;border-radius:8px;height:8px;overflow:hidden;">
-            <div style="background:#b45309;height:100%;width:${pctPangkal}%;border-radius:8px;"></div>
+            <div style="background:#b45309;height:100%;width:${pctItem}%;border-radius:8px;"></div>
           </div>
-          <div style="font-size:11px;color:#888;margin-top:4px;">${pctPangkal}% terbayar</div>
+          <div style="font-size:11px;color:#888;margin-top:4px;">${pctItem}% terbayar</div>
         </div>
       </div>`;
-    }
+    });
     if (sppTunggakan > 0) {
       tunggakanHtml += `
       <div style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;overflow:hidden;">
