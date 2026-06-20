@@ -10,14 +10,16 @@ function renderLaporPage() {
   const sel = document.getElementById('laporItem');
   sel.innerHTML = '<option value="">-- Pilih item tunggakan --</option>';
 
-  // Pangkal
-  const sisaPangkal = Math.max(0, (siswa.pangkal||0) - (siswa.pangkal_paid||0));
-  if (sisaPangkal > 0) {
+  // Item tagihan (tetap) yang belum lunas
+  const siswaTagihan = (typeof appState !== 'undefined' ? appState.tagihan || [] : [])
+    .filter(t => t.nama === siswa.nama && t.nominal > t.paid_amount);
+  siswaTagihan.forEach(t => {
+    const sisa = Math.max(0, t.nominal - (t.paid_amount||0));
     const opt = document.createElement('option');
-    opt.value = JSON.stringify({ type: 'pangkal', label: 'Uang Pangkal', nominal: sisaPangkal });
-    opt.textContent = `Uang Pangkal — Sisa Rp ${fmt(sisaPangkal)}`;
+    opt.value = JSON.stringify({ type: t.item_id, label: t.item_name, nominal: sisa });
+    opt.textContent = `${t.item_name} — Sisa Rp ${fmt(sisa)}`;
     sel.appendChild(opt);
-  }
+  });
 
   // SPP bulan yang belum dibayar
   MONTHS_KEY.filter(m => !(siswa.spp_paid_months||[]).includes(m)).forEach(m => {

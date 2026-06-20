@@ -2,17 +2,15 @@
 function renderDashboard() {
   const ss = appState.students;
   const totalSiswa = ss.length;
-  const totalTagihanSPP = ss.reduce((a,s) => a + (s.spp||0)*12, 0);
   const totalBayarSPP = ss.reduce((a,s) => a + (s.spp||0)*(s.spp_paid_months||[]).length, 0);
-  const totalTagihanPangkal = ss.reduce((a,s) => a + (s.pangkal||0), 0);
-  const totalBayarPangkal = ss.reduce((a,s) => a + (s.pangkal_paid||0), 0);
+  const totalBayarTagihan = appState.tagihan.reduce((a,t) => a + (t.paid_amount||0), 0);
   const totalTunggak = ss.reduce((a,s) => a + totalTunggakan(s), 0);
 
   document.getElementById('statGrid').innerHTML = `
     <div class="stat-card green"><div class="stat-label">Total Santri</div><div class="stat-value">${totalSiswa}</div><div class="stat-sub">Santri Aktif</div><div class="stat-icon">🎓</div></div>
-    <div class="stat-card gold"><div class="stat-label">Total Terkumpul</div><div class="stat-value" style="font-size:18px;">${rp(totalBayarSPP+totalBayarPangkal)}</div><div class="stat-sub">SPP + Uang Pangkal</div><div class="stat-icon">💰</div></div>
+    <div class="stat-card gold"><div class="stat-label">Total Terkumpul</div><div class="stat-value" style="font-size:18px;">${rp(totalBayarSPP+totalBayarTagihan)}</div><div class="stat-sub">SPP + Semua Pembayaran</div><div class="stat-icon">💰</div></div>
     <div class="stat-card red"><div class="stat-label">Total Tunggakan</div><div class="stat-value" style="font-size:18px;">${rp(totalTunggak)}</div><div class="stat-sub">${ss.filter(s=>totalTunggakan(s)>0).length} santri belum lunas</div><div class="stat-icon">⚠️</div></div>
-    <div class="stat-card blue"><div class="stat-label">Pangkal Lunas</div><div class="stat-value">${ss.filter(s=>s.pangkal>0&&s.pangkal_paid>=s.pangkal).length}</div><div class="stat-sub">dari ${ss.filter(s=>s.pangkal>0).length} santri</div><div class="stat-icon">✅</div></div>
+    <div class="stat-card blue"><div class="stat-label">Tagihan Aktif</div><div class="stat-value">${appState.tagihan.filter(t=>t.paid_amount>=t.nominal).length}</div><div class="stat-sub">dari ${appState.tagihan.length} total tagihan</div><div class="stat-icon">✅</div></div>
   `;
 
   // Kelas table
@@ -21,13 +19,13 @@ function renderDashboard() {
   tbody.innerHTML = kelasList.map(k => {
     const ks = ss.filter(s=>s.kelas===k);
     const lunas = ks.filter(s=>MONTHS.every(m=>!s.spp||s.spp_paid_months.includes(m))).length;
-    const tkPangkal = ks.reduce((a,s)=>a+pangkalTunggakan(s),0);
+    const tkItems = ks.reduce((a,s)=>a+itemsTunggakan(s),0);
     const pct_ = pct(lunas,ks.length);
     return `<tr>
       <td><strong>${k==='?'?'Kelas Belum Diset':k}</strong></td>
       <td>${ks.length}</td>
       <td>${lunas} / ${ks.length} <span style="color:var(--text-muted);font-size:11px;">(${pct_}%)</span></td>
-      <td>${rp(tkPangkal)}</td>
+      <td>${rp(tkItems)}</td>
       <td>${pct_===100?'<span class="badge badge-green">✓ Lunas</span>':pct_>50?'<span class="badge badge-yellow">~Sebagian</span>':'<span class="badge badge-red">Banyak Tunggak</span>'}</td>
     </tr>`;
   }).join('');

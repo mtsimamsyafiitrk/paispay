@@ -1022,20 +1022,10 @@
     </div>
     <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:16px;" id="ep_namaLabel">—</div>
 
-    <!-- Pangkal -->
+    <!-- Tagihan items -->
     <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;">
-      <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:10px;">🏫 Uang Pangkal</div>
-      <div class="form-grid">
-        <div class="form-group" style="margin:0;">
-          <label>Total Pangkal (Rp)</label>
-          <input type="number" id="ep_pangkal" placeholder="0" oninput="updateEpPangkalInfo()">
-        </div>
-        <div class="form-group" style="margin:0;">
-          <label>Sudah Dibayar (Rp)</label>
-          <input type="number" id="ep_pangkal_paid" placeholder="0" oninput="updateEpPangkalInfo()">
-        </div>
-      </div>
-      <div style="margin-top:8px;font-size:12px;color:var(--text-muted);" id="ep_pangkal_info">—</div>
+      <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:10px;">📋 Tagihan Item</div>
+      <div id="ep_tagihan_wrap"></div>
     </div>
 
     <!-- SPP bulan -->
@@ -1297,14 +1287,6 @@
         <label>SPP per Bulan (Rp)</label>
         <input type="number" id="ns_spp" placeholder="0">
       </div>
-      <div class="form-group">
-        <label>Uang Pangkal (Rp)</label>
-        <input type="number" id="ns_pangkal" placeholder="0">
-      </div>
-      <div class="form-group">
-        <label>Sudah Bayar Pangkal (Rp)</label>
-        <input type="number" id="ns_pangkal_paid" placeholder="0">
-      </div>
       <div class="form-group full">
         <label>Bulan SPP yang Sudah Dibayar</label>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;" id="ns_months_wrap">
@@ -1358,14 +1340,10 @@
         <label>SPP per Bulan (Rp)</label>
         <input type="number" id="ed_spp" placeholder="0">
       </div>
-      <div class="form-group">
-        <label>Uang Pangkal (Rp)</label>
-        <input type="number" id="ed_pangkal" placeholder="0">
-      </div>
     </div>
     <div style="margin-top:14px;padding:10px 14px;background:var(--primary-pale);border-radius:10px;font-size:12px;color:var(--primary);display:flex;align-items:center;gap:8px;">
       <span>ℹ️</span>
-      <span>Edit pembayaran SPP & pangkal tersedia di menu <strong>Tunggakan → Detail Santri</strong></span>
+      <span>Edit pembayaran SPP & tagihan tersedia di menu <strong>Tunggakan → Detail Santri</strong></span>
     </div>
     <input type="hidden" id="ed_original_nama">
     <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
@@ -1404,8 +1382,6 @@
             <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>TAHUN_AJARAN</strong><br><span style="color:var(--text-muted);font-size:11px;">Misal: 2024/2025</span></div>
             <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>NISN</strong><br><span style="color:var(--text-muted);font-size:11px;">10 digit NISN</span></div>
             <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>SPP</strong><br><span style="color:var(--text-muted);font-size:11px;">Nominal SPP/bulan</span></div>
-            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>PANGKAL</strong><br><span style="color:var(--text-muted);font-size:11px;">Total uang pangkal</span></div>
-            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>PANGKAL_PAID</strong><br><span style="color:var(--text-muted);font-size:11px;">Sudah dibayar</span></div>
           </div>
           <div style="font-weight:700;margin-bottom:6px;color:var(--primary);">Kolom SPP per bulan <span style="font-weight:400;color:var(--text-muted);">(isi 1 = sudah bayar, kosong = belum)</span>:</div>
           <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">
@@ -1455,7 +1431,7 @@
       <div class="table-wrap" style="max-height:320px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);">
         <table id="importPreviewTable" style="font-size:12px;">
           <thead><tr>
-            <th>No</th><th>Nama</th><th>Kelas</th><th>NISN</th><th>SPP/bln</th><th>Pangkal</th><th>SPP Dibayar</th>
+            <th>No</th><th>Nama</th><th>Kelas</th><th>NISN</th><th>SPP/bln</th><th>SPP Dibayar</th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -1693,6 +1669,34 @@
   </div>
 </div>
 
+
+<!-- ═══ DEACTIVATE ITEM MODAL ═══ -->
+<div class="modal-overlay" id="deactivateModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--accent);">⭕ Nonaktifkan Item</div>
+    </div>
+    <p style="font-size:14px;color:var(--text);margin-bottom:8px;line-height:1.6;">
+      Anda akan menonaktifkan item: <strong id="deactivateItemName"></strong>
+    </p>
+    <div id="deactivateTagihanWarn" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;font-size:12px;color:#856404;margin-bottom:16px;">
+      ⚠️ Ada record tagihan santri yang terkait item ini. Pilih tindakan:
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+      <button class="btn btn-outline" style="text-align:left;padding:12px 16px;" onclick="confirmDeactivateKeep()">
+        <strong>📁 Simpan Record</strong><br>
+        <span style="font-size:12px;color:var(--text-muted);">Item nonaktif, tagihan tetap tersimpan</span>
+      </button>
+      <button class="btn btn-danger" style="text-align:left;padding:12px 16px;" onclick="confirmDeactivateDelete()">
+        <strong>🗑️ Hapus Record</strong><br>
+        <span style="font-size:12px;color:var(--text-muted);">Item nonaktif & semua tagihan dihapus</span>
+      </button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="cancelDeactivate()">Batal</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ TAMBAH CALON SANTRI MODAL ═══ -->
 <div class="modal-overlay" id="addCalonModal">

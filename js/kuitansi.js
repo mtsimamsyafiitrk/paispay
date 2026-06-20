@@ -101,79 +101,65 @@ async function konfirmasiHapusKwt() {
   btn.innerHTML = '⏳ Menghapus...';
 
   try {
-    // 1. Ambil data kuitansi koreksi lengkap
+    // 1. Ambil data kuitansi
     const rows = await sb('kuitansi?select=*&id=eq.' + id);
     if (!rows.length) { toast('⚠️ Data tidak ditemukan'); return; }
     const kwt = rows[0];
 
-    // Hanya boleh hapus kuitansi koreksi (is_koreksi=true)
-    if (!kwt.is_koreksi) { toast('⚠️ Hanya kuitansi koreksi yang dapat dihapus'); return; }
-
-    // 2. Balik efek koreksi ke data siswa
+    // 2. Balik efek pembayaran ke data siswa & tagihan
     if (kwt.nama && kwt.items?.length) {
-      const siswaRows = await sb('students?select=*&nama=eq.' + encodeURIComponent(kwt.nama));
-      if (siswaRows.length) {
-        const s = siswaRows[0];
-        let sppMonths  = Array.isArray(s.spp_paid_months) ? [...s.spp_paid_months] : [];
-        let pangkalPaid = Number(s.pangkal_paid) || 0;
-        let changed = false;
+      const si = appState.students.findIndex(s => s.nama === kwt.nama);
+      let sppMonths = si >= 0 ? [...(appState.students[si].spp_paid_months || [])] : [];
+      let sppChanged = false;
 
-        kwt.items.forEach(item => {
-          const dibatalkan = item._dibatalkan || item._tipe === 'batalkan';
-          const dikoreksi  = item._koreksi    || item._tipe === 'koreksi_nilai';
-          const isPangkal  = item.name?.toLowerCase().includes('pangkal');
+      for (const item of kwt.items) {
+        const dibatalkan = item._dibatalkan || item._tipe === 'batalkan';
+        const dikoreksi  = item._koreksi    || item._tipe === 'koreksi_nilai';
 
+        if (kwt.is_koreksi) {
+          // Kuitansi koreksi: balik efek koreksi
           if (dibatalkan) {
-            // Item dibatalkan saat koreksi → kembalikan
-            if (item.bulan && !sppMonths.includes(item.bulan)) {
-              sppMonths.push(item.bulan);
-              changed = true;
-            }
-            if (isPangkal && item.amount > 0) {
-              pangkalPaid += item.amount;
-              changed = true;
+            if (item.bulan && !sppMonths.includes(item.bulan)) { sppMonths.push(item.bulan); sppChanged = true; }
+            if (item.item_id && item.item_id !== 'spp') {
+              const t = findTagihan(kwt.nama, item.item_id);
+              if (t) await updateTagihanPaid(t.id, t.paid_amount + item.amount);
             }
           } else if (dikoreksi) {
-            // Nilai dikoreksi → kembalikan selisih
-            // Nilai lama bisa dilihat dari ref_kuitansi tapi cukup kurangi amount baru
-            if (isPangkal && item.amount > 0) {
-              pangkalPaid = Math.max(0, pangkalPaid - item.amount);
-              changed = true;
+            if (item.item_id && item.item_id !== 'spp') {
+              const t = findTagihan(kwt.nama, item.item_id);
+              if (t) await updateTagihanPaid(t.id, Math.max(0, t.paid_amount - item.amount));
             }
           }
-        });
-
-        if (changed) {
-          await sb(
-            'students?nama=eq.' + encodeURIComponent(kwt.nama),
-            'PATCH',
-            { spp_paid_months: sppMonths, pangkal_paid: pangkalPaid },
-            { 'Prefer': 'return=minimal' }
-          );
-          const si = appState.students.findIndex(s => s.nama === kwt.nama);
-          if (si >= 0) {
-            appState.students[si].spp_paid_months = sppMonths;
-            appState.students[si].pangkal_paid    = pangkalPaid;
+        } else {
+          // Kuitansi biasa: kurangi pembayaran
+          if (item.bulan) {
+            sppMonths = sppMonths.filter(m => m !== item.bulan);
+            sppChanged = true;
+          } else if (item.item_id && item.item_id !== 'spp') {
+            const t = findTagihan(kwt.nama, item.item_id);
+            if (t) await updateTagihanPaid(t.id, Math.max(0, t.paid_amount - item.amount));
           }
         }
       }
 
-      // 3. Hapus tanda "dikoreksi" dari kuitansi lama yang direferensikan
-      if (kwt.ref_no_kuitansi) {
-        await sb(
-          'kuitansi?no_kuitansi=eq.' + encodeURIComponent(kwt.ref_no_kuitansi),
-          'PATCH',
-          { dikoreksi_oleh: null },
-          { 'Prefer': 'return=minimal' }
-        ).catch(() => {});
+      if (sppChanged && si >= 0) {
+        appState.students[si].spp_paid_months = sppMonths;
+        await sb('students?nama=eq.' + encodeURIComponent(kwt.nama),
+          'PATCH', { spp_paid_months: sppMonths }, { 'Prefer': 'return=minimal' });
+      }
+
+      // Hapus tanda "dikoreksi" dari kuitansi lama jika ini kuitansi koreksi
+      if (kwt.is_koreksi && kwt.ref_no_kuitansi) {
+        await sb('kuitansi?no_kuitansi=eq.' + encodeURIComponent(kwt.ref_no_kuitansi),
+          'PATCH', { dikoreksi_oleh: null }, { 'Prefer': 'return=minimal' }).catch(() => {});
       }
     }
 
-    // 4. Hapus kuitansi koreksi
+    // 3. Hapus kuitansi
     await sb('kuitansi?id=eq.' + id, 'DELETE', null, { 'Prefer': 'return=minimal' });
 
     tutupModalHapusKwt();
-    toast('🗑️ Kuitansi koreksi dihapus & data pembayaran dikembalikan');
+    toast('🗑️ Kuitansi dihapus & data pembayaran dikembalikan');
     loadRiwayatKuitansi();
     renderDashboard(); renderSiswaTable(); renderTunggakan();
 
@@ -263,7 +249,7 @@ async function loadRiwayatKuitansi() {
                 <td>${statusBadge}</td>
                 <td style="white-space:nowrap;">
                   <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang">🖨️</button>
-                  ${r.is_koreksi ? `<button class="btn btn-danger btn-sm" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi koreksi">🗑️</button>` : ''}
+                  ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi">🗑️</button>` : ''}
                 </td>
               </tr>`;
             }).join('')}

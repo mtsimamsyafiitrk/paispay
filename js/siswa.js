@@ -190,13 +190,30 @@ let tunggakanSuggIdx = -1;
 function renderTunggakan() {
   const ss = appState.students;
   const withTk = ss.filter(s => totalTunggakan(s) > 0);
-  const totalTk   = withTk.reduce((a,s) => a + totalTunggakan(s), 0);
-  const sppTk     = withTk.reduce((a,s) => a + sppTunggakan(s), 0);
-  const pangkalTk = withTk.reduce((a,s) => a + pangkalTunggakan(s), 0);
-  const crossTk   = withTk.reduce((a,s) => a + crossTATunggakan(s), 0);
+  const totalTk = withTk.reduce((a,s) => a + totalTunggakan(s), 0);
+  const sppTk   = ss.reduce((a,s) => a + sppTunggakan(s), 0);
+
+  // Hitung tunggakan per item dari tagihan
+  const itemStats = {};
+  appState.tagihan.forEach(t => {
+    const sisa = Math.max(0, t.nominal - t.paid_amount);
+    if (sisa <= 0) return;
+    if (!itemStats[t.item_id]) itemStats[t.item_id] = { name: t.item_name, total: 0, count: 0 };
+    itemStats[t.item_id].total += sisa;
+    itemStats[t.item_id].count += 1;
+  });
 
   const el = document.getElementById('tunggakanStats');
   if (!el) return;
+
+  const itemCards = Object.values(itemStats).map(it => `
+    <div class="stat-card blue">
+      <div class="stat-label">Tunggakan ${it.name}</div>
+      <div class="stat-value" style="font-size:18px;">${rp(it.total)}</div>
+      <div class="stat-sub">${it.count} santri</div>
+      <div class="stat-icon">📋</div>
+    </div>`).join('');
+
   el.innerHTML = `
     <div class="stat-card red">
       <div class="stat-label">Total Tunggakan</div>
@@ -207,24 +224,11 @@ function renderTunggakan() {
     <div class="stat-card gold">
       <div class="stat-label">Tunggakan SPP</div>
       <div class="stat-value" style="font-size:18px;">${rp(sppTk)}</div>
-      <div class="stat-sub">${withTk.filter(s=>sppTunggakan(s)>0).length} santri</div>
+      <div class="stat-sub">${ss.filter(s=>sppTunggakan(s)>0).length} santri</div>
       <div class="stat-icon">📅</div>
     </div>
-    <div class="stat-card blue">
-      <div class="stat-label">Tunggakan Pangkal</div>
-      <div class="stat-value" style="font-size:18px;">${rp(pangkalTk)}</div>
-      <div class="stat-sub">${withTk.filter(s=>pangkalTunggakan(s)>0).length} santri</div>
-      <div class="stat-icon">🏫</div>
-    </div>
-    ${crossTk > 0 ? `
-    <div class="stat-card red">
-      <div class="stat-label">Lintas TA</div>
-      <div class="stat-value" style="font-size:18px;">${rp(crossTk)}</div>
-      <div class="stat-sub">${ss.filter(s=>crossTATunggakan(s)>0).length} santri</div>
-      <div class="stat-icon">📂</div>
-    </div>` : ''}
+    ${itemCards}
   `;
-  // Reset detail & search
   document.getElementById('tunggakanDetail').innerHTML = '';
   const inp = document.getElementById('searchTunggakan');
   if (inp) inp.value = '';
@@ -306,7 +310,7 @@ function selectTunggakanStudent(nama) {
 }
 
 function renderTunggakanDetail(s) {
-  const nameSafe  = s.nama.replace(/'/g, "\\'");
+  const nameSafe = s.nama.replace(/'/g, "\\'");
   const headerBar = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <div>
@@ -320,77 +324,50 @@ function renderTunggakanDetail(s) {
       </div>
     </div>`;
 
-  const history = s.spp_history || {};
-  const taKeys  = Object.keys(history).sort((a,b) => parseInt(a.split('/')[0]) - parseInt(b.split('/')[0]));
+  const sppT   = sppTunggakan(s);
+  const itemT  = itemsTunggakan(s);
+  const totalT = sppT + itemT;
 
-  // ── Tampilan multi-TA (spp_history ada isinya) ──
-  if (taKeys.length > 0) {
-    const totalT = sppTunggakan(s) + pangkalTunggakan(s);
-
-    const taCards = taKeys.map(ta => {
-      const d         = history[ta];
-      const sppTA     = d.spp ? MONTHS.filter(m => !(d.spp_paid_months||[]).includes(m)).length * d.spp : 0;
-      const pangkalTA = Math.max(0, (d.pangkal||0) - (d.pangkal_paid||0));
-      const tunggakTA = sppTA + pangkalTA;
-      const lunas     = tunggakTA === 0;
-      const bulanBelum = d.spp ? MONTHS.filter(m => !(d.spp_paid_months||[]).includes(m)) : [];
-      const monthGrid = MONTHS.map(m => {
-        const paid = (d.spp_paid_months||[]).includes(m);
-        return `<div style="padding:4px 2px;border-radius:6px;border:1.5px solid ${paid?'var(--primary)':'var(--border)'};
-          background:${paid?'var(--primary)':'var(--card)'};color:${paid?'#fff':'var(--text-muted)'};
-          font-size:10px;font-weight:600;text-align:center;">${m}</div>`;
-      }).join('');
-
-      return `<div style="border:1.5px solid ${lunas?'var(--primary-light)':'var(--danger)'};border-radius:12px;padding:16px;margin-bottom:12px;background:${lunas?'var(--primary-pale)':'var(--danger-pale)'};">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-weight:800;font-size:14px;color:${lunas?'var(--primary)':'var(--danger)'};">TA ${ta} — Kelas ${d.kelas||'?'} ${lunas?'✅':'⚠️'}</div>
-          <div style="font-size:12px;font-weight:700;color:${lunas?'var(--primary-light)':'var(--danger)'};">${lunas?'Lunas':'Tunggak '+rp(tunggakTA)}</div>
-        </div>
-        ${d.spp ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">SPP: ${rp(d.spp)}/bln</div>
-        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:6px;">${monthGrid}</div>
-        <div style="font-size:11px;margin-bottom:4px;">
-          <span style="font-weight:600;">${(d.spp_paid_months||[]).length}/12 bulan lunas</span>
-          ${bulanBelum.length ? ` &nbsp;• Belum: <span style="color:var(--danger);">${bulanBelum.join(', ')}</span>` : ''}
-        </div>` : ''}
-        ${d.pangkal ? `<div style="font-size:12px;margin-top:6px;">
-          Pangkal: ${rp(d.pangkal_paid)} / ${rp(d.pangkal)}
-          ${pangkalTA <= 0
-            ? '<span style="color:var(--primary-light);font-weight:600;"> ✅ Lunas</span>'
-            : `<span style="color:var(--danger);font-weight:600;"> Sisa ${rp(pangkalTA)}</span>`}
-        </div>` : ''}
-      </div>`;
-    }).join('');
-
-    const totalBanner = `<div style="background:${totalT>0?'var(--danger-pale)':'var(--primary-pale)'};border-left:4px solid ${totalT>0?'var(--danger)':'var(--primary-light)'};border-radius:10px;padding:14px 16px;margin-top:4px;">
-      <div style="font-weight:800;font-size:15px;color:${totalT>0?'var(--danger)':'var(--primary-light)'};">
-        ${totalT>0 ? '⚠️ TOTAL TUNGGAKAN: '+rp(totalT) : '✅ Semua Pembayaran Lunas'}
-      </div>
-    </div>`;
-
-    document.getElementById('tunggakanDetail').innerHTML =
-      `<div class="card">${headerBar}${taCards}${totalBanner}</div>`;
-    return;
-  }
-
-  // ── Tampilan fallback (siswa lama tanpa spp_history) ──
-  const sppT     = sppTunggakan(s);
-  const pangkalT = pangkalTunggakan(s);
-  const totalT   = sppT + pangkalT;
-  const bulanBelum = MONTHS.filter(m => !(s.spp_paid_months||[]).includes(m) && s.spp > 0);
+  // SPP bulan grid
   const bulanLunas = MONTHS.filter(m => (s.spp_paid_months||[]).includes(m));
-
-  const monthGrid = MONTHS.map(m => {
+  const bulanBelum = MONTHS.filter(m => !(s.spp_paid_months||[]).includes(m));
+  const monthGrid  = MONTHS.map(m => {
     const paid = (s.spp_paid_months||[]).includes(m);
     return `<div style="padding:5px 2px;border-radius:8px;border:1.5px solid ${paid?'var(--primary)':'var(--border)'};
       background:${paid?'var(--primary)':'var(--card)'};color:${paid?'#fff':'var(--text-muted)'};
       font-size:11px;font-weight:600;text-align:center;">${m}</div>`;
   }).join('');
 
-  const statusBanner = totalT > 0
+  // Tagihan item cards
+  const tagihanSiswa = appState.tagihan.filter(t => t.nama === s.nama);
+  const tagihanCards = tagihanSiswa.map(t => {
+    const sisa = Math.max(0, t.nominal - t.paid_amount);
+    const lunas = sisa <= 0;
+    const pctPaid = pct(t.paid_amount, t.nominal);
+    return `<div style="margin-bottom:8px;">
+      <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:8px;">📋 ${t.item_name}</div>
+      <div style="background:var(--bg);border-radius:12px;padding:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
+          <span>Tagihan</span><strong>${rp(t.nominal)}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
+          <span>Dibayar</span><strong style="color:var(--primary-light);">${rp(t.paid_amount)}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;">
+          <span>Sisa</span><strong style="color:${lunas?'var(--primary-light)':'var(--danger)'};">${lunas?'✅ Lunas':rp(sisa)}</strong>
+        </div>
+        <div class="progress-wrap" style="height:8px;">
+          <div class="progress-bar ${pctPaid>=100?'green':'yellow'}" style="width:${pctPaid}%"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalBanner = totalT > 0
     ? `<div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-weight:800;font-size:15px;color:var(--danger);">⚠️ Total Tunggakan: ${rp(totalT)}</div>
-        ${sppT > 0     ? `<div style="font-size:13px;color:var(--text);margin-top:4px;">SPP: ${rp(sppT)} (${bulanBelum.length} bulan)</div>` : ''}
-        ${pangkalT > 0 ? `<div style="font-size:13px;color:var(--text);margin-top:2px;">Pangkal: ${rp(pangkalT)}</div>` : ''}
+        ${sppT > 0  ? `<div style="font-size:13px;margin-top:4px;">SPP: ${rp(sppT)} (${bulanBelum.length} bulan belum lunas)</div>` : ''}
+        ${itemT > 0 ? `<div style="font-size:13px;margin-top:2px;">Item lain: ${rp(itemT)}</div>` : ''}
       </div>`
     : `<div style="background:var(--primary-pale);border-left:4px solid var(--primary-light);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-weight:800;font-size:15px;color:var(--primary-light);">✅ Semua Pembayaran Lunas</div>
@@ -399,7 +376,7 @@ function renderTunggakanDetail(s) {
   document.getElementById('tunggakanDetail').innerHTML = `
     <div class="card">
       ${headerBar}
-      ${statusBanner}
+      ${totalBanner}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
           <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">SPP / Bulan</div>
@@ -410,26 +387,15 @@ function renderTunggakanDetail(s) {
           <div style="font-size:18px;font-weight:800;color:var(--primary-light);">${bulanLunas.length} <span style="font-size:12px;font-weight:500;">/ 12</span></div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Pangkal Dibayar</div>
-          <div style="font-size:18px;font-weight:800;color:${pangkalT>0?'var(--danger)':'var(--primary-light)'};">${pct(s.pangkal_paid,s.pangkal)}%</div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Item Tagihan</div>
+          <div style="font-size:18px;font-weight:800;color:${itemT>0?'var(--danger)':'var(--primary-light)'};">${tagihanSiswa.length}</div>
         </div>
       </div>
       <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">📅 Status SPP per Bulan</div>
       <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:20px;">${monthGrid}</div>
-      ${s.pangkal > 0 ? `
-      <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">🏫 Uang Pangkal</div>
-      <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;">
-          <span>Sudah dibayar</span><strong>${rp(s.pangkal_paid)}</strong>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;">
-          <span>Total tagihan</span><strong>${rp(s.pangkal)}</strong>
-        </div>
-        <div class="progress-wrap" style="height:10px;">
-          <div class="progress-bar ${pct(s.pangkal_paid,s.pangkal)>=100?'green':'yellow'}" style="width:${pct(s.pangkal_paid,s.pangkal)}%"></div>
-        </div>
-      </div>` : ''}
+      ${tagihanCards}
     </div>`;
+}
 }
 
 // Close tunggakan dropdown when clicking outside
