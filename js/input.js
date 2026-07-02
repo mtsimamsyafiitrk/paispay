@@ -324,8 +324,6 @@ async function submitPayment() {
   });
   if (!items.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
 
-  if (!items.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
-
   // Update student SPP months & tagihan paid_amount
   const si = appState.students.findIndex(s=>s.nama===nama);
   const tagihanUpdates = []; // { id, newPaidAmount }

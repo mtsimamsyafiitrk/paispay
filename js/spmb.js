@@ -246,7 +246,9 @@ function saveEditCalonSantri() {
   }
 
   appState.students.sort((a, b) => a.nama.localeCompare(b.nama));
-  saveSiswa(appState.students.find(s => s.nama === newNama));
+  const saved = appState.students.find(s => s.nama === newNama);
+  if (newNama !== origNama) renameStudentInDB(origNama, saved);
+  else saveSiswa(saved);
   document.getElementById('editCalonModal').classList.remove('open');
   renderSpmbPage();
   toast(`✅ Data ${newNama} berhasil diperbarui!`);

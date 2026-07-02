@@ -445,13 +445,16 @@ function saveEditSiswa() {
     spp_paid_months: oldData.spp_paid_months || [],
   };
 
-  // Update nama di transactions jika berubah
+  // Update nama di transactions & tagihan (memori) jika berubah
   if (newNama !== origNama) {
     appState.transactions.forEach(t => { if (t.nama === origNama) t.nama = newNama; });
+    appState.tagihan.forEach(t => { if (t.nama === origNama) t.nama = newNama; });
   }
 
   appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
-  saveSiswa(appState.students[idx]);
+  const savedIdx = appState.students.findIndex(s => s.nama === newNama);
+  if (newNama !== origNama) renameStudentInDB(origNama, appState.students[savedIdx]);
+  else saveSiswa(appState.students[savedIdx]);
   document.getElementById('editSiswaModal').classList.remove('open');
 
   // Refresh semua tampilan terkait

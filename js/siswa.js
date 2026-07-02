@@ -124,6 +124,10 @@ function renderSiswaTable(resetPage = true) {
   const tbody = document.querySelector('#siswaTable tbody');
   tbody.innerHTML = pageList.map((s, i) => {
     const tunggak = totalTunggakan(s);
+    // Agregat tagihan item (tetap) — pangkal/buku/seragam dll kini disimpan di tabel tagihan
+    const tagT       = appState.tagihan.filter(t => t.nama === s.nama);
+    const tagNominal = tagT.reduce((a, t) => a + (t.nominal || 0), 0);
+    const tagPaid    = tagT.reduce((a, t) => a + (t.paid_amount || 0), 0);
     const history = s.spp_history || {};
     const taKeys  = Object.keys(history).sort((a,b) => parseInt(a.split('/')[0]) - parseInt(b.split('/')[0]));
     let monthBadges;
@@ -152,8 +156,8 @@ function renderSiswaTable(resetPage = true) {
       <td>${rp(s.spp)}</td>
       <td><div style="line-height:1.6;">${monthBadges}</div></td>
       <td>
-        <div>${rp(s.pangkal_paid)} / ${rp(s.pangkal)}</div>
-        <div class="progress-wrap" style="margin-top:4px;"><div class="progress-bar ${pct(s.pangkal_paid,s.pangkal)>=100?'green':'yellow'}" style="width:${pct(s.pangkal_paid,s.pangkal)}%"></div></div>
+        <div>${rp(tagPaid)} / ${rp(tagNominal)}</div>
+        <div class="progress-wrap" style="margin-top:4px;"><div class="progress-bar ${pct(tagPaid,tagNominal)>=100?'green':'yellow'}" style="width:${pct(tagPaid,tagNominal)}%"></div></div>
       </td>
       <td>${tunggak>0?`<span class="badge badge-red">Tunggak ${rp(tunggak)}</span>`:'<span class="badge badge-green">✓ Lunas</span>'}</td>
       <td style="white-space:nowrap;">
@@ -395,7 +399,6 @@ function renderTunggakanDetail(s) {
       <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:20px;">${monthGrid}</div>
       ${tagihanCards}
     </div>`;
-}
 }
 
 // Close tunggakan dropdown when clicking outside
