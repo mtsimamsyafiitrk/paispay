@@ -210,4 +210,17 @@ function totalTunggakan(s) {
   return sppTunggakan(s) + itemsTunggakan(s);
 }
 
+// ── Tunggakan calon santri (SPMB) ──
+// Calon santri masih memakai field uang_pendaftaran/pangkal + *_paid,
+// bukan tabel tagihan (yang dipakai santri aktif setelah promosi).
+function pendaftaranTunggakan(s) {
+  return Math.max(0, (s.uang_pendaftaran || 0) - (s.uang_pendaftaran_paid || 0));
+}
+
+function pangkalTunggakan(s) {
+  return Math.max(0, (s.pangkal || 0) - (s.pangkal_paid || 0));
+}
+
+function crossTATunggakan(s) { return 0; }
+
 // ── DASHBOARD ──
