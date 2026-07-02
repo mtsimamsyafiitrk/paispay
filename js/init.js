@@ -29,14 +29,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (g.nama) {
       document.getElementById('loginScreen').classList.add('hidden');
       try {
-        const [allSiswa, txns] = await Promise.all([
+        const [allSiswa, txns, tagihan] = await Promise.all([
           sb('students?select=*&nama=eq.' + encodeURIComponent(g.nama)),
           sb('transactions?select=*&nama=eq.' + encodeURIComponent(g.nama) + '&order=created_at.desc'),
+          sb('tagihan?select=*&nama=eq.' + encodeURIComponent(g.nama)).catch(() => []),
         ]);
         if (!allSiswa.length) throw new Error('Santri tidak ditemukan');
         const siswa = allSiswa[0];
         siswa.spp_paid_months = Array.isArray(siswa.spp_paid_months) ? siswa.spp_paid_months : [];
-        guestData = { siswa, txns };
+        guestData = { siswa, txns, tagihan };
         document.getElementById('adminLabel').textContent = siswa.nama;
         document.getElementById('guestSidebarSiswa').textContent = siswa.nama;
         document.getElementById('guestSidebarKelas').textContent = 'Kelas ' + siswa.kelas;

@@ -37,6 +37,27 @@ async function saveSiswa(s) {
   }
 }
 
+// Rename santri: update baris yang sudah ada (bukan insert baru) + ikut ganti
+// nama di tagihan & transaksi agar tidak jadi record yatim / duplikat.
+async function renameStudentInDB(origNama, s) {
+  if (!s || origNama === s.nama) return saveSiswa(s);
+  showSyncIndicator('💾 Menyimpan...');
+  try {
+    await sb('students?nama=eq.' + encodeURIComponent(origNama), 'PATCH',
+      _buildStudentRow(s), { 'Prefer': 'return=minimal' });
+    await sb('tagihan?nama=eq.' + encodeURIComponent(origNama), 'PATCH',
+      { nama: s.nama }, { 'Prefer': 'return=minimal' }).catch(e => console.error('rename tagihan:', e));
+    await sb('transactions?nama=eq.' + encodeURIComponent(origNama), 'PATCH',
+      { nama: s.nama }, { 'Prefer': 'return=minimal' }).catch(e => console.error('rename transactions:', e));
+    // Sinkron nama tagihan di memori
+    appState.tagihan.forEach(t => { if (t.nama === origNama) t.nama = s.nama; });
+    showSyncIndicator('✅ Tersimpan', 1500);
+  } catch(e) {
+    console.error('renameStudentInDB error:', e);
+    showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
+  }
+}
+
 async function saveState() {
   showSyncIndicator('💾 Menyimpan...');
   try {
