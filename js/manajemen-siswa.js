@@ -317,6 +317,7 @@ function saveNewSiswa() {
     nama, kelas,
     nisn: document.getElementById('ns_nisn').value.trim(),
     spp, spp_paid_months: paid_months,
+    access_code: genCode(),
   };
 
   const existIdx = findExistingSiswaIdx(newSiswa);

@@ -40,6 +40,17 @@ function showDetail(nama) {
     </div>
     ${otherTAHtml}
     ${dupesHtml}
+    <div style="margin-top:14px;background:var(--bg,#f7f7f7);border:1px dashed var(--border);border-radius:10px;padding:12px 14px;">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">🔑 Kode Akses Wali</div>
+      ${s.access_code
+        ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+             <code style="font-size:18px;font-weight:800;letter-spacing:2px;color:var(--primary);background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 12px;">${s.access_code}</code>
+             <button class="btn btn-outline btn-sm" onclick="copyAccessCode('${s.access_code}')">📋 Salin</button>
+             <button class="btn btn-outline btn-sm" onclick="regenerateAccessCode('${s.nama.replace(/'/g,"\\'")}')">🔄 Ganti</button>
+           </div>
+           <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Berikan kode ini ke wali santri untuk login mode Pengunjung.</div>`
+        : `<button class="btn btn-primary btn-sm" onclick="regenerateAccessCode('${s.nama.replace(/'/g,"\\'")}')">🔑 Buat Kode Akses</button>`}
+    </div>
     <div style="margin-top:16px;display:flex;gap:8px;">
       <button class="btn btn-primary" onclick="closeModal();quickInput('${s.nama.replace(/'/g,"\\'")}')">💳 Bayar Sekarang</button>
       <button class="btn btn-outline" onclick="closeModal();showCetakForStudent('${s.nama.replace(/'/g,"\\'")}')">📄 Cetak Surat</button>

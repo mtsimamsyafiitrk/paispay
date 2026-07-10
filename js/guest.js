@@ -3,48 +3,39 @@
 // ══════════════════════════════════════════
 
 async function initGuestLogin() {
-  const sel = document.getElementById('guestSiswa');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">Memuat daftar santri...</option>';
-  try {
-    const rows = await sb('students?select=nama,kelas,status_kelulusan&order=nama');
-    sel.innerHTML = '<option value="">-- Pilih nama santri --</option>';
-    rows.forEach(r => {
-      const opt = document.createElement('option');
-      opt.value = r.nama;
-      const kelasText = r.status_kelulusan ? kelasLabel(r) : 'Kelas ' + r.kelas;
-      opt.textContent = r.nama + ' (' + kelasText + ')';
-      sel.appendChild(opt);
-    });
-  } catch(e) {
-    sel.innerHTML = '<option value="">Gagal memuat data</option>';
-  }
+  // Tidak lagi menampilkan daftar semua santri (privasi). Wali memasukkan
+  // nama + kode akses yang diberikan admin.
+  const n = document.getElementById('guestNamaInput');
+  const c = document.getElementById('guestKodeInput');
+  if (n) n.value = '';
+  if (c) c.value = '';
+  const err = document.getElementById('guestError');
+  if (err) err.style.display = 'none';
 }
 
 async function loadGuestSiswaList() { /* tidak dipakai */ }
 
 async function doLoginGuest() {
-  const nama  = document.getElementById('guestSiswa').value;
+  const nama  = (document.getElementById('guestNamaInput')?.value || '').trim();
+  const code  = (document.getElementById('guestKodeInput')?.value || '').trim();
   const errEl = document.getElementById('guestError');
-  if (!nama) { errEl.style.display = 'block'; setTimeout(()=>errEl.style.display='none',3000); return; }
+  if (!nama || !code) { errEl.textContent = 'Isi nama santri & kode akses.'; errEl.style.display = 'block'; setTimeout(()=>errEl.style.display='none',3000); return; }
 
   const btn = document.querySelector('#loginFormGuest .login-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Memuat...'; }
 
   try {
-    const allSiswa = await sb('students?select=*&nama=eq.' + encodeURIComponent(nama));
-    if (!allSiswa.length) { errEl.textContent = 'Santri tidak ditemukan.'; errEl.style.display = 'block'; return; }
+    const res = await rpc('guest_lookup', { p_nama: nama, p_code: code });
+    if (!res || !res.siswa) { errEl.textContent = 'Nama atau kode akses salah.'; errEl.style.display = 'block'; return; }
 
-    const siswa = allSiswa[0];
+    const siswa = res.siswa;
     siswa.spp_paid_months = Array.isArray(siswa.spp_paid_months) ? siswa.spp_paid_months : [];
+    const txns    = res.transactions || [];
+    const tagihan = res.tagihan || [];
 
-    const txns = await sb('transactions?select=*&nama=eq.' + encodeURIComponent(nama) + '&order=created_at.desc');
-    let tagihan = [];
-    try { tagihan = await sb('tagihan?select=*&nama=eq.' + encodeURIComponent(nama)); } catch {}
-
-    guestData = { siswa, txns, tagihan };
+    guestData = { siswa, txns, tagihan, code };
     localStorage.setItem('sipay_auth', 'guest');
-    localStorage.setItem('sipay_guest', JSON.stringify({ nama }));
+    localStorage.setItem('sipay_guest', JSON.stringify({ nama: siswa.nama, code }));
 
     document.getElementById('guestSidebarSiswa').textContent = siswa.nama;
     document.getElementById('guestSidebarKelas').textContent = siswa.status_kelulusan ? kelasLabel(siswa) : 'Kelas ' + siswa.kelas;
@@ -190,10 +181,16 @@ function openLogoutConfirm() {
 function closeLogoutConfirm() {
   document.getElementById('logoutOverlay').classList.remove('show');
 }
-function doLogout() {
+async function doLogout() {
   closeLogoutConfirm();
+  // Cabut sesi admin di Supabase (best-effort) lalu bersihkan lokal
+  if (sbAuthToken) {
+    try { await fetch(SB_URL + '/auth/v1/logout', { method: 'POST', headers: sbHeaders() }); } catch {}
+  }
+  clearSession();
   localStorage.removeItem('sipay_auth');
   localStorage.removeItem('sipay_guest');
+  localStorage.removeItem('sipay_admin_email');
   guestData = { siswa: null, txns: [] };
   showPage('dashboard');
   document.getElementById('loginUser').value = '';

@@ -10,8 +10,9 @@ function getAkunData() {
   catch { return { user:'admin', pass:'sipay123', email:'', hp:'' }; }
 }
 async function saveAkunData(data) {
-  localStorage.setItem('sipay_akun', JSON.stringify(data));
-  localStorage.setItem('sipay_admin', JSON.stringify({ user: data.user, pass: data.pass }));
+  // Password TIDAK disimpan lokal/server — dikelola Supabase Auth.
+  const { pass, ...safe } = data;
+  localStorage.setItem('sipay_akun', JSON.stringify(safe));
   await saveSettings();
 }
 function renderAkunPage() {
@@ -116,8 +117,17 @@ async function saveNewPassword() {
   if (!p1) { errEl.textContent = '⚠️ Password baru tidak boleh kosong'; errEl.style.display='block'; return; }
   if (p1.length < 6) { errEl.textContent = '⚠️ Password minimal 6 karakter'; errEl.style.display='block'; return; }
   if (p1 !== p2) { errEl.textContent = '❌ Konfirmasi password tidak cocok'; errEl.style.display='block'; return; }
-  const a = getAkunData();
-  await saveAkunData({ ...a, pass: p1 });
+  if (!sbAuthToken) { errEl.textContent = '❌ Sesi berakhir. Login ulang dulu.'; errEl.style.display='block'; return; }
+  try {
+    const r = await fetch(SB_URL + '/auth/v1/user', {
+      method: 'PUT', headers: sbHeaders(), body: JSON.stringify({ password: p1 }),
+    });
+    if (!r.ok) { const t = await r.text(); throw new Error(t); }
+  } catch(e) {
+    errEl.textContent = '❌ Gagal ubah password: ' + (e.message || 'coba lagi');
+    errEl.style.display = 'block';
+    return;
+  }
   closeGantiPass();
   toast('✅ Password berhasil diubah! Silakan login ulang.');
   setTimeout(doLogout, 1500);

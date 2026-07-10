@@ -2,6 +2,30 @@
 const rp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
 const pct = (a,b) => b ? Math.round(a/b*100) : 0;
 
+// Kode akses wali — 6 karakter tanpa huruf/angka ambigu (0/O/1/I/L)
+function genCode() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  return c;
+}
+async function regenerateAccessCode(nama) {
+  const idx = appState.students.findIndex(s => s.nama === nama);
+  if (idx < 0) return;
+  const code = genCode();
+  appState.students[idx].access_code = code;
+  try {
+    await sb('students?nama=eq.' + encodeURIComponent(nama), 'PATCH',
+      { access_code: code }, { 'Prefer': 'return=minimal' });
+    showDetail(nama);
+    toast('🔑 Kode akses baru: ' + code);
+  } catch(e) { toast('⚠️ Gagal membuat kode: ' + e.message); }
+}
+function copyAccessCode(code) {
+  if (navigator.clipboard) navigator.clipboard.writeText(code).catch(()=>{});
+  toast('📋 Kode akses disalin: ' + code);
+}
+
 function kelasLabel(s) {
   const sk = s.status_kelulusan || '';
   if (sk === 'calon')  return 'Calon Santri';

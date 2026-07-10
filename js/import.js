@@ -182,6 +182,7 @@ function confirmImport() {
         kelas: latestData.kelas || base.kelas,
         spp: latestData.spp || base.spp,
         spp_paid_months: latestData.spp_paid_months || base.spp_paid_months,
+        access_code: genCode(),
       };
       appState.students.push(newSiswa);
       ditambahkan++;

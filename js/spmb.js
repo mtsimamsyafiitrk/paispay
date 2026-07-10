@@ -191,6 +191,7 @@ function saveCalonSantri() {
     pangkal, pangkal_paid: 0,
     uang_pendaftaran, uang_pendaftaran_paid: 0,
     status_kelulusan: 'calon',
+    access_code: genCode(),
   };
 
   appState.students.push(newCalon);
@@ -478,6 +479,7 @@ async function confirmSpmbImport() {
       pangkal: row.pangkal, pangkal_paid: 0,
       uang_pendaftaran: row.uang_pendaftaran, uang_pendaftaran_paid: 0,
       status_kelulusan: 'calon',
+      access_code: genCode(),
     });
     ditambah++;
   });

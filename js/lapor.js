@@ -61,7 +61,7 @@ async function uploadBukti(file, nama) {
   const path = `${nama.replace(/\s+/g,'_')}_${Date.now()}.${ext}`;
   const res  = await fetch(SB_UPLOAD_URL + path, {
     method: 'PUT',
-    headers: { ...SB_HDR, 'Content-Type': file.type, 'x-upsert': 'true' },
+    headers: { ...sbHeaders(), 'Content-Type': file.type, 'x-upsert': 'true' },
     body: file,
   });
   if (!res.ok) { const t = await res.text(); throw new Error('Upload gagal: ' + t); }
@@ -94,12 +94,13 @@ async function kirimLaporan() {
       console.warn('Upload bukti gagal:', e.message);
     }
 
-    // Simpan laporan ke Supabase
-    await sb('payment_reports', 'POST', {
-      nama: siswa.nama, kelas: siswa.kelas,
-      item_type: item.type, item_label: item.label,
-      nominal, catatan, bukti_url, status: 'pending',
-    }, { 'Prefer': 'return=minimal' });
+    // Simpan laporan via RPC (validasi kode akses di server)
+    const ok = await rpc('guest_submit_report', {
+      p_nama: siswa.nama, p_code: guestData.code || '',
+      p_item_type: item.type, p_item_label: item.label,
+      p_nominal: nominal, p_catatan: catatan, p_bukti_url: bukti_url,
+    });
+    if (!ok) throw new Error('Kode akses tidak valid — silakan login ulang.');
 
     // Kirim email notifikasi ke admin
     await kirimEmailNotifAdmin({ siswa, item, nominal, catatan, bukti_url });
@@ -145,7 +146,7 @@ async function loadRiwayatLaporan() {
   if (!el) return;
   el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:12px;font-size:13px;">Memuat...</div>';
   try {
-    const rows = await sb('payment_reports?select=*&nama=eq.' + encodeURIComponent(siswa.nama) + '&order=created_at.desc');
+    const rows = (await rpc('guest_reports', { p_nama: siswa.nama, p_code: guestData.code || '' })) || [];
     if (!rows.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:13px;">Belum ada laporan yang dikirim.</div>'; return; }
     const fmt = n => Number(n||0).toLocaleString('id-ID');
     const statusStyle = { pending:'background:#fef9c3;color:#854d0e;', diterima:'background:#dcfce7;color:#166534;', ditolak:'background:#fee2e2;color:#991b1b;' };
@@ -177,9 +178,10 @@ async function updateLaporBadge() {
   const { siswa } = guestData;
   if (!siswa) return;
   try {
-    const rows = await sb('payment_reports?select=id,status&nama=eq.' + encodeURIComponent(siswa.nama) + '&status=eq.pending');
+    const rows = (await rpc('guest_reports', { p_nama: siswa.nama, p_code: guestData.code || '' })) || [];
+    const pending = rows.filter(r => r.status === 'pending').length;
     const badge = document.getElementById('guestLaporBadge');
-    if (badge) { badge.textContent = rows.length; badge.style.display = rows.length ? 'inline' : 'none'; }
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
   } catch {}
 }
 

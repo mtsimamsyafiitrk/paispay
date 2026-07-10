@@ -2,7 +2,7 @@
 
 // ══ STUDENTS ══
 function _buildStudentRow(s) {
-  return {
+  const row = {
     nama: s.nama,
     kelas: s.kelas,
     nisn: s.nisn || '',
@@ -10,6 +10,8 @@ function _buildStudentRow(s) {
     spp_paid_months: s.spp_paid_months || [],
     status_kelulusan: s.status_kelulusan || '',
   };
+  if (s.access_code) row.access_code = s.access_code; // jaga kode akses wali
+  return row;
 }
 
 async function loadStudents() {
@@ -21,6 +23,7 @@ async function loadStudents() {
     spp: Number(r.spp) || 0,
     spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
     status_kelulusan: r.status_kelulusan || '',
+    access_code: r.access_code || '',
   }));
 }
 
@@ -212,8 +215,8 @@ async function loadSettings() {
     if (map.logo)
       localStorage.setItem('sipay_logo', map.logo);
     if (map.akun && map.akun.user) {
+      // Hanya info non-sensitif (user/email/hp) — password ada di Supabase Auth.
       localStorage.setItem('sipay_akun', JSON.stringify(map.akun));
-      localStorage.setItem('sipay_admin', JSON.stringify({ user: map.akun.user, pass: map.akun.pass }));
     }
   } catch(e) { console.error('loadSettings error:', e); }
 }
@@ -223,10 +226,12 @@ async function saveSettings() {
   const akun   = JSON.parse(localStorage.getItem('sipay_akun')   || '{}');
   const logo   = localStorage.getItem('sipay_logo') || '';
   try {
+    // Password TIDAK pernah disimpan ke server — dikelola oleh Supabase Auth.
+    const akunAman = { user: akun.user || '', email: akun.email || '', hp: akun.hp || '' };
     const records = [
       { key: 'payItems', value: appState.payItems },
       { key: 'profil',   value: profil },
-      { key: 'akun',     value: akun },
+      { key: 'akun',     value: akunAman },
     ];
     if (logo) records.push({ key: 'logo', value: logo });
     await sb('settings?on_conflict=key', 'POST', records,
@@ -275,6 +280,8 @@ async function loadDataForTA() {
 async function initApp() {
   showSyncIndicator('⏳ Memuat data...');
   try { await loadSettings(); } catch(e) { console.error('loadSettings error:', e); }
+  // Tanpa sesi admin, tabel data terkunci oleh RLS — jangan coba muat.
+  if (!sbAuthToken) { applyProfil(); return; }
   try {
     await loadDataForTA();
   } catch(e) {

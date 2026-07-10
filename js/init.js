@@ -17,27 +17,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('deleteModal').addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
   document.getElementById('addSiswaModal').addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
   applyProfil();
+  await restoreSession();   // pulihkan token admin sebelum memuat data terkunci
   await initApp();
 
   // Restore sesi setelah data dimuat
   if (isLoggedIn()) {
     document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('adminLabel').textContent = getAdminCreds().user;
+    document.getElementById('adminLabel').textContent = getAdminEmail();
     showPage('dashboard');
   } else if (isGuest()) {
     const g = JSON.parse(localStorage.getItem('sipay_guest') || '{}');
-    if (g.nama) {
+    if (g.nama && g.code) {
       document.getElementById('loginScreen').classList.add('hidden');
       try {
-        const [allSiswa, txns, tagihan] = await Promise.all([
-          sb('students?select=*&nama=eq.' + encodeURIComponent(g.nama)),
-          sb('transactions?select=*&nama=eq.' + encodeURIComponent(g.nama) + '&order=created_at.desc'),
-          sb('tagihan?select=*&nama=eq.' + encodeURIComponent(g.nama)).catch(() => []),
-        ]);
-        if (!allSiswa.length) throw new Error('Santri tidak ditemukan');
-        const siswa = allSiswa[0];
+        const res = await rpc('guest_lookup', { p_nama: g.nama, p_code: g.code });
+        if (!res || !res.siswa) throw new Error('Sesi wali tidak valid');
+        const siswa = res.siswa;
         siswa.spp_paid_months = Array.isArray(siswa.spp_paid_months) ? siswa.spp_paid_months : [];
-        guestData = { siswa, txns, tagihan };
+        guestData = { siswa, txns: res.transactions || [], tagihan: res.tagihan || [], code: g.code };
         document.getElementById('adminLabel').textContent = siswa.nama;
         document.getElementById('guestSidebarSiswa').textContent = siswa.nama;
         document.getElementById('guestSidebarKelas').textContent = 'Kelas ' + siswa.kelas;
