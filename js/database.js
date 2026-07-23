@@ -212,16 +212,20 @@ async function loadSettings() {
     if (map.logo)
       localStorage.setItem('sipay_logo', map.logo);
     if (map.akun && map.akun.user) {
-      localStorage.setItem('sipay_akun', JSON.stringify(map.akun));
-      localStorage.setItem('sipay_admin', JSON.stringify({ user: map.akun.user, pass: map.akun.pass }));
+      // Password tidak lagi disimpan di settings (dikelola Supabase Auth).
+      const cleanAkun = { user: map.akun.user, email: map.akun.email || '', hp: map.akun.hp || '' };
+      localStorage.setItem('sipay_akun', JSON.stringify(cleanAkun));
+      localStorage.setItem('sipay_admin', JSON.stringify({ user: cleanAkun.user }));
     }
   } catch(e) { console.error('loadSettings error:', e); }
 }
 
 async function saveSettings() {
-  const profil = JSON.parse(localStorage.getItem('sipay_profil') || '{}');
-  const akun   = JSON.parse(localStorage.getItem('sipay_akun')   || '{}');
-  const logo   = localStorage.getItem('sipay_logo') || '';
+  const profil  = JSON.parse(localStorage.getItem('sipay_profil') || '{}');
+  const akunRaw = JSON.parse(localStorage.getItem('sipay_akun')   || '{}');
+  // Jangan pernah menulis password ke settings (dibaca anon). Simpan hanya kontak.
+  const akun    = { user: akunRaw.user || 'Admin', email: akunRaw.email || '', hp: akunRaw.hp || '' };
+  const logo    = localStorage.getItem('sipay_logo') || '';
   try {
     const records = [
       { key: 'payItems', value: appState.payItems },
@@ -288,14 +292,9 @@ async function initApp() {
     if (saved?.tagihan)          appState.tagihan      = saved.tagihan;
     if (saved?.payItems?.length) appState.payItems     = saved.payItems;
   }
-  if (isGuest()) return;
   renderDashboard();
   renderSiswaTable();
   renderTunggakan();
-  sb('payment_reports?select=id&status=eq.pending').then(rows => {
-    const b = document.getElementById('adminLaporBadge');
-    if (b && rows.length) { b.textContent = rows.length; b.style.display = 'inline'; }
-  }).catch(()=>{});
   loadTemplateKuitansi().catch(()=>{});
   const sel = document.getElementById('cetakNama');
   if (sel) sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +

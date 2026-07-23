@@ -16,7 +16,93 @@ let guestData = { siswa: null, taId: null, taLabel: '', txns: [] };
 // ══════════════════════════════════════════
 const SB_URL = 'https://urlooswvcbmixzercsoc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVybG9vc3d2Y2JtaXh6ZXJjc29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MzA1NjAsImV4cCI6MjA4ODQwNjU2MH0.Lpcqce_6NHZF3wJnJa-kkMvMTEzb3Mqrb0bP4HO_6DQ';
+// SB_HDR: header anon (dipakai untuk upload storage bukti oleh wali/tamu).
 const SB_HDR = { 'Content-Type':'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+
+// ══════════════════════════════════════════
+// SUPABASE AUTH (sesi admin)
+// Admin login memakai email+password terverifikasi server (Supabase Auth).
+// Token JWT admin disimpan di localStorage; sb() memakainya untuk operasi
+// tulis. Tanpa token, sb() memakai anon key (hanya bisa baca + kirim laporan
+// sesuai kebijakan RLS). Jadi keamanan ditegakkan SERVER, bukan sekadar UI.
+// ══════════════════════════════════════════
+let sbSession = null;
+try { sbSession = JSON.parse(localStorage.getItem('sipay_session') || 'null'); }
+catch { sbSession = null; }
+
+function saveSession(s) {
+  sbSession = s;
+  if (s) localStorage.setItem('sipay_session', JSON.stringify(s));
+  else   localStorage.removeItem('sipay_session');
+}
+
+function hasAdminSession() {
+  return !!(sbSession && sbSession.access_token);
+}
+
+// Header untuk request REST: pakai token admin bila ada, jika tidak anon key.
+function authHeaders() {
+  const token = hasAdminSession() ? sbSession.access_token : SB_KEY;
+  return { 'Content-Type':'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token };
+}
+
+function _storeSession(data) {
+  saveSession({
+    access_token:  data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at:    Date.now() + (Number(data.expires_in || 3600) * 1000),
+    user:          data.user || (sbSession && sbSession.user) || null,
+  });
+}
+
+// Login via password grant → simpan token.
+async function sbSignIn(email, password) {
+  const r = await fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'apikey': SB_KEY },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || !data.access_token) {
+    throw new Error(data.error_description || data.msg || data.error || 'Login gagal');
+  }
+  _storeSession(data);
+  return sbSession;
+}
+
+// Perbarui token pakai refresh_token. Return true bila berhasil.
+async function sbRefresh() {
+  if (!sbSession || !sbSession.refresh_token) return false;
+  try {
+    const r = await fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'apikey': SB_KEY },
+      body: JSON.stringify({ refresh_token: sbSession.refresh_token }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || !data.access_token) { saveSession(null); return false; }
+    _storeSession(data);
+    return true;
+  } catch { return false; }
+}
+
+async function sbSignOut() {
+  if (hasAdminSession()) {
+    try { await fetch(SB_URL + '/auth/v1/logout', { method: 'POST', headers: authHeaders() }); }
+    catch { /* best-effort */ }
+  }
+  saveSession(null);
+}
+
+// Ubah password admin yang sedang login (butuh sesi aktif).
+async function sbUpdatePassword(newPass) {
+  if (!hasAdminSession()) throw new Error('Sesi admin tidak ditemukan — login ulang.');
+  const r = await fetch(SB_URL + '/auth/v1/user', {
+    method: 'PUT', headers: authHeaders(), body: JSON.stringify({ password: newPass }),
+  });
+  if (!r.ok) { const t = await r.text(); throw new Error(t); }
+  return true;
+}
 
 const defaultState = {
   students: [],
@@ -37,10 +123,22 @@ let allTA = [];
 let activeTA = null;
 
 // ── REST helper ──
+// Menyisipkan token admin (bila login) & memperbarui token otomatis:
+// - proaktif refresh jika token hampir kadaluarsa
+// - jika server balas 401, coba refresh sekali lalu ulangi request
 async function sb(path, method = 'GET', body = null, extra = {}) {
-  const opts = { method, headers: { ...SB_HDR, ...extra } };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(SB_URL + '/rest/v1/' + path, opts);
+  if (hasAdminSession() && sbSession.expires_at && Date.now() > sbSession.expires_at - 60000) {
+    await sbRefresh();
+  }
+  const doFetch = () => {
+    const opts = { method, headers: { ...authHeaders(), ...extra } };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(SB_URL + '/rest/v1/' + path, opts);
+  };
+  let r = await doFetch();
+  if (r.status === 401 && sbSession && sbSession.refresh_token) {
+    if (await sbRefresh()) r = await doFetch();
+  }
   if (!r.ok) { const t = await r.text(); throw new Error(t); }
   const txt = await r.text();
   return txt ? JSON.parse(txt) : [];

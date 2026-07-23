@@ -5,13 +5,16 @@ const EMAILJS_SVC  = 'service_44479eq';
 const EMAILJS_TPL  = 'template_wo9w96i';
 const EMAILJS_KEY  = 'OKFiGZTDpsAbkIFCZ';
 
+// Data akun untuk tampilan (nama, email kontak, hp). Password TIDAK lagi
+// disimpan di sini — kredensial dikelola Supabase Auth.
 function getAkunData() {
-  try { return JSON.parse(localStorage.getItem('sipay_akun') || 'null') || { user:'admin', pass:'sipay123', email:'', hp:'' }; }
-  catch { return { user:'admin', pass:'sipay123', email:'', hp:'' }; }
+  try { return JSON.parse(localStorage.getItem('sipay_akun') || 'null') || { user:'Admin', email:'', hp:'' }; }
+  catch { return { user:'Admin', email:'', hp:'' }; }
 }
 async function saveAkunData(data) {
-  localStorage.setItem('sipay_akun', JSON.stringify(data));
-  localStorage.setItem('sipay_admin', JSON.stringify({ user: data.user, pass: data.pass }));
+  const clean = { user: data.user || 'Admin', email: data.email || '', hp: data.hp || '' };
+  localStorage.setItem('sipay_akun', JSON.stringify(clean));
+  localStorage.setItem('sipay_admin', JSON.stringify({ user: clean.user }));
   await saveSettings();
 }
 function renderAkunPage() {
@@ -45,19 +48,16 @@ async function saveEditAkun() {
 
 let otpCode = '', otpExpiry = 0, otpTimerInterval = null;
 
+// Ganti password: admin sudah terautentikasi (punya sesi), jadi tak perlu OTP
+// email lagi — langsung ke input password baru, lalu update via Supabase Auth.
 function openGantiPassword() {
-  const a = getAkunData();
-  if (!a.email) { toast('⚠️ Isi email dulu di Edit Profil Akun'); openEditAkun(); return; }
-  const [local, domain] = a.email.split('@');
-  const masked = local.slice(0,2) + '***@' + domain;
-  document.getElementById('gp_emailHint').textContent = masked;
-  document.getElementById('gp_emailSent').textContent = masked;
-  document.getElementById('gp_step1').style.display = 'block';
+  if (!hasAdminSession()) { toast('⚠️ Sesi berakhir — login ulang dulu'); return; }
+  document.getElementById('gp_step1').style.display = 'none';
   document.getElementById('gp_step2').style.display = 'none';
-  document.getElementById('gp_step3').style.display = 'none';
-  document.getElementById('gp_step1_error').style.display = 'none';
-  const btn = document.getElementById('gp_sendBtn');
-  if (btn) { btn.disabled = false; btn.textContent = '📧 Kirim Kode Verifikasi'; }
+  document.getElementById('gp_step3').style.display = 'block';
+  document.getElementById('gp_newpass').value = '';
+  document.getElementById('gp_newpass2').value = '';
+  document.getElementById('gp_step3_error').style.display = 'none';
   document.getElementById('gantiPassModal').classList.add('open');
 }
 function closeGantiPass() {
@@ -116,8 +116,13 @@ async function saveNewPassword() {
   if (!p1) { errEl.textContent = '⚠️ Password baru tidak boleh kosong'; errEl.style.display='block'; return; }
   if (p1.length < 6) { errEl.textContent = '⚠️ Password minimal 6 karakter'; errEl.style.display='block'; return; }
   if (p1 !== p2) { errEl.textContent = '❌ Konfirmasi password tidak cocok'; errEl.style.display='block'; return; }
-  const a = getAkunData();
-  await saveAkunData({ ...a, pass: p1 });
+  try {
+    await sbUpdatePassword(p1);
+  } catch (e) {
+    errEl.textContent = '❌ Gagal ubah password: ' + (e.message || 'coba lagi');
+    errEl.style.display = 'block';
+    return;
+  }
   closeGantiPass();
   toast('✅ Password berhasil diubah! Silakan login ulang.');
   setTimeout(doLogout, 1500);

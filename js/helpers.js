@@ -63,19 +63,6 @@ function showPage(id) {
   document.getElementById('pageTitle').textContent = t[0];
   document.getElementById('pageSubtitle').textContent = t[1];
 
-  // Kelola sidebar admin vs guest
-  const sidebarAdmin = document.getElementById('sidebar');
-  const sidebarGuest = document.getElementById('sidebarGuest');
-  if (isGuest()) {
-    sidebarAdmin.style.display = 'none';
-    sidebarGuest.style.display = 'flex';
-    document.querySelector('.main-content').style.marginLeft = '';
-  } else {
-    sidebarAdmin.style.display = '';
-    sidebarGuest.style.display = 'none';
-    document.querySelector('.main-content').style.marginLeft = '';
-  }
-
   closeSidebar();
   if(id==='dashboard') renderDashboard();
   if(id==='rekap-siswa') renderSiswaTable();
@@ -84,9 +71,6 @@ function showPage(id) {
   if(id==='pengaturan') renderItemList();
   if(id==='input') renderInputPage();
   if(id==='cetak') renderCetakPage();
-  if(id==='pengunjung') renderGuestPage();
-  if(id==='lapor') renderLaporPage();
-  if(id==='laporan-masuk') loadLaporanMasuk();
   if(id==='template-kuitansi') renderTemplateKuitansiPage();
   if(id==='riwayat-kuitansi') loadRiwayatKuitansi();
 }

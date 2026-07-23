@@ -2,37 +2,50 @@
 // ══════════════════════════════════════════
 // AUTH / LOGIN
 // ══════════════════════════════════════════
-const DEFAULT_ADMIN = { user: 'admin', pass: 'sipay123' };
+// Kredensial admin kini di Supabase Auth (bukan localStorage). DEFAULT_ADMIN
+// hanya menyediakan label nama untuk UI sebelum profil termuat.
+const DEFAULT_ADMIN = { user: 'Admin' };
 
 function getAdminCreds() {
   try { return JSON.parse(localStorage.getItem('sipay_admin') || 'null') || DEFAULT_ADMIN; }
   catch { return DEFAULT_ADMIN; }
 }
+// Login admin = punya sesi Supabase Auth yang valid (ditegakkan server via RLS),
+// bukan sekadar penanda di localStorage.
 function isLoggedIn() {
-  return localStorage.getItem('sipay_auth') === 'admin';
-}function switchLoginMode(mode) {
-  document.getElementById('tabAdmin').classList.toggle('active', mode === 'admin');
-  document.getElementById('tabGuest').classList.toggle('active', mode === 'guest');
-  document.getElementById('loginFormAdmin').style.display = mode === 'admin' ? 'block' : 'none';
-  document.getElementById('loginFormGuest').style.display = mode === 'guest' ? 'block' : 'none';
-  document.getElementById('loginError').style.display = 'none';
-  if (mode === 'guest') initGuestLogin();
+  return hasAdminSession();
 }
-// ── Reset credentials via OTP (dari halaman login) ──
-function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const creds = getAdminCreds();
-  if (u === creds.user && p === creds.pass) {
-    localStorage.setItem('sipay_auth', 'admin');
+function showLoginError(msg) {
+  const err = document.getElementById('loginError');
+  err.textContent = '⚠️ ' + msg;
+  err.style.display = 'block';
+  setTimeout(() => err.style.display = 'none', 4000);
+}
+
+// Login admin via Supabase Auth (email + password).
+async function doLogin() {
+  const email = document.getElementById('loginUser').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  if (!email || !pass) { showLoginError('Email & password wajib diisi'); return; }
+
+  const btn = document.querySelector('#loginFormAdmin .login-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
+  try {
+    const sess = await sbSignIn(email, pass);
+    const label = (sess.user && sess.user.email) ? sess.user.email : email;
+    localStorage.setItem('sipay_admin', JSON.stringify({ user: label }));
+    localStorage.setItem('sipay_auth', 'admin'); // penanda UI (otoritas ada di token)
+    localStorage.removeItem('sipay_guest');
     document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('adminLabel').textContent = u;
+    document.getElementById('adminLabel').textContent = label;
+    // Muat ulang data dengan hak akses admin (token kini terpasang di sb())
+    try { await loadDataForTA(); } catch { /* biarkan; UI tetap tampil */ }
     showPage('dashboard');
-  } else {
-    const err = document.getElementById('loginError');
-    err.style.display = 'block';
+  } catch (e) {
+    showLoginError('Email atau password salah');
     document.getElementById('loginPass').value = '';
-    setTimeout(() => err.style.display = 'none', 3000);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Masuk sebagai Admin'; }
   }
 }
 // ══════════════════════════════════════════

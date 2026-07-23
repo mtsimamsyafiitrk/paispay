@@ -20,13 +20,11 @@ sipay/
 │   ├── profil.js           # Profil madrasah (nama, alamat, logo)
 │   ├── manajemen-siswa.js  # Tambah/edit/hapus/bulk siswa
 │   ├── import.js           # Import siswa dari Excel/CSV
-│   ├── auth.js             # Login admin & reset password via OTP
-│   ├── guest.js            # Mode tamu/orang tua wali
-│   ├── emailjs.js          # EmailJS config, notifikasi email admin
+│   ├── auth.js             # Login admin via Supabase Auth
+│   ├── guest.js            # Modal logout (sisa mode wali telah dihapus)
 │   ├── kuitansi.js         # Modal kuitansi, hapus, cetak, riwayat
 │   ├── koreksi.js          # Alur koreksi pembayaran (multi-step)
 │   ├── template-kuitansi.js# Builder & preview template kuitansi
-│   ├── lapor.js            # Laporan wali & laporan masuk admin
 │   └── init.js             # DOMContentLoaded & inisialisasi app
 └── README.md
 ```
@@ -55,6 +53,24 @@ URL hasil     : https://<username>.github.io/<repo-name>/
 ```
 
 > **Catatan:** Tidak diperlukan file `_config.yml` karena tidak ada Jekyll. Jika ada masalah routing, tambahkan file kosong bernama `.nojekyll` di root repo.
+
+## Keamanan (RLS + Supabase Auth) — Admin Only
+
+Sejak versi ini, akses data ditegakkan **di sisi server** lewat Row Level Security,
+dan aplikasi bersifat **admin-only** (mode wali/pengunjung telah dihapus):
+
+| Peran | Hak akses |
+|-------|-----------|
+| Admin (Supabase Auth) | Akses penuh (baca, tulis, ubah, hapus) |
+| Publik (anon) | **Tidak ada** — kecuali membaca branding layar login (nama madrasah, logo, item bayar) |
+
+Login admin memakai **email + password terverifikasi Supabase Auth** — bukan lagi
+cek di sisi klien. Password admin **tidak lagi disimpan** di database/localStorage.
+Seluruh data santri tertutup dari publik.
+
+> ⚙️ **Setup wajib sekali jalan:** jalankan `supabase_migration_auth.sql` di
+> Supabase SQL Editor, lalu buat 1 akun admin di *Authentication → Users* dan
+> **matikan pendaftaran publik**. Langkah lengkap ada di komentar file SQL tersebut.
 
 ## Status Koneksi Supabase
 
