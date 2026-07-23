@@ -73,7 +73,7 @@ function _renderSpmbTable(list) {
     const pendaftaranOk = sisaPendaftaran <= 0;
     const pangkalOk = sisaPangkal <= 0 && (s.pangkal || 0) > 0;
     const sel = spmbSelectedRows.has(s.nama);
-    const nameSafe = s.nama.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const nameSafe = escJs(s.nama);
 
     const pendaftaranBadge = s.uang_pendaftaran > 0
       ? (pendaftaranOk
@@ -94,15 +94,15 @@ function _renderSpmbTable(list) {
       : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
 
     return `<tr>
-      <td><input type="checkbox" class="spmb-row-chk" data-nama="${s.nama.replace(/"/g,'&quot;')}"
+      <td><input type="checkbox" class="spmb-row-chk" data-nama="${esc(s.nama)}"
         ${sel ? 'checked' : ''} onchange="toggleSpmbRowSelect(this)"
         style="width:15px;height:15px;accent-color:var(--primary);"></td>
       <td>${i + 1}</td>
       <td>
-        <div style="font-weight:600;font-size:13px;">${s.nama}</div>
-        ${s.nisn ? `<div style="font-size:11px;color:var(--text-muted);">NISN: ${s.nisn}</div>` : ''}
+        <div style="font-weight:600;font-size:13px;">${esc(s.nama)}</div>
+        ${s.nisn ? `<div style="font-size:11px;color:var(--text-muted);">NISN: ${esc(s.nisn)}</div>` : ''}
       </td>
-      <td><span style="font-weight:700;font-size:14px;">Kelas ${s.kelas}</span></td>
+      <td><span style="font-weight:700;font-size:14px;">Kelas ${esc(s.kelas)}</span></td>
       <td>${sppLabel}</td>
       <td>${pendaftaranBadge}</td>
       <td>${pangkalBadge}</td>
@@ -453,9 +453,9 @@ function _parseSpmbRows(rows) {
           ${spmbImportBuffer.map((s, i) => `
             <tr>
               <td>${i + 1}</td>
-              <td><strong>${s.nama}</strong></td>
-              <td>${s.kelas}</td>
-              <td>${s.nisn || '—'}</td>
+              <td><strong>${esc(s.nama)}</strong></td>
+              <td>${esc(s.kelas)}</td>
+              <td>${esc(s.nisn || '—')}</td>
               <td>${s.spp ? rp(s.spp) : '—'}</td>
               <td>${s.uang_pendaftaran ? rp(s.uang_pendaftaran) : '—'}</td>
               <td>${s.pangkal ? rp(s.pangkal) : '—'}</td>

@@ -46,6 +46,35 @@ async function sb(path, method = 'GET', body = null, extra = {}) {
   return txt ? JSON.parse(txt) : [];
 }
 
+// ── HTML escaping (XSS guard) ──
+// esc(): amankan data untuk konteks teks HTML maupun nilai atribut ber-tanda-kutip.
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+// escJs(): untuk argumen string di dalam handler inline, mis. onclick="fn('${escJs(x)}')".
+// HTML-escape saja TIDAK cukup di sini: browser men-decode nilai atribut sebelum
+// mesin JS mengeksekusinya, sehingga entity kembali jadi kutip & bisa breakout.
+// Solusinya: escape untuk konteks string-JS dulu, lalu HTML-encode hasilnya.
+function escJs(v) {
+  const j = String(v == null ? '' : v)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r?\n/g, '\\n');
+  return esc(j);
+}
+
+// safeUrl(): hanya izinkan skema http/https/data — cegah href="javascript:...".
+function safeUrl(u) {
+  const s = String(u == null ? '' : u).trim();
+  if (/^(https?:|data:image\/)/i.test(s)) return esc(s);
+  return '#';
+}
+
 // ── Indikator sync ──
 function showSyncIndicator(msg, hideAfter = 0) {
   const ind = document.getElementById('syncIndicator');

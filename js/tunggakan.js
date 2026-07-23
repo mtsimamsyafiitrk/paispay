@@ -16,7 +16,7 @@ function renderItemList() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="form-group">
             <label>Nama Item</label>
-            <input type="text" id="ei_name" value="${item.name}">
+            <input type="text" id="ei_name" value="${esc(item.name)}">
           </div>
           <div class="form-group">
             <label>Nominal Default (Rp)</label>
@@ -56,7 +56,7 @@ function renderItemList() {
     return `<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);">
       <label class="toggle"><input type="checkbox" ${item.active?'checked':''} onchange="toggleItem(${idx})"><span class="toggle-slider"></span></label>
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;font-size:13.5px;">${item.name}</div>
+        <div style="font-weight:600;font-size:13.5px;">${esc(item.name)}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${typeLabel} • ${rp(item.amount)}${isDefault?' • <span style="color:var(--accent);">Default</span>':''}</div>
         <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">${kelasBadge}</div>
       </div>

@@ -45,24 +45,24 @@ function onInputNamaSearch() {
       : `<span style="font-size:11px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
   };
 
-  // Highlight karakter yang cocok
+  // Highlight karakter yang cocok (tiap potongan di-escape agar aman dari XSS)
   const highlight = (text, q) => {
-    if (!q) return text;
+    if (!q) return esc(text);
     const idx = text.toLowerCase().indexOf(q);
-    if (idx < 0) return text;
-    return text.slice(0, idx) +
-      `<mark style="background:#fef08a;border-radius:2px;padding:0 1px;">${text.slice(idx, idx+q.length)}</mark>` +
-      text.slice(idx + q.length);
+    if (idx < 0) return esc(text);
+    return esc(text.slice(0, idx)) +
+      `<mark style="background:#fef08a;border-radius:2px;padding:0 1px;">${esc(text.slice(idx, idx+q.length))}</mark>` +
+      esc(text.slice(idx + q.length));
   };
 
   dd.innerHTML = list.slice(0, 15).map((s, i) => `
-    <div class="input-nama-item" data-idx="${i}" data-nama="${s.nama.replace(/"/g,'&quot;')}"
-      onmousedown="selectInputNama('${s.nama.replace(/'/g,"\\'")}')"
+    <div class="input-nama-item" data-idx="${i}" data-nama="${esc(s.nama)}"
+      onmousedown="selectInputNama('${escJs(s.nama)}')"
       onmouseenter="hoverInputNamaItem(${i})"
       style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">
       <div>
         <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas}${s.nisn ? ' · NISN ' + s.nisn : ''}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
       </div>
       ${tunggakBadge(s)}
     </div>`).join('');
@@ -140,7 +140,7 @@ function onStudentSelect() {
     .filter(t => t.nama === s.nama && t.nominal > 0)
     .map(t => {
       const sisa = Math.max(0, t.nominal - t.paid_amount);
-      return `<div style="font-size:12px;color:var(--text-muted);">${t.item_name}</div>
+      return `<div style="font-size:12px;color:var(--text-muted);">${esc(t.item_name)}</div>
         <div style="font-size:12px;font-weight:600;color:${sisa>0?'var(--danger)':'var(--primary-light)'};">
           ${sisa > 0 ? rp(sisa) + ' <span style="font-weight:400;font-size:10px;">(sisa)</span>' : '✅ Lunas'}
         </div>`;
@@ -224,7 +224,7 @@ function renderPaymentItems(student) {
     return `<div class="pay-item" ${disabled ? 'style="opacity:.5;pointer-events:none;"' : ''}>
       <input type="checkbox" id="chk_${item.id}" onchange="calcTotal()" ${disabled ? 'disabled' : ''}>
       <div class="pay-item-info">
-        <div class="pay-item-name">${item.name}</div>
+        <div class="pay-item-name">${esc(item.name)}</div>
         <div class="pay-item-amount">${
           item.type === 'custom' ? 'Nominal custom'
           : item.type === 'tetap' && student
@@ -361,7 +361,7 @@ async function submitPayment() {
   // Render session table
   const tbody = document.querySelector('#sessionTable tbody');
   const row = document.createElement('tr');
-  row.innerHTML = `<td><strong>${nama}</strong></td><td>${student.kelas}</td><td>${items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', ')}</td><td><strong>${rp(totalAmt)}</strong></td><td>${timeStr}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${nama}','${timeStr}')">🖨️ Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
+  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')">🖨️ Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
   if(tbody.firstChild?.tagName==='TR' && tbody.firstChild.querySelector('[colspan]')) tbody.innerHTML='';
   tbody.prepend(row);
 
@@ -417,7 +417,7 @@ async function cetakKuitansi(data) {
   const lembar2 = buildKuitansiHTML(data, ktData, 'Lembar Arsip');
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Kuitansi — ${data.nama}</title>
+  <title>Kuitansi — ${esc(data.nama)}</title>
   <style>
     @page { size: A4 portrait; margin: 10mm; }
     @media print { body { margin:0; } .no-print { display:none !important; } }

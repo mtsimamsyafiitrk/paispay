@@ -50,12 +50,12 @@ function onKoreksiNamaSearch() {
   const list = q ? appState.students.filter(s => s.nama.toLowerCase().includes(q) || (s.nisn && s.nisn.includes(q))) : appState.students.slice(0, 20);
   if (!list.length) { dd.innerHTML = `<div style="padding:12px 16px;font-size:13px;color:var(--text-muted);">Tidak ditemukan</div>`; dd.style.display='block'; return; }
   dd.innerHTML = list.slice(0,12).map((s,i) => `
-    <div class="koreksi-nama-item" data-idx="${i}" data-nama="${s.nama.replace(/"/g,'&quot;')}"
-      onmousedown="selectKoreksiNama('${s.nama.replace(/'/g,"\\'")}')"
+    <div class="koreksi-nama-item" data-idx="${i}" data-nama="${esc(s.nama)}"
+      onmousedown="selectKoreksiNama('${escJs(s.nama)}')"
       onmouseenter="this.style.background='var(--primary-pale)'" onmouseleave="this.style.background=''"
       style="padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;">
-      <div style="font-weight:600;">${s.nama}</div>
-      <div style="font-size:11px;color:var(--text-muted);">${s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas}${s.nisn?' · NISN '+s.nisn:''}</div>
+      <div style="font-weight:600;">${esc(s.nama)}</div>
+      <div style="font-size:11px;color:var(--text-muted);">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn?' · NISN '+esc(s.nisn):''}</div>
     </div>`).join('');
   dd.style.display = 'block';
 }
@@ -99,8 +99,8 @@ async function loadKoreksiKwtList(nama) {
         onmouseleave="if(!${sudahDikoreksi}) this.style.borderColor='var(--border)'">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div style="font-weight:700;font-size:13px;color:var(--primary);">${r.no_kuitansi||'—'}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${tgl} · TA ${r.ta_label||'—'}</div>
+            <div style="font-weight:700;font-size:13px;color:var(--primary);">${esc(r.no_kuitansi||'—')}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${tgl} · TA ${esc(r.ta_label||'—')}</div>
           </div>
           <div style="text-align:right;">
             <div style="font-weight:700;font-size:14px;">Rp ${fmt(r.total)}</div>
@@ -109,7 +109,7 @@ async function loadKoreksiKwtList(nama) {
               : `<div style="font-size:11px;color:var(--primary-light);">Klik untuk pilih →</div>`}
           </div>
         </div>
-        ${r.catatan ? `<div style="font-size:11px;color:#666;margin-top:6px;">💬 ${r.catatan}</div>` : ''}
+        ${r.catatan ? `<div style="font-size:11px;color:#666;margin-top:6px;">💬 ${esc(r.catatan)}</div>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
@@ -127,7 +127,7 @@ async function selectKoreksiKwt(id) {
     const fmt = n => Number(n||0).toLocaleString('id-ID');
 
     document.getElementById('koreksiRefLabel').innerHTML =
-      `Kuitansi: <strong>${kwt.no_kuitansi}</strong> · Rp ${fmt(kwt.total)} · TA ${kwt.ta_label||'—'}`;
+      `Kuitansi: <strong>${esc(kwt.no_kuitansi)}</strong> · Rp ${fmt(kwt.total)} · TA ${esc(kwt.ta_label||'—')}`;
 
     // Render item-item kuitansi sebagai checklist koreksi
     const items = Array.isArray(kwt.items) ? kwt.items : [];
@@ -142,7 +142,7 @@ async function selectKoreksiKwt(id) {
         <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
           <input type="checkbox" id="koreksiChk_${i}" data-idx="${i}" style="margin-top:3px;width:16px;height:16px;accent-color:var(--primary);cursor:pointer;" onchange="toggleKoreksiItem(${i})">
           <div style="flex:1;">
-            <div style="font-weight:600;font-size:13px;">${item.name}${item.bulan?' ('+(MONTH_FULL[item.bulan]||item.bulan)+')':''}</div>
+            <div style="font-weight:600;font-size:13px;">${esc(item.name)}${item.bulan?' ('+esc(MONTH_FULL[item.bulan]||item.bulan)+')':''}</div>
             <div style="font-size:12px;color:var(--text-muted);">Nilai tercatat di kuitansi: <strong>Rp ${fmt(item.amount)}</strong></div>
             ${isPangkal ? `<div style="font-size:11px;color:#888;margin-top:2px;">Total pangkal dibayar saat ini: Rp ${fmt(pangkalPaidSekarang)} dari Rp ${fmt(student?.pangkal||0)}</div>` : ''}
           </div>

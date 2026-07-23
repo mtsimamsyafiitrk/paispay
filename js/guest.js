@@ -114,8 +114,8 @@ function renderGuestPage() {
       tunggakanHtml += `
       <div style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;overflow:hidden;">
         <div style="background:linear-gradient(135deg,#92400e,#b45309);padding:14px 18px;">
-          <div style="font-size:11px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.5px;">${t.item_name}</div>
-          <div style="font-size:16px;font-weight:800;color:#fff;">🏫 ${t.item_name}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.5px;">${esc(t.item_name)}</div>
+          <div style="font-size:16px;font-weight:800;color:#fff;">🏫 ${esc(t.item_name)}</div>
         </div>
         <div style="padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -172,7 +172,7 @@ function renderGuestPage() {
       ${allTxns.map(t => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid #f5f5f5;">
         <div>
-          <div style="font-size:13px;font-weight:600;">${t.jenis||'—'}</div>
+          <div style="font-size:13px;font-weight:600;">${esc(t.jenis||'—')}</div>
           <div style="font-size:11px;color:#999;">${t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : t.time || '—'}</div>
         </div>
         <div style="font-size:14px;font-weight:700;color:#16a34a;">+${rp(t.nominal)}</div>

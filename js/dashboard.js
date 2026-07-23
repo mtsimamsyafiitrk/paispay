@@ -22,7 +22,7 @@ function renderDashboard() {
     const tkItems = ks.reduce((a,s)=>a+itemsTunggakan(s),0);
     const pct_ = pct(lunas,ks.length);
     return `<tr>
-      <td><strong>${k==='?'?'Kelas Belum Diset':k}</strong></td>
+      <td><strong>${k==='?'?'Kelas Belum Diset':esc(k)}</strong></td>
       <td>${ks.length}</td>
       <td>${lunas} / ${ks.length} <span style="color:var(--text-muted);font-size:11px;">(${pct_}%)</span></td>
       <td>${rp(tkItems)}</td>
@@ -51,9 +51,9 @@ function renderDashboard() {
     tbody2.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Belum ada transaksi tercatat</td></tr>';
   } else {
     tbody2.innerHTML = recent.map(t => `<tr>
-      <td style="font-size:11px;color:var(--text-muted);">${t.time}</td>
-      <td><strong>${t.nama}</strong></td><td>${t.kelas}</td>
-      <td>${t.jenis}</td><td>${rp(t.nominal)}</td>
+      <td style="font-size:11px;color:var(--text-muted);">${esc(t.time)}</td>
+      <td><strong>${esc(t.nama)}</strong></td><td>${esc(t.kelas)}</td>
+      <td>${esc(t.jenis)}</td><td>${rp(t.nominal)}</td>
       <td><span class="badge badge-green">Lunas</span></td>
     </tr>`).join('');
   }

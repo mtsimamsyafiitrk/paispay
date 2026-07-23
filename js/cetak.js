@@ -2,7 +2,7 @@
 function renderCetakPage() {
   const sel = document.getElementById('cetakNama');
   sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
-    appState.students.map(s=>`<option value="${s.nama}">${s.nama} — ${s.kelas}</option>`).join('');
+    appState.students.map(s=>`<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
   document.getElementById('cetakTanggal').value = new Date().toISOString().split('T')[0];
   document.getElementById('cetakTanggalTotal').value = new Date().toISOString().split('T')[0];
 }
@@ -206,11 +206,11 @@ function buildSuratHTML(s, tgl) {
   return `
   <div class="pdf-preview" id="suratPreview">
     <div class="kop-surat">
-      <div class="kop-logo">${getLogo() ? `<img src="${getLogo()}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🕌'}</div>
+      <div class="kop-logo">${getLogo() ? `<img src="${safeUrl(getLogo())}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🕌'}</div>
       <div class="kop-text">
-        <h2>${P.nama||'MADRASAH TERPADU'}</h2>
-        <p>${P.alamat||''}${P.kota?', '+P.kota:''}${P.provinsi?', '+P.provinsi:''}</p>
-        <p>${P.telp?'Telp. '+P.telp:''} ${P.email?'| Email: '+P.email:''} ${P.nsm?'| NSM: '+P.nsm:''}</p>
+        <h2>${esc(P.nama||'MADRASAH TERPADU')}</h2>
+        <p>${esc(P.alamat||'')}${P.kota?', '+esc(P.kota):''}${P.provinsi?', '+esc(P.provinsi):''}</p>
+        <p>${P.telp?'Telp. '+esc(P.telp):''} ${P.email?'| Email: '+esc(P.email):''} ${P.nsm?'| NSM: '+esc(P.nsm):''}</p>
       </div>
     </div>
     <div class="surat-body">
@@ -218,9 +218,9 @@ function buildSuratHTML(s, tgl) {
       <p style="margin-bottom:12px;line-height:2;font-size:11pt;">
         Kepada Yth.<br>
         <strong>Orang Tua / Wali Santri</strong><br>
-        Nama Santri &nbsp;: <strong>${s.nama}</strong><br>
-        Kelas &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${s.kelas}<br>
-        NISN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${s.nisn||'—'}
+        Nama Santri &nbsp;: <strong>${esc(s.nama)}</strong><br>
+        Kelas &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(s.kelas)}<br>
+        NISN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(s.nisn||'—')}
       </p>
       <p style="text-align:justify;line-height:1.8;margin-bottom:12px;font-size:11pt;">
         Dengan hormat, bersama surat ini kami sampaikan informasi pembayaran santri yang bersangkutan untuk Tahun Ajaran Berjalan sebagaimana tercantum di bawah ini:
@@ -240,7 +240,7 @@ function buildSuratHTML(s, tgl) {
             const sisa = Math.max(0, t.nominal - t.paid_amount);
             return `<tr>
               <td style="text-align:center">${++no}</td>
-              <td>${t.item_name}</td>
+              <td>${esc(t.item_name)}</td>
               <td style="font-size:10pt">Terbayar ${t.paid_amount.toLocaleString('id-ID')}</td>
               <td style="text-align:right">${t.nominal.toLocaleString('id-ID')}</td>
               <td style="text-align:right">${t.paid_amount.toLocaleString('id-ID')}</td>
@@ -261,12 +261,12 @@ function buildSuratHTML(s, tgl) {
         <div class="ttd-box">
           <p>Mengetahui,<br>Kepala Madrasah</p>
           <div class="ttd-space"></div>
-          <p><strong>${P.kepsek||'__________________'}</strong>${P.kepsek_nip?'<br><small>'+P.kepsek_nip+'</small>':''}</p>
+          <p><strong>${esc(P.kepsek||'__________________')}</strong>${P.kepsek_nip?'<br><small>'+esc(P.kepsek_nip)+'</small>':''}</p>
         </div>
         <div class="ttd-box">
-          <p>${P.kota||'Tarakan'}, ${tglFmt}<br>Bendahara</p>
+          <p>${esc(P.kota||'Tarakan')}, ${tglFmt}<br>Bendahara</p>
           <div class="ttd-space"></div>
-          <p><strong>${P.bendahara||'__________________'}</strong>${P.bendahara_nip?'<br><small>'+P.bendahara_nip+'</small>':''}</p>
+          <p><strong>${esc(P.bendahara||'__________________')}</strong>${P.bendahara_nip?'<br><small>'+esc(P.bendahara_nip)+'</small>':''}</p>
         </div>
       </div>
     </div>
@@ -312,7 +312,7 @@ function printHTML(bodyHTML, filename) {
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>${filename}</title>
+  <title>${esc(filename)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #fff; font-family: 'Times New Roman', Times, serif; }
@@ -376,14 +376,14 @@ function buildRekapTotalHTML(kelasFil, tgl) {
   return `
   <div class="pdf-preview" id="suratPreviewTotal">
     <div class="kop-surat">
-      <div class="kop-logo">${getLogo() ? `<img src="${getLogo()}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🕌'}</div>
+      <div class="kop-logo">${getLogo() ? `<img src="${safeUrl(getLogo())}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🕌'}</div>
       <div class="kop-text">
-        <h2>${P2.nama}</h2>
-        <p>${P2.alamat}${P2.kota?', '+P2.kota:''}${P2.provinsi?', '+P2.provinsi:''}<br>${P2.telp?'Telp. '+P2.telp+' ':''} ${P2.email?'| Email: '+P2.email:''}</p>
+        <h2>${esc(P2.nama)}</h2>
+        <p>${esc(P2.alamat)}${P2.kota?', '+esc(P2.kota):''}${P2.provinsi?', '+esc(P2.provinsi):''}<br>${P2.telp?'Telp. '+esc(P2.telp)+' ':''} ${P2.email?'| Email: '+esc(P2.email):''}</p>
       </div>
     </div>
     <div class="surat-body">
-      <h3>REKAP PEMBAYARAN SANTRI ${kelasFil?'KELAS '+kelasFil:'SELURUH KELAS'}</h3>
+      <h3>REKAP PEMBAYARAN SANTRI ${kelasFil?'KELAS '+esc(kelasFil):'SELURUH KELAS'}</h3>
       <p style="margin-bottom:10px;">Tahun Ajaran 2025/2026 &nbsp;|&nbsp; Per Tanggal: ${tglFmt}<br>
       Total Santri: <strong>${list.length}</strong> orang</p>
       <table class="data-table-pdf">
@@ -394,7 +394,7 @@ function buildRekapTotalHTML(kelasFil, tgl) {
             const itemBayar = appState.tagihan.filter(t=>t.nama===s.nama).reduce((a,t)=>a+(t.paid_amount||0),0);
             return `<tr${tk>0?' style="background:#fff5f5;"':''}>
               <td style="text-align:center">${i+1}</td>
-              <td>${s.nama}</td><td>${s.kelas}</td>
+              <td>${esc(s.nama)}</td><td>${esc(s.kelas)}</td>
               <td style="text-align:right">${((s.spp_paid_months||[]).length*(s.spp||0)).toLocaleString('id-ID')}</td>
               <td style="text-align:right">${itemBayar.toLocaleString('id-ID')}</td>
               <td style="text-align:right;${tk>0?'color:#c0392b;font-weight:bold;':''}">${tk>0?tk.toLocaleString('id-ID'):'Lunas'}</td>
@@ -409,8 +409,8 @@ function buildRekapTotalHTML(kelasFil, tgl) {
         </tbody>
       </table>
       <div class="ttd-section" style="margin-top:20px;">
-        <div class="ttd-box"><p>Mengetahui,<br>Kepala Madrasah</p><div class="ttd-space"></div><p><strong>${P2.kepsek}</strong>${P2.kepsek_nip?'<br><small>'+P2.kepsek_nip+'</small>':''}</p></div>
-        <div class="ttd-box"><p>${P2.kota||'Tarakan'}, ${tglFmt}<br>Bendahara</p><div class="ttd-space"></div><p><strong>${P2.bendahara}</strong>${P2.bendahara_nip?'<br><small>'+P2.bendahara_nip+'</small>':''}</p></div>
+        <div class="ttd-box"><p>Mengetahui,<br>Kepala Madrasah</p><div class="ttd-space"></div><p><strong>${esc(P2.kepsek)}</strong>${P2.kepsek_nip?'<br><small>'+esc(P2.kepsek_nip)+'</small>':''}</p></div>
+        <div class="ttd-box"><p>${esc(P2.kota||'Tarakan')}, ${tglFmt}<br>Bendahara</p><div class="ttd-space"></div><p><strong>${esc(P2.bendahara)}</strong>${P2.bendahara_nip?'<br><small>'+esc(P2.bendahara_nip)+'</small>':''}</p></div>
       </div>
     </div>
   </div>`;

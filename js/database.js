@@ -269,7 +269,7 @@ async function loadDataForTA() {
   renderTunggakan();
   const sel = document.getElementById('cetakNama');
   if (sel) sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
-    appState.students.map(s => `<option value="${s.nama}">${s.nama} — ${s.kelas}</option>`).join('');
+    appState.students.map(s => `<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
 }
 
 async function initApp() {
@@ -299,7 +299,7 @@ async function initApp() {
   loadTemplateKuitansi().catch(()=>{});
   const sel = document.getElementById('cetakNama');
   if (sel) sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
-    appState.students.map(s => `<option value="${s.nama}">${s.nama} — ${s.kelas}</option>`).join('');
+    appState.students.map(s => `<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
   const t1 = document.getElementById('cetakTanggal');
   const t2 = document.getElementById('cetakTanggalTotal');
   if (t1) t1.value = new Date().toISOString().split('T')[0];

@@ -18,14 +18,14 @@ function showDetail(nama) {
   // Warning nama mirip
   const dupesHtml = dupes.length ? `
     <div style="background:#fef9c3;border-radius:8px;padding:8px 12px;margin-top:10px;font-size:12px;">
-      ⚠️ Nama mirip ditemukan: ${dupes.map(d => `<strong>${d.a === s.nama ? d.b : d.a}</strong> (${d.score}%)`).join(', ')}
+      ⚠️ Nama mirip ditemukan: ${dupes.map(d => `<strong>${esc(d.a === s.nama ? d.b : d.a)}</strong> (${d.score}%)`).join(', ')}
       — Periksa apakah ini siswa yang sama.
     </div>` : '';
 
   document.getElementById('modalBody').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-      <div><div style="font-size:11px;color:var(--text-muted);">Kelas</div><div style="font-weight:700;">${s.kelas}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${s.nisn||'—'}</div></div>
+      <div><div style="font-size:11px;color:var(--text-muted);">Kelas</div><div style="font-weight:700;">${esc(s.kelas)}</div></div>
+      <div><div style="font-size:11px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${esc(s.nisn||'—')}</div></div>
       <div><div style="font-size:11px;color:var(--text-muted);">SPP/bulan</div><div style="font-weight:700;">${rp(s.spp)}</div></div>
       <div><div style="font-size:11px;color:var(--text-muted);">Item Tagihan</div><div style="font-weight:700;">${rp(tagPaid)} / ${rp(tagNominal)}</div></div>
     </div>
@@ -41,8 +41,8 @@ function showDetail(nama) {
     ${otherTAHtml}
     ${dupesHtml}
     <div style="margin-top:16px;display:flex;gap:8px;">
-      <button class="btn btn-primary" onclick="closeModal();quickInput('${s.nama.replace(/'/g,"\\'")}')">💳 Bayar Sekarang</button>
-      <button class="btn btn-outline" onclick="closeModal();showCetakForStudent('${s.nama.replace(/'/g,"\\'")}')">📄 Cetak Surat</button>
+      <button class="btn btn-primary" onclick="closeModal();quickInput('${escJs(s.nama)}')">💳 Bayar Sekarang</button>
+      <button class="btn btn-outline" onclick="closeModal();showCetakForStudent('${escJs(s.nama)}')">📄 Cetak Surat</button>
     </div>
   `;
   document.getElementById('detailModal').classList.add('open');

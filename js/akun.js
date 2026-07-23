@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const logo = getLogo();
   if (logo) {
     const loginLogo = document.getElementById('loginLogo');
-    if (loginLogo) loginLogo.innerHTML = `<img src="${logo}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
+    if (loginLogo) loginLogo.innerHTML = `<img src="${safeUrl(logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
   }
 });
 

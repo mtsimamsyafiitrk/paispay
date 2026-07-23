@@ -75,7 +75,7 @@ function applyLogoPreview(dataUrl) {
   const removeBtn = document.getElementById('pf_logo_remove');
   if (!prev) return;
   if (dataUrl) {
-    prev.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+    prev.innerHTML = `<img src="${safeUrl(dataUrl)}" style="width:100%;height:100%;object-fit:cover;">`;
     prev.style.borderStyle = 'solid';
     prev.style.borderColor = 'var(--primary-light)';
     if (removeBtn) removeBtn.style.display = 'inline-block';
@@ -92,14 +92,14 @@ function applyLogoEverywhere(dataUrl) {
   const bannerLogo = document.getElementById('bannerLogoWrap');
   if (bannerLogo) {
     bannerLogo.innerHTML = dataUrl
-      ? `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">`
+      ? `<img src="${safeUrl(dataUrl)}" style="width:100%;height:100%;object-fit:cover;">`
       : '🕌';
   }
   // Sidebar
   const sidebarLogo = document.getElementById('sidebarLogoWrap');
   if (sidebarLogo) {
     sidebarLogo.innerHTML = dataUrl
-      ? `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">`
+      ? `<img src="${safeUrl(dataUrl)}" style="width:100%;height:100%;object-fit:cover;">`
       : '🕌';
   }
 }
@@ -110,12 +110,12 @@ function applyProfil(p) {
   if (el('profilNama')) el('profilNama').textContent = p.nama;
   if (el('profilAlamat')) el('profilAlamat').textContent = [p.alamat, p.kota, p.provinsi].filter(Boolean).join(', ');
   if (el('profilKontak')) el('profilKontak').innerHTML = [
-    p.telp ? '📞 ' + p.telp : '',
-    p.email ? '✉️ ' + p.email : '',
-    p.ta ? '📅 TA ' + p.ta : ''
+    p.telp ? '📞 ' + esc(p.telp) : '',
+    p.email ? '✉️ ' + esc(p.email) : '',
+    p.ta ? '📅 TA ' + esc(p.ta) : ''
   ].filter(Boolean).join(' &nbsp;|&nbsp; ');
   const sn = document.querySelector('.sidebar-logo .school-name');
-  if (sn) sn.innerHTML = p.nama.replace(/\s+/, '<br>');
+  if (sn) sn.innerHTML = esc(p.nama).replace(/\s+/, '<br>');
   // Apply logo
   applyLogoEverywhere(getLogo());
 }
