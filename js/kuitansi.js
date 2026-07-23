@@ -78,7 +78,7 @@ async function hapusKuitansi(id) {
       const tgl = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : '—';
       document.getElementById('modalHapusKwtNama').textContent = r.nama || '—';
       document.getElementById('modalHapusKwtDetail').innerHTML =
-        `${r.no_kuitansi || '—'} &nbsp;·&nbsp; Rp ${fmt(r.total)} &nbsp;·&nbsp; TA ${r.ta_label || '—'}<br>
+        `${esc(r.no_kuitansi || '—')} &nbsp;·&nbsp; Rp ${fmt(r.total)} &nbsp;·&nbsp; TA ${esc(r.ta_label || '—')}<br>
          <span style="font-size:11px;color:#999;">${tgl}</span>`;
     } else {
       document.getElementById('modalHapusKwtNama').textContent = 'Data Kuitansi';
@@ -232,19 +232,19 @@ async function loadRiwayatKuitansi() {
               const jam = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
               const items = Array.isArray(r.items) ? r.items.map(i => i.name + (i.bulan?' ('+( MONTH_FULL[i.bulan]||i.bulan)+')':'')).join(', ') : '—';
               const statusBadge = r.dikoreksi_oleh
-                ? `<span style="background:#fef9c3;color:#92400e;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">🔄 Dikoreksi</span><br><span style="font-size:10px;color:#999;">${r.dikoreksi_oleh}</span>`
+                ? `<span style="background:#fef9c3;color:#92400e;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">🔄 Dikoreksi</span><br><span style="font-size:10px;color:#999;">${esc(r.dikoreksi_oleh)}</span>`
                 : r.is_koreksi
-                ? `<span style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">📋 Kuitansi Koreksi</span><br><span style="font-size:10px;color:#999;">Ref: ${r.ref_no_kuitansi||'—'}</span>`
+                ? `<span style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">📋 Kuitansi Koreksi</span><br><span style="font-size:10px;color:#999;">Ref: ${esc(r.ref_no_kuitansi||'—')}</span>`
                 : r.dicetak
                 ? `<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">✅ Dicetak</span>`
                 : `<span style="background:#fef9c3;color:#854d0e;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">⏳ Belum</span>`;
               return `<tr>
-                <td style="font-weight:700;font-size:12px;color:var(--primary);">${r.no_kuitansi||'—'}</td>
+                <td style="font-weight:700;font-size:12px;color:var(--primary);">${esc(r.no_kuitansi||'—')}</td>
                 <td style="font-size:12px;">${tgl}<br><span style="color:var(--text-muted);font-size:11px;">${jam}</span></td>
-                <td><strong>${r.nama}</strong></td>
-                <td>${r.kelas||'—'}</td>
-                <td><span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${r.ta_label||'—'}</span></td>
-                <td style="font-size:12px;max-width:180px;white-space:normal;">${items}</td>
+                <td><strong>${esc(r.nama)}</strong></td>
+                <td>${esc(r.kelas||'—')}</td>
+                <td><span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${esc(r.ta_label||'—')}</span></td>
+                <td style="font-size:12px;max-width:180px;white-space:normal;">${esc(items)}</td>
                 <td style="text-align:right;font-weight:700;color:var(--primary-light);">Rp ${fmt(r.total)}</td>
                 <td>${statusBadge}</td>
                 <td style="white-space:nowrap;">

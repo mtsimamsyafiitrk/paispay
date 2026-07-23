@@ -59,9 +59,9 @@ async function renderLogSiswa(resetPage = true) {
           return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:#fafafa;border:1px solid var(--border);margin-bottom:6px;">
             <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;min-width:40px;">${jam}</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-weight:700;font-size:13px;">${r.nama} <span style="font-weight:400;color:var(--text-muted);">— ${r.kelas}</span></div>
-              <div style="font-size:12px;color:#555;margin-top:2px;">${r.jenis}</div>
-              ${r.catatan ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">💬 ${r.catatan}</div>` : ''}
+              <div style="font-weight:700;font-size:13px;">${esc(r.nama)} <span style="font-weight:400;color:var(--text-muted);">— ${esc(r.kelas)}</span></div>
+              <div style="font-size:12px;color:#555;margin-top:2px;">${esc(r.jenis)}</div>
+              ${r.catatan ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">💬 ${esc(r.catatan)}</div>` : ''}
             </div>
             <div style="text-align:right;white-space:nowrap;">
               <div style="font-weight:700;font-size:14px;color:var(--primary-light);">Rp ${fmt(r.nominal)}</div>
@@ -141,7 +141,7 @@ function renderSiswaTable(resetPage = true) {
     } else {
       monthBadges = MONTHS.map(m=>`<span style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${(s.spp_paid_months||[]).includes(m)?'var(--primary)':'#e5e0d8'};color:${(s.spp_paid_months||[]).includes(m)?'#fff':'#999'};">${m}</span>`).join('');
     }
-    const nama_safe = s.nama.replace(/'/g, "\'");
+    const nama_safe = escJs(s.nama);
     const no = start + i + 1;
     const sk = s.status_kelulusan || '';
     const skBadge = sk && STATUS_KELULUSAN_BADGE[sk]
@@ -149,10 +149,10 @@ function renderSiswaTable(resetPage = true) {
       : '';
     const rowStyle = sk ? 'opacity:0.65;' : '';
     return `<tr style="${rowStyle}">
-      <td class="chk-col"><input type="checkbox" class="row-chk" data-nama="${s.nama}" onchange="toggleRowSelect(this)"></td>
+      <td class="chk-col"><input type="checkbox" class="row-chk" data-nama="${esc(s.nama)}" onchange="toggleRowSelect(this)"></td>
       <td>${no}</td>
-      <td><strong>${s.nama}</strong>${skBadge}</td>
-      <td>${kelasLabel(s)}</td>
+      <td><strong>${esc(s.nama)}</strong>${skBadge}</td>
+      <td>${esc(kelasLabel(s))}</td>
       <td>${rp(s.spp)}</td>
       <td><div style="line-height:1.6;">${monthBadges}</div></td>
       <td>
@@ -212,7 +212,7 @@ function renderTunggakan() {
 
   const itemCards = Object.values(itemStats).map(it => `
     <div class="stat-card blue">
-      <div class="stat-label">Tunggakan ${it.name}</div>
+      <div class="stat-label">Tunggakan ${esc(it.name)}</div>
       <div class="stat-value" style="font-size:18px;">${rp(it.total)}</div>
       <div class="stat-sub">${it.count} santri</div>
       <div class="stat-icon">📋</div>
@@ -260,13 +260,13 @@ function onTunggakanSearch() {
     const badge = tk > 0
       ? `<span style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;">Tunggak ${rp(tk)}</span>`
       : `<span style="font-size:11px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
-    return `<div class="tk-sugg-item" data-idx="${i}" data-nama="${s.nama.replace(/"/g,'&quot;')}"
-      onmousedown="selectTunggakanStudent('${s.nama.replace(/'/g,"\\'")}')"
+    return `<div class="tk-sugg-item" data-idx="${i}" data-nama="${esc(s.nama)}"
+      onmousedown="selectTunggakanStudent('${escJs(s.nama)}')"
       onmouseenter="hoverTunggakanItem(${i})"
       style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;">
       <div>
-        <div style="font-weight:600;font-size:13.5px;">${s.nama}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${kelasLabel(s)}</div>
+        <div style="font-weight:600;font-size:13.5px;">${esc(s.nama)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${esc(kelasLabel(s))}</div>
       </div>
       ${badge}
     </div>`;
@@ -314,12 +314,12 @@ function selectTunggakanStudent(nama) {
 }
 
 function renderTunggakanDetail(s) {
-  const nameSafe = s.nama.replace(/'/g, "\\'");
+  const nameSafe = escJs(s.nama);
   const headerBar = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <div>
-        <div style="font-size:20px;font-weight:800;color:var(--primary);">${s.nama}</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">${kelasLabel(s)} &nbsp;•&nbsp; NISN: ${s.nisn || '—'}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--primary);">${esc(s.nama)}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">${esc(kelasLabel(s))} &nbsp;•&nbsp; NISN: ${esc(s.nisn || '—')}</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" onclick="quickInput('${nameSafe}')">💳 Bayar Sekarang</button>
@@ -349,7 +349,7 @@ function renderTunggakanDetail(s) {
     const lunas = sisa <= 0;
     const pctPaid = pct(t.paid_amount, t.nominal);
     return `<div style="margin-bottom:8px;">
-      <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:8px;">📋 ${t.item_name}</div>
+      <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:8px;">📋 ${esc(t.item_name)}</div>
       <div style="background:var(--bg);border-radius:12px;padding:14px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
           <span>Tagihan</span><strong>${rp(t.nominal)}</strong>

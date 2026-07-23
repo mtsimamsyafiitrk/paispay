@@ -32,13 +32,13 @@ function renderPromosiStudentList() {
     if (s.kelas !== lastKelas) {
       lastKelas = s.kelas;
       html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-pale);margin-top:${i>0?'8px':'0'};">
-        Kelas ${s.kelas}
+        Kelas ${esc(s.kelas)}
       </div>`;
     }
 
     const sel     = promosiMap.has(s.nama);
     const action  = promosiMap.get(s.nama) || 'naik';
-    const nameSafe = s.nama.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const nameSafe = escJs(s.nama);
     const nextKelas = s.kelas === '7' ? '8' : s.kelas === '8' ? '9' : null;
     const nextLabel = nextKelas
       ? `<span style="color:var(--primary);font-weight:600;">→ Kelas ${nextKelas}</span>`
@@ -48,8 +48,8 @@ function renderPromosiStudentList() {
       <input type="checkbox" ${sel?'checked':''} onchange="togglePromosiStudent('${nameSafe}',this.checked)"
         style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;font-size:13px;">${s.nama}</div>
-        <div style="font-size:11px;color:var(--text-muted);">Kelas ${s.kelas}</div>
+        <div style="font-weight:600;font-size:13px;">${esc(s.nama)}</div>
+        <div style="font-size:11px;color:var(--text-muted);">Kelas ${esc(s.kelas)}</div>
       </div>
       ${sel ? `
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 9px;border-radius:6px;
@@ -63,7 +63,7 @@ function renderPromosiStudentList() {
             onchange="setStudentPromosiAction('${nameSafe}','tinggal')" style="accent-color:var(--danger);"> Tinggal Kelas
         </label>
         <div style="font-size:12px;min-width:90px;text-align:right;">
-          ${action==='naik' ? nextLabel : `<span style="color:var(--text-muted);">Tetap Kls ${s.kelas}</span>`}
+          ${action==='naik' ? nextLabel : `<span style="color:var(--text-muted);">Tetap Kls ${esc(s.kelas)}</span>`}
         </div>
       ` : `<div style="font-size:11px;color:var(--border);min-width:200px;text-align:right;">—</div>`}
     </div>`;
@@ -365,7 +365,7 @@ function openEditPembayaran(nama) {
     } else {
       tagihanWrap.innerHTML = siswaTagihan.map(t => `
         <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-          <div style="flex:1;font-size:13px;font-weight:600;">${t.item_name}</div>
+          <div style="flex:1;font-size:13px;font-weight:600;">${esc(t.item_name)}</div>
           <div style="font-size:12px;color:var(--text-muted);">Total: ${rp(t.nominal)}</div>
           <div style="display:flex;align-items:center;gap:6px;">
             <label style="font-size:12px;">Terbayar:</label>

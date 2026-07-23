@@ -48,9 +48,9 @@ function previewBukti(input) {
   const wrap = document.getElementById('laporBuktiPreview');
   if (laporBuktiFile.type.startsWith('image/')) {
     const url = URL.createObjectURL(laporBuktiFile);
-    wrap.innerHTML = `<img src="${url}" style="max-width:100%;max-height:160px;border-radius:8px;"><br><span style="font-size:11px;color:var(--text-muted);">${laporBuktiFile.name}</span>`;
+    wrap.innerHTML = `<img src="${url}" style="max-width:100%;max-height:160px;border-radius:8px;"><br><span style="font-size:11px;color:var(--text-muted);">${esc(laporBuktiFile.name)}</span>`;
   } else {
-    wrap.innerHTML = `📄 <strong>${laporBuktiFile.name}</strong><br><span style="font-size:11px;color:var(--text-muted);">PDF terpilih</span>`;
+    wrap.innerHTML = `📄 <strong>${esc(laporBuktiFile.name)}</strong><br><span style="font-size:11px;color:var(--text-muted);">PDF terpilih</span>`;
   }
   document.getElementById('laporBuktiWrap').style.borderColor = 'var(--primary)';
 }
@@ -154,14 +154,14 @@ async function loadRiwayatLaporan() {
       <div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
           <div>
-            <div style="font-weight:700;font-size:14px;">${r.item_label}</div>
+            <div style="font-weight:700;font-size:14px;">${esc(r.item_label)}</div>
             <div style="font-size:12px;color:var(--text-muted);">Rp ${fmt(r.nominal)}</div>
           </div>
-          <span style="${statusStyle[r.status]||statusStyle.pending}border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;">${statusLabel[r.status]||r.status}</span>
+          <span style="${statusStyle[r.status]||statusStyle.pending}border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;">${esc(statusLabel[r.status]||r.status)}</span>
         </div>
-        ${r.catatan ? `<div style="font-size:12px;color:#555;margin-bottom:6px;">💬 ${r.catatan}</div>` : ''}
-        ${r.bukti_url ? `<a href="${r.bukti_url}" target="_blank" style="font-size:12px;color:var(--primary);text-decoration:none;">📎 Lihat Bukti</a>` : ''}
-        ${r.admin_note ? `<div style="font-size:12px;color:#555;margin-top:6px;padding:8px;background:var(--primary-pale);border-radius:8px;">📝 Catatan admin: ${r.admin_note}</div>` : ''}
+        ${r.catatan ? `<div style="font-size:12px;color:#555;margin-bottom:6px;">💬 ${esc(r.catatan)}</div>` : ''}
+        ${r.bukti_url ? `<a href="${safeUrl(r.bukti_url)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--primary);text-decoration:none;">📎 Lihat Bukti</a>` : ''}
+        ${r.admin_note ? `<div style="font-size:12px;color:#555;margin-top:6px;padding:8px;background:var(--primary-pale);border-radius:8px;">📝 Catatan admin: ${esc(r.admin_note)}</div>` : ''}
         <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">${new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
       </div>`).join('');
     // Update badge
@@ -205,17 +205,17 @@ async function loadLaporanMasuk() {
       <div class="card" style="margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
           <div>
-            <div style="font-weight:700;font-size:15px;">${r.nama} <span style="font-size:12px;font-weight:400;color:var(--text-muted);">— Kelas ${r.kelas||'?'}</span></div>
-            <div style="font-size:13px;color:var(--primary);font-weight:600;">${r.item_label}</div>
+            <div style="font-weight:700;font-size:15px;">${esc(r.nama)} <span style="font-size:12px;font-weight:400;color:var(--text-muted);">— Kelas ${esc(r.kelas||'?')}</span></div>
+            <div style="font-size:13px;color:var(--primary);font-weight:600;">${esc(r.item_label)}</div>
             <div style="font-size:13px;margin-top:2px;">Nominal: <strong>Rp ${fmt(r.nominal)}</strong></div>
           </div>
           <span style="${r.status==='pending'?'background:#fef9c3;color:#854d0e;':r.status==='diterima'?'background:#dcfce7;color:#166534;':'background:#fee2e2;color:#991b1b;'}border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;white-space:nowrap;">
             ${r.status==='pending'?'⏳ Pending':r.status==='diterima'?'✅ Diterima':'❌ Ditolak'}
           </span>
         </div>
-        ${r.catatan ? `<div style="font-size:13px;color:#555;margin-bottom:10px;padding:8px 12px;background:#f9f9f9;border-radius:8px;">💬 "${r.catatan}"</div>` : ''}
+        ${r.catatan ? `<div style="font-size:13px;color:#555;margin-bottom:10px;padding:8px 12px;background:#f9f9f9;border-radius:8px;">💬 "${esc(r.catatan)}"</div>` : ''}
         ${r.bukti_url ? `<div style="margin-bottom:10px;">
-          <a href="${r.bukti_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--primary);text-decoration:none;border:1px solid var(--primary);padding:6px 14px;border-radius:8px;">📎 Lihat Bukti Pembayaran</a>
+          <a href="${safeUrl(r.bukti_url)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--primary);text-decoration:none;border:1px solid var(--primary);padding:6px 14px;border-radius:8px;">📎 Lihat Bukti Pembayaran</a>
         </div>` : '<div style="font-size:12px;color:#999;margin-bottom:10px;">Tidak ada bukti dilampirkan</div>'}
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Dilaporkan: ${new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
         ${r.status === 'pending' ? `
@@ -223,7 +223,7 @@ async function loadLaporanMasuk() {
           <input type="text" id="note_${r.id}" placeholder="Catatan (opsional)" style="flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;">
           <button class="btn btn-primary" style="font-size:12px;padding:8px 14px;" onclick="updateLaporan('${r.id}','diterima')">✅ Terima</button>
           <button class="btn btn-outline" style="font-size:12px;padding:8px 14px;color:var(--danger);border-color:var(--danger);" onclick="updateLaporan('${r.id}','ditolak')">❌ Tolak</button>
-        </div>` : `${r.admin_note ? `<div style="font-size:12px;padding:8px 12px;background:var(--primary-pale);border-radius:8px;color:var(--primary);">📝 Catatan admin: ${r.admin_note}</div>` : ''}`}
+        </div>` : `${r.admin_note ? `<div style="font-size:12px;padding:8px 12px;background:var(--primary-pale);border-radius:8px;color:var(--primary);">📝 Catatan admin: ${esc(r.admin_note)}</div>` : ''}`}
       </div>`).join('');
   } catch(e) {
     el.innerHTML = `<div style="color:var(--danger);padding:16px;">Gagal: ${e.message}</div>`;

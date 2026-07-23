@@ -252,7 +252,7 @@ function buildKuitansiHTML(data, kt, label) {
   const warnaBorder = isKoreksi ? '#b45309' : w;
 
   const logoHtml = (kt.show_logo && logoB64)
-    ? `<img src="${logoB64}" style="width:52px;height:52px;object-fit:contain;">`
+    ? `<img src="${safeUrl(logoB64)}" style="width:52px;height:52px;object-fit:contain;">`
     : (kt.show_logo ? `<div style="width:52px;height:52px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🕌</div>` : '');
 
   const itemRows = data.items.map(i => {
@@ -265,7 +265,7 @@ function buildKuitansiHTML(data, kt, label) {
       ? ' <span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:3px;font-family:sans-serif;">KOREKSI</span>' : '';
     const namaItem = i.name + (i.bulan && !i.name.includes('(') ? ' (' + (MONTH_FULL[i.bulan]||i.bulan) + ')' : '');
     return `<tr style="${rowStyle}">
-      <td style="padding:4px 8px;border:1px solid #ddd;font-size:${fs}px;">${namaItem}${badge}</td>
+      <td style="padding:4px 8px;border:1px solid #ddd;font-size:${fs}px;">${esc(namaItem)}${badge}</td>
       <td style="padding:4px 8px;border:1px solid #ddd;text-align:right;font-size:${fs}px;">${dibatalkan ? '<s>Rp '+fmt(i.amount)+'</s>' : 'Rp '+fmt(i.amount)}</td>
     </tr>`;
   }).join('');
@@ -276,18 +276,18 @@ function buildKuitansiHTML(data, kt, label) {
     const kiri  = kt.ttd_kiri  || 'Bendahara / Admin';
     const kanan = kt.ttd_kanan || '';
     const ttdImgHtml = (kt.use_ttd_online && kt.ttd_online_img)
-      ? `<img src="${kt.ttd_online_img}" style="height:40px;max-width:130px;object-fit:contain;display:block;margin:0 auto;">`
+      ? `<img src="${safeUrl(kt.ttd_online_img)}" style="height:40px;max-width:130px;object-fit:contain;display:block;margin:0 auto;">`
       : `<div style="height:40px;"></div>`;
 
     const blokKiri = `<div style="min-width:130px;text-align:center;">
-      <div style="margin-bottom:4px;">${kiri}</div>
+      <div style="margin-bottom:4px;">${esc(kiri)}</div>
       ${ttdImgHtml}
       <div style="border-bottom:1.5px solid #333;width:130px;margin:0 auto;"></div>
       <div style="margin-top:4px;font-size:${fs-1}px;color:#555;">(Tanda Tangan)</div>
     </div>`;
 
     const blokKanan = kanan ? `<div style="min-width:130px;text-align:center;">
-      <div style="margin-bottom:4px;">${kanan}</div>
+      <div style="margin-bottom:4px;">${esc(kanan)}</div>
       <div style="height:40px;"></div>
       <div style="border-bottom:1.5px solid #333;width:130px;margin:0 auto;"></div>
       <div style="margin-top:4px;font-size:${fs-1}px;color:#555;">(Tanda Tangan)</div>
@@ -305,9 +305,9 @@ function buildKuitansiHTML(data, kt, label) {
     <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid ${warnaBorder};padding-bottom:8px;margin-bottom:8px;">
       ${logoHtml}
       <div style="flex:1;text-align:center;">
-        <div style="font-size:${fs+4}px;font-weight:700;color:${warnaBorder};">${namaLbg}</div>
-        ${alamatLbg ? `<div style="font-size:${fs-1}px;color:#555;">${alamatLbg}</div>` : ''}
-        ${kontakLbg ? `<div style="font-size:${fs-1}px;color:#555;">${kontakLbg}</div>` : ''}
+        <div style="font-size:${fs+4}px;font-weight:700;color:${warnaBorder};">${esc(namaLbg)}</div>
+        ${alamatLbg ? `<div style="font-size:${fs-1}px;color:#555;">${esc(alamatLbg)}</div>` : ''}
+        ${kontakLbg ? `<div style="font-size:${fs-1}px;color:#555;">${esc(kontakLbg)}</div>` : ''}
       </div>
       <div style="text-align:right;min-width:80px;">
         <span style="background:${warnaBorder};color:#fff;padding:3px 8px;border-radius:4px;font-size:${fs-1}px;font-weight:700;">${label}</span>
@@ -317,17 +317,17 @@ function buildKuitansiHTML(data, kt, label) {
     <!-- Judul -->
     <div style="text-align:center;margin-bottom:8px;">
       <div style="font-size:${fs+2}px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${warnaBorder};">
-        ${isKoreksi ? 'KUITANSI KOREKSI' : kt.judul}
+        ${isKoreksi ? 'KUITANSI KOREKSI' : esc(kt.judul)}
       </div>
-      ${isKoreksi && data.ref_no_kuitansi ? `<div style="font-size:${fs-1}px;color:#b45309;margin-top:3px;font-family:sans-serif;">📋 Koreksi atas Kuitansi No. <strong>${data.ref_no_kuitansi}</strong></div>` : ''}
+      ${isKoreksi && data.ref_no_kuitansi ? `<div style="font-size:${fs-1}px;color:#b45309;margin-top:3px;font-family:sans-serif;">📋 Koreksi atas Kuitansi No. <strong>${esc(data.ref_no_kuitansi)}</strong></div>` : ''}
     </div>
 
     <!-- Info -->
     <table style="width:100%;font-size:${fs}px;margin-bottom:8px;border-collapse:collapse;">
-      ${kt.show_nokwt ? `<tr><td style="width:28%;padding:2px 0;">No. Kuitansi</td><td style="width:2%">:</td><td style="font-weight:700;">${noKwt}</td><td style="width:24%;text-align:right;">Tanggal</td><td style="width:2%">:</td><td style="font-weight:700;">${data.time}</td></tr>` : `<tr><td colspan="6" style="text-align:right;padding:2px 0;font-size:${fs-1}px;color:#666;">Tanggal: ${data.time}</td></tr>`}
-      <tr><td style="padding:2px 0;">Nama Santri</td><td>:</td><td style="font-weight:700;" colspan="4">${data.nama}</td></tr>
-      <tr><td style="padding:2px 0;">Kelas</td><td>:</td><td colspan="4">${data.kelas}${kt.show_nisn && data.nisn ? ' &nbsp;|&nbsp; NISN: ' + data.nisn : ''}</td></tr>
-      ${kt.show_catatan && data.catatan ? `<tr><td style="padding:2px 0;">Keterangan</td><td>:</td><td colspan="4" style="font-style:italic;">${data.catatan}</td></tr>` : ''}
+      ${kt.show_nokwt ? `<tr><td style="width:28%;padding:2px 0;">No. Kuitansi</td><td style="width:2%">:</td><td style="font-weight:700;">${esc(noKwt)}</td><td style="width:24%;text-align:right;">Tanggal</td><td style="width:2%">:</td><td style="font-weight:700;">${esc(data.time)}</td></tr>` : `<tr><td colspan="6" style="text-align:right;padding:2px 0;font-size:${fs-1}px;color:#666;">Tanggal: ${esc(data.time)}</td></tr>`}
+      <tr><td style="padding:2px 0;">Nama Santri</td><td>:</td><td style="font-weight:700;" colspan="4">${esc(data.nama)}</td></tr>
+      <tr><td style="padding:2px 0;">Kelas</td><td>:</td><td colspan="4">${esc(data.kelas)}${kt.show_nisn && data.nisn ? ' &nbsp;|&nbsp; NISN: ' + esc(data.nisn) : ''}</td></tr>
+      ${kt.show_catatan && data.catatan ? `<tr><td style="padding:2px 0;">Keterangan</td><td>:</td><td colspan="4" style="font-style:italic;">${esc(data.catatan)}</td></tr>` : ''}
     </table>
 
     <!-- Item -->
@@ -347,7 +347,7 @@ function buildKuitansiHTML(data, kt, label) {
 
     ${ttdHtml}
 
-    ${kt.footer ? `<div style="margin-top:8px;text-align:center;font-size:${fs-1}px;color:#888;border-top:1px solid #eee;padding-top:6px;">${kt.footer}</div>` : ''}
+    ${kt.footer ? `<div style="margin-top:8px;text-align:center;font-size:${fs-1}px;color:#888;border-top:1px solid #eee;padding-top:6px;">${esc(kt.footer)}</div>` : ''}
   </div>`;
 }
 
