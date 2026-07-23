@@ -201,7 +201,11 @@ function pendaftaranTunggakan(s) {
   return Math.max(0, (s.uang_pendaftaran || 0) - (s.uang_pendaftaran_paid || 0));
 }
 
+// Pangkal kini disimpan sebagai tagihan (per-siswa, persisten & terbawa saat
+// promosi). Utamakan tagihan; fallback ke field lama bila tagihan belum ada.
 function pangkalTunggakan(s) {
+  const t = (typeof findTagihan === 'function') ? findTagihan(s.nama, 'pangkal') : null;
+  if (t) return Math.max(0, (t.nominal || 0) - (t.paid_amount || 0));
   return Math.max(0, (s.pangkal || 0) - (s.pangkal_paid || 0));
 }
 
