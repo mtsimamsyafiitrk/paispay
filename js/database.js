@@ -97,10 +97,11 @@ async function loadTagihan() {
   }));
 }
 
-// Buat tagihan untuk satu siswa baru (semua item tetap aktif yg sesuai kelas)
+// Buat tagihan untuk satu siswa baru (item tetap aktif yg sesuai kelas).
+// 'pangkal' dikecualikan: nominalnya per-siswa, diatur lewat form Data Siswa.
 async function createTagihanForStudent(student) {
   const items = appState.payItems.filter(i =>
-    i.active && i.type === 'tetap' &&
+    i.active && i.type === 'tetap' && i.id !== 'pangkal' &&
     (i.kelas || []).includes(student.kelas) &&
     !appState.tagihan.find(t => t.nama === student.nama && t.item_id === i.id)
   );
@@ -120,8 +121,10 @@ async function createTagihanForStudent(student) {
   }
 }
 
-// Buat tagihan untuk semua siswa aktif saat item diaktifkan
+// Buat tagihan untuk semua siswa aktif saat item diaktifkan.
+// 'pangkal' dikecualikan: nominalnya per-siswa (diatur di form Data Siswa).
 async function createTagihanForItem(item) {
+  if (item.id === 'pangkal') return 0;
   const students = appState.students.filter(s =>
     !s.status_kelulusan &&
     (item.kelas || []).includes(s.kelas) &&
@@ -160,6 +163,39 @@ async function updateTagihanNominal(tagihanId, nominal, paidAmount) {
   if (idx >= 0) {
     appState.tagihan[idx].nominal     = nominal;
     appState.tagihan[idx].paid_amount = paidAmount;
+  }
+}
+
+// Nominal pangkal siswa saat ini (dari tagihan pangkal). Untuk prefill form.
+function getPangkalNominal(nama) {
+  const t = findTagihan(nama, 'pangkal');
+  return t ? (t.nominal || 0) : 0;
+}
+
+// Set/buat nominal tagihan pangkal satu siswa — acuan per-siswa dari form Data
+// Siswa. paid_amount dipertahankan. nominal<=0 tanpa tagihan → tak membuat apa2.
+async function upsertPangkalTagihan(student, nominal) {
+  const val = Math.max(0, Number(nominal) || 0);
+  const existing = findTagihan(student.nama, 'pangkal');
+  if (existing) {
+    if ((existing.nominal || 0) === val) return;
+    await updateTagihanNominal(existing.id, val, existing.paid_amount || 0);
+    return;
+  }
+  if (val <= 0) return;
+  const item = appState.payItems.find(i => i.id === 'pangkal');
+  const rec = {
+    nama: student.nama, kelas: student.kelas,
+    item_id: 'pangkal', item_name: item ? item.name : 'Uang Pangkal',
+    nominal: val, paid_amount: 0,
+  };
+  const res = await sb('tagihan', 'POST', [rec], { 'Prefer': 'return=representation' });
+  if (Array.isArray(res) && res[0]) {
+    appState.tagihan.push({
+      id: res[0].id, nama: res[0].nama, kelas: res[0].kelas,
+      item_id: res[0].item_id, item_name: res[0].item_name,
+      nominal: Number(res[0].nominal) || 0, paid_amount: Number(res[0].paid_amount) || 0,
+    });
   }
 }
 
