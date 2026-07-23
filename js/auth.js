@@ -45,7 +45,7 @@ async function doLogin() {
     showLoginError('Email atau password salah');
     document.getElementById('loginPass').value = '';
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Masuk sebagai Admin'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Masuk'; }
   }
 }
 // ══════════════════════════════════════════
