@@ -163,6 +163,17 @@ async function updateTagihanNominal(tagihanId, nominal, paidAmount) {
   }
 }
 
+// Perbarui nominal SEMUA tagihan satu item (saat admin ubah nominal item).
+// paid_amount tiap santri dipertahankan; sisa dihitung ulang dari nominal baru.
+async function updateTagihanNominalByItem(itemId, newNominal) {
+  const rows = appState.tagihan.filter(t => t.item_id === itemId);
+  if (!rows.length) return 0;
+  await sb('tagihan?item_id=eq.' + encodeURIComponent(itemId), 'PATCH',
+    { nominal: newNominal }, { 'Prefer': 'return=minimal' });
+  rows.forEach(t => { t.nominal = newNominal; });
+  return rows.length;
+}
+
 // Hapus semua tagihan satu item (saat admin pilih "hapus record")
 async function deleteTagihanByItemId(itemId) {
   await sb('tagihan?item_id=eq.' + encodeURIComponent(itemId), 'DELETE', null, { 'Prefer': 'return=minimal' });
