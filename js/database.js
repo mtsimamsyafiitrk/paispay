@@ -98,10 +98,11 @@ async function loadTagihan() {
 }
 
 // Buat tagihan untuk satu siswa baru (item tetap aktif yg sesuai kelas).
-// 'pangkal' dikecualikan: nominalnya per-siswa, diatur lewat form Data Siswa.
+// Item per-siswa (pangkal/pendaftaran) dikecualikan: nominalnya diatur lewat
+// form Data Siswa / SPMB.
 async function createTagihanForStudent(student) {
   const items = appState.payItems.filter(i =>
-    i.active && i.type === 'tetap' && i.id !== 'pangkal' &&
+    i.active && i.type === 'tetap' && !PER_STUDENT_ITEMS.includes(i.id) &&
     (i.kelas || []).includes(student.kelas) &&
     !appState.tagihan.find(t => t.nama === student.nama && t.item_id === i.id)
   );
@@ -122,9 +123,9 @@ async function createTagihanForStudent(student) {
 }
 
 // Buat tagihan untuk semua siswa aktif saat item diaktifkan.
-// 'pangkal' dikecualikan: nominalnya per-siswa (diatur di form Data Siswa).
+// Item per-siswa (pangkal/pendaftaran) dikecualikan (nominal per-siswa).
 async function createTagihanForItem(item) {
-  if (item.id === 'pangkal') return 0;
+  if (PER_STUDENT_ITEMS.includes(item.id)) return 0;
   const students = appState.students.filter(s =>
     !s.status_kelulusan &&
     (item.kelas || []).includes(s.kelas) &&
@@ -166,27 +167,29 @@ async function updateTagihanNominal(tagihanId, nominal, paidAmount) {
   }
 }
 
-// Nominal pangkal siswa saat ini (dari tagihan pangkal). Untuk prefill form.
-function getPangkalNominal(nama) {
-  const t = findTagihan(nama, 'pangkal');
+// Nominal tagihan item per-siswa saat ini (untuk prefill form). Generik.
+function getStudentTagihanNominal(nama, itemId) {
+  const t = findTagihan(nama, itemId);
   return t ? (t.nominal || 0) : 0;
 }
+function getPangkalNominal(nama)      { return getStudentTagihanNominal(nama, 'pangkal'); }
+function getPendaftaranNominal(nama)  { return getStudentTagihanNominal(nama, 'pendaftaran'); }
 
-// Set/buat nominal tagihan pangkal satu siswa — acuan per-siswa dari form Data
-// Siswa. paid_amount dipertahankan. nominal<=0 tanpa tagihan → tak membuat apa2.
-async function upsertPangkalTagihan(student, nominal) {
+// Set/buat nominal tagihan item per-siswa (acuan dari form Data Siswa / SPMB).
+// paid_amount dipertahankan. nominal<=0 tanpa tagihan → tak membuat apa-apa.
+async function upsertStudentTagihan(student, itemId, nominal) {
   const val = Math.max(0, Number(nominal) || 0);
-  const existing = findTagihan(student.nama, 'pangkal');
+  const existing = findTagihan(student.nama, itemId);
   if (existing) {
     if ((existing.nominal || 0) === val) return;
     await updateTagihanNominal(existing.id, val, existing.paid_amount || 0);
     return;
   }
   if (val <= 0) return;
-  const item = appState.payItems.find(i => i.id === 'pangkal');
+  const item = appState.payItems.find(i => i.id === itemId);
   const rec = {
     nama: student.nama, kelas: student.kelas,
-    item_id: 'pangkal', item_name: item ? item.name : 'Uang Pangkal',
+    item_id: itemId, item_name: item ? item.name : itemId,
     nominal: val, paid_amount: 0,
   };
   const res = await sb('tagihan', 'POST', [rec], { 'Prefer': 'return=representation' });
@@ -198,6 +201,8 @@ async function upsertPangkalTagihan(student, nominal) {
     });
   }
 }
+function upsertPangkalTagihan(student, nominal)     { return upsertStudentTagihan(student, 'pangkal', nominal); }
+function upsertPendaftaranTagihan(student, nominal) { return upsertStudentTagihan(student, 'pendaftaran', nominal); }
 
 // Perbarui nominal SEMUA tagihan satu item (saat admin ubah nominal item).
 // paid_amount tiap santri dipertahankan; sisa dihitung ulang dari nominal baru.
@@ -326,6 +331,8 @@ async function loadDataForTA() {
 async function initApp() {
   showSyncIndicator('⏳ Memuat data...');
   try { await loadSettings(); } catch(e) { console.error('loadSettings error:', e); }
+  // Pastikan item baku (SPP/Pangkal/Pendaftaran) ada; persist bila admin login.
+  if (ensureBakuItems() && hasAdminSession()) saveSettings().catch(() => {});
   try {
     await loadDataForTA();
   } catch(e) {
