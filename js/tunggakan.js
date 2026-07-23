@@ -68,7 +68,9 @@ function renderItemList() {
       </div>
       <span class="badge ${item.active?'badge-green':'badge-gray'}" style="white-space:nowrap;">${item.active?'Aktif':'Nonaktif'}</span>
       <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item">✏️</button>
-      <button class="btn btn-danger btn-sm" onclick="confirmRemoveItem(${idx})" title="Hapus item">🗑️</button>
+      ${(item.id === 'spp' || item.id === 'pangkal')
+        ? `<span title="Item baku — tidak bisa dihapus, hanya bisa diedit" style="color:var(--text-muted);font-size:15px;padding:0 6px;cursor:default;">🔒</span>`
+        : `<button class="btn btn-danger btn-sm" onclick="confirmRemoveItem(${idx})" title="Hapus item">🗑️</button>`}
     </div>`;
   }).join('');
 }
@@ -128,7 +130,9 @@ async function saveEditItem(idx) {
   saveSettings();
   // Item tetap: sinkronkan nominal baru ke tagihan santri yang sudah ada
   // (paid_amount tiap santri dipertahankan) agar sisa tagihan ikut terbarui.
-  if (newType === 'tetap' && amountChanged) {
+  // 'pangkal' dikecualikan: nominalnya per-siswa (diatur di form Data Siswa),
+  // jadi mengubah "default" di sini tak menimpa nilai per-siswa yang sudah ada.
+  if (newType === 'tetap' && amountChanged && it.id !== 'pangkal') {
     showSyncIndicator('⏳ Menyinkronkan nominal tagihan...');
     try {
       const n = await updateTagihanNominalByItem(it.id, newAmount);
@@ -203,7 +207,12 @@ async function confirmDeactivateDelete() {
   _deactivatingIdx = -1;
 }
 function confirmRemoveItem(idx) {
-  const name = appState.payItems[idx].name;
+  const item = appState.payItems[idx];
+  if (item.id === 'spp' || item.id === 'pangkal') {
+    toast('🔒 Item baku (SPP & Uang Pangkal) tidak bisa dihapus — hanya bisa diedit.');
+    return;
+  }
+  const name = item.name;
   document.getElementById('deleteMsg').textContent = 'Hapus item pembayaran "' + name + '"? Item ini tidak akan tersedia lagi di form input.';
   document.getElementById('deleteConfirmBtn').onclick = function() {
     appState.payItems.splice(idx,1);
