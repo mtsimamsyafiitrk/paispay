@@ -2,39 +2,28 @@
 // AI CATATAN — Analisa bukti transfer → isi catatan
 // ══════════════════════════════════════════
 
-// ── Tab Input Page ──
-function switchInputTab(tab) {
-  const isBayar = tab === 'bayar';
-  document.getElementById('tabBayar').style.display   = isBayar ? 'block' : 'none';
-  document.getElementById('tabKoreksi').style.display  = isBayar ? 'none'  : 'block';
-  document.getElementById('tabBayarBtn').style.background   = isBayar ? 'var(--primary)' : 'transparent';
-  document.getElementById('tabBayarBtn').style.color        = isBayar ? '#fff' : 'var(--text-muted)';
-  document.getElementById('tabKoreksiBtn').style.background = isBayar ? 'transparent' : 'var(--primary)';
-  document.getElementById('tabKoreksiBtn').style.color      = isBayar ? 'var(--text-muted)' : '#fff';
-  if (!isBayar) resetKoreksiTab();
-}
-
-function resetKoreksiTab() {
+// ── Buka koreksi untuk satu kuitansi (dipicu dari menu Riwayat Kuitansi) ──
+function openKoreksiKwt(id) {
   koreksiSelectedKwt = null;
-  const srch = document.getElementById('koreksiNamaSearch');
-  const nama = document.getElementById('koreksiNama');
-  const cat  = document.getElementById('koreksiCatatan');
-  if (srch) srch.value = '';
-  if (nama) nama.value = '';
-  if (cat)  cat.value  = '';
-  showKoreksiInlineStep(1);
+  const cat = document.getElementById('koreksiCatatan');
+  if (cat) cat.value = '';
+  const ld = document.getElementById('koreksiLoading');
+  if (ld) ld.style.display = 'none';
+  const list = document.getElementById('koreksiItemList');
+  if (list) list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;">Memuat...</div>';
+  const ref = document.getElementById('koreksiRefLabel');
+  if (ref) ref.textContent = '—';
+  document.getElementById('koreksiModal').classList.add('open');
+  selectKoreksiKwt(id);
 }
-
-function showKoreksiInlineStep(n) {
-  [1,2,3].forEach(i => {
-    const el = document.getElementById('tkStep' + i);
-    if (el) el.style.display = i === n ? 'block' : 'none';
-  });
+function closeKoreksiModal() {
+  document.getElementById('koreksiModal').classList.remove('open');
+}
+// Kompat: tak ada lagi langkah inline (kini modal). Cukup pastikan loading tertutup.
+function showKoreksiInlineStep() {
   const ld = document.getElementById('koreksiLoading');
   if (ld) ld.style.display = 'none';
 }
-
-function tkBack(toStep) { showKoreksiInlineStep(toStep); }
 
 // ══════════════════════════════════════════
 // KOREKSI PEMBAYARAN
@@ -314,7 +303,8 @@ async function prosesKoreksi() {
     renderTunggakan();
     renderDashboard();
 
-    switchInputTab('bayar');
+    closeKoreksiModal();
+    if (typeof loadRiwayatKuitansi === 'function') loadRiwayatKuitansi();
     toast('✅ Koreksi berhasil! Kuitansi koreksi ' + noKoreksi + ' dibuat.');
 
     // Tawarkan cetak kuitansi koreksi
