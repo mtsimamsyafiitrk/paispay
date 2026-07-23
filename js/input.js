@@ -205,17 +205,28 @@ function renderPaymentItems(student) {
       const t = findTagihan(student.nama, item.id);
       const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : item.amount;
       amount = sisa;
-      if (t) {
-        if (sisa <= 0) {
-          extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Lunas (${rp(t.nominal)})</div>`;
-          disabled = true;
-        } else {
-          extra = `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
+      if (t && t.nominal <= 0) {
+        extra = `<div style="margin-top:6px;font-size:12px;color:var(--accent);font-weight:600;">⚠️ Nominal belum diatur — atur dulu di menu "Kelola Item Bayar"</div>`;
+        disabled = true;
+      } else if (t && sisa <= 0) {
+        extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Lunas (${rp(t.nominal)})</div>`;
+        disabled = true;
+      } else if (t) {
+        extra = `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
             Total: <strong>${rp(t.nominal)}</strong> &nbsp;|&nbsp;
             Dibayar: <strong style="color:var(--primary-light);">${rp(t.paid_amount)}</strong> &nbsp;|&nbsp;
             <strong style="color:var(--danger);">Sisa: ${rp(sisa)}</strong>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="tetapMode_${esc(item.id)}" onchange="onTetapModeChange('${escJs(item.id)}')"
+              style="padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;">
+              <option value="lunas">💰 Lunas — bayar sisa (${rp(sisa)})</option>
+              <option value="angsur">📆 Angsur — cicil sebagian</option>
+            </select>
+            <input type="number" id="tetapAngsur_${esc(item.id)}" placeholder="Nominal angsur..." min="1" max="${sisa}"
+              oninput="calcTotal()"
+              style="display:none;width:160px;padding:5px 9px;border:1.5px solid var(--primary-light);border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
           </div>`;
-        }
       }
     } else if (item.type === 'custom') {
       extra = `<div class="pay-item-custom" style="margin-top:6px;"><input type="number" id="custom_${item.id}" placeholder="Nominal..." value="${amount||''}" oninput="calcTotal()" style="font-size:12px;padding:4px 8px;width:150px;"></div>`;
@@ -228,7 +239,11 @@ function renderPaymentItems(student) {
         <div class="pay-item-amount">${
           item.type === 'custom' ? 'Nominal custom'
           : item.type === 'tetap' && student
-            ? (amount > 0 ? rp(amount) + ' <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(sisa)</span>' : '✅ Lunas')
+            ? (() => {
+                const tt = findTagihan(student.nama, item.id);
+                if (tt && tt.nominal <= 0) return '<span style="font-size:11px;color:var(--accent);">Nominal belum diatur</span>';
+                return amount > 0 ? rp(amount) + ' <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(sisa)</span>' : '✅ Lunas';
+              })()
             : rp(amount)
         }</div>
         ${extra}
@@ -270,6 +285,30 @@ function getSppMonthsSelected() {
   return MONTHS.filter(m => document.getElementById('sppChk_' + m)?.checked);
 }
 
+// Toggle input angsur untuk item tetap saat mode Lunas/Angsur diganti.
+function onTetapModeChange(itemId) {
+  const mode = document.getElementById('tetapMode_' + itemId)?.value;
+  const inp  = document.getElementById('tetapAngsur_' + itemId);
+  if (inp) {
+    inp.style.display = mode === 'angsur' ? 'inline-block' : 'none';
+    if (mode === 'angsur') setTimeout(() => inp.focus(), 0);
+    else inp.value = '';
+  }
+  calcTotal();
+}
+
+// Nominal yang akan dibayar untuk satu item tetap (hormati mode Lunas/Angsur).
+function tetapAmountToPay(item, student) {
+  const t = findTagihan(student.nama, item.id);
+  const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
+  const mode = document.getElementById('tetapMode_' + item.id)?.value || 'lunas';
+  if (mode === 'angsur') {
+    const inp = document.getElementById('tetapAngsur_' + item.id);
+    return Math.min(sisa, Math.max(0, Number(inp?.value || 0)));
+  }
+  return sisa;
+}
+
 function calcTotal() {
   let total = 0;
   const student = getStudent(document.getElementById('inputNama').value);
@@ -284,8 +323,7 @@ function calcTotal() {
       const sppRate = student.spp || item.amount || 0;
       total += sppRate * Math.max(1, bulanDipilih.length);
     } else if (item.type === 'tetap' && student) {
-      const t = findTagihan(student.nama, item.id);
-      total += t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
+      total += tetapAmountToPay(item, student);
     } else {
       total += item.amount||0;
     }
@@ -302,6 +340,7 @@ async function submitPayment() {
     const chk = document.getElementById('chk_'+item.id);
     if (!chk || !chk.checked) return;
     let amount = item.amount;
+    let payName = item.name;
     if (item.type === 'custom') {
       const inp = document.getElementById('custom_'+item.id);
       amount = Number(inp?.value||0);
@@ -309,7 +348,10 @@ async function submitPayment() {
       amount = student.spp || item.amount || 0;
     } else if (item.type === 'tetap' && student) {
       const t = findTagihan(student.nama, item.id);
-      amount = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
+      const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
+      amount = tetapAmountToPay(item, student);
+      // Tandai "(Angsur)" bila membayar sebagian (belum melunasi sisa)
+      if (amount > 0 && amount < sisa) payName = item.name + ' (Angsur)';
     }
     if (amount <= 0 && item.type !== 'custom') return;
 
@@ -319,7 +361,7 @@ async function submitPayment() {
       const totalSPP = (student.spp || item.amount || 0) * bulanDipilih.length;
       items.push({ id: item.id, type: item.type, name: item.name, amount: totalSPP, bulanList: bulanDipilih });
     } else {
-      items.push({ id: item.id, type: item.type, name: item.name, amount, bulan: null });
+      items.push({ id: item.id, type: item.type, name: payName, amount, bulan: null });
     }
   });
   if (!items.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }

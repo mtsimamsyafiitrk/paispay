@@ -69,17 +69,33 @@ function renderItemList() {
 
 function startEditItem(idx) { editingItemIdx = idx; renderItemList(); }
 function cancelEditItem() { editingItemIdx = -1; renderItemList(); }
-function saveEditItem(idx) {
+async function saveEditItem(idx) {
   const name = document.getElementById('ei_name').value.trim();
   if (!name) { toast('⚠️ Nama item tidak boleh kosong!'); return; }
   const kelas = ['7','8','9','calon'].filter(k => document.getElementById('ei_kelas_'+k)?.checked);
   if (!kelas.length) { toast('⚠️ Pilih minimal 1 kelas!'); return; }
-  appState.payItems[idx].name   = name;
-  appState.payItems[idx].amount = Number(document.getElementById('ei_amount').value)||0;
-  appState.payItems[idx].type   = document.getElementById('ei_type').value;
-  appState.payItems[idx].kelas  = kelas;
+  const it = appState.payItems[idx];
+  const newAmount = Number(document.getElementById('ei_amount').value) || 0;
+  const newType   = document.getElementById('ei_type').value;
+  const amountChanged = it.amount !== newAmount;
+  it.name   = name;
+  it.amount = newAmount;
+  it.type   = newType;
+  it.kelas  = kelas;
   editingItemIdx = -1;
-  saveSettings(); renderItemList();
+  saveSettings();
+  // Item tetap: sinkronkan nominal baru ke tagihan santri yang sudah ada
+  // (paid_amount tiap santri dipertahankan) agar sisa tagihan ikut terbarui.
+  if (newType === 'tetap' && amountChanged) {
+    showSyncIndicator('⏳ Menyinkronkan nominal tagihan...');
+    try {
+      const n = await updateTagihanNominalByItem(it.id, newAmount);
+      showSyncIndicator(n ? `✅ ${n} tagihan santri diperbarui` : '✅ Tersimpan', 2000);
+    } catch(e) { showSyncIndicator('⚠️ Gagal perbarui tagihan', 3000); }
+  }
+  renderItemList();
+  if (typeof renderTunggakan === 'function') renderTunggakan();
+  if (typeof renderDashboard === 'function') renderDashboard();
   toast('✅ Item berhasil diperbarui!');
 }
 
