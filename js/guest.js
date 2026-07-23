@@ -190,10 +190,12 @@ function openLogoutConfirm() {
 function closeLogoutConfirm() {
   document.getElementById('logoutOverlay').classList.remove('show');
 }
-function doLogout() {
+async function doLogout() {
   closeLogoutConfirm();
+  await sbSignOut();               // revoke & hapus token admin (bila ada)
   localStorage.removeItem('sipay_auth');
   localStorage.removeItem('sipay_guest');
+  localStorage.removeItem('sipay_admin');
   guestData = { siswa: null, txns: [] };
   showPage('dashboard');
   document.getElementById('loginUser').value = '';

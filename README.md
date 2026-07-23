@@ -56,6 +56,22 @@ URL hasil     : https://<username>.github.io/<repo-name>/
 
 > **Catatan:** Tidak diperlukan file `_config.yml` karena tidak ada Jekyll. Jika ada masalah routing, tambahkan file kosong bernama `.nojekyll` di root repo.
 
+## Keamanan (RLS + Supabase Auth)
+
+Sejak versi ini, akses data ditegakkan **di sisi server** lewat Row Level Security:
+
+| Peran | Hak akses |
+|-------|-----------|
+| Publik / wali (anon) | Baca data + kirim laporan pembayaran saja |
+| Admin (Supabase Auth) | Akses penuh (tulis, ubah, hapus) |
+
+Login admin memakai **email + password terverifikasi Supabase Auth** — bukan lagi
+cek di sisi klien. Password admin **tidak lagi disimpan** di database/localStorage.
+
+> ⚙️ **Setup wajib sekali jalan:** jalankan `supabase_migration_auth.sql` di
+> Supabase SQL Editor, lalu buat 1 akun admin di *Authentication → Users* dan
+> **matikan pendaftaran publik**. Langkah lengkap ada di komentar file SQL tersebut.
+
 ## Status Koneksi Supabase
 
 SiPay menggunakan **Supabase REST API** (bukan Realtime WebSocket). Artinya:

@@ -20,6 +20,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initApp();
 
   // Restore sesi setelah data dimuat
+  // Refresh token bila hampir/kadung kadaluarsa sebelum memutuskan status login.
+  if (hasAdminSession() && sbSession.expires_at && Date.now() > sbSession.expires_at - 60000) {
+    await sbRefresh();
+  }
   if (isLoggedIn()) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminLabel').textContent = getAdminCreds().user;
