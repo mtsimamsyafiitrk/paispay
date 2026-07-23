@@ -110,6 +110,7 @@ const defaultState = {
   payItems: [
     { id:'spp',         name:'SPP Bulanan',      amount:0,      type:'bulanan', active:true,  kelas:['7','8','9'] },
     { id:'pangkal',     name:'Uang Pangkal',     amount:0,      type:'tetap',   active:false, kelas:['7','8','9'] },
+    { id:'pendaftaran', name:'Uang Pendaftaran', amount:0,      type:'tetap',   active:true,  kelas:['7','8','9'] },
     { id:'buku',        name:'Uang Buku',        amount:0,      type:'tetap',   active:false, kelas:['7','8','9'] },
     { id:'seragam',     name:'Uang Seragam',     amount:0,      type:'tetap',   active:false, kelas:['7','8','9'] },
     { id:'ekskul',      name:'Ekstrakurikuler',  amount:0,      type:'custom',  active:false, kelas:['7','8','9'] },
@@ -118,6 +119,26 @@ const defaultState = {
   transactions: [],
 };
 const appState = JSON.parse(JSON.stringify(defaultState));
+
+// Item "baku": tak bisa dihapus (hanya edit). SPP + item per-siswa.
+const BAKU_ITEMS = ['spp', 'pangkal', 'pendaftaran'];
+// Item bernominal per-siswa (diatur di form Data Siswa / SPMB, disimpan sebagai
+// tagihan per-siswa) — dikecualikan dari pembuatan tagihan otomatis & propagasi.
+const PER_STUDENT_ITEMS = ['pangkal', 'pendaftaran'];
+// Definisi item baku untuk memastikan selalu ada walau settings lama tak punya.
+const BAKU_ITEM_DEFS = [
+  { id:'spp',         name:'SPP Bulanan',      amount:0, type:'bulanan', active:true,  kelas:['7','8','9'] },
+  { id:'pangkal',     name:'Uang Pangkal',     amount:0, type:'tetap',   active:false, kelas:['7','8','9'] },
+  { id:'pendaftaran', name:'Uang Pendaftaran', amount:0, type:'tetap',   active:true,  kelas:['7','8','9'] },
+];
+// Sisipkan item baku yang belum ada di appState.payItems (mis. install lama).
+function ensureBakuItems() {
+  let added = false;
+  BAKU_ITEM_DEFS.forEach(def => {
+    if (!appState.payItems.find(i => i.id === def.id)) { appState.payItems.push({ ...def }); added = true; }
+  });
+  return added;
+}
 
 let allTA = [];
 let activeTA = null;

@@ -279,12 +279,15 @@ function openAddSiswaModal() {
   document.getElementById('tambahChoiceModal').classList.remove('open');
   ['ns_nama','ns_nisn','ns_spp'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('ns_kelas').value = '';
-  // Prefill nominal pangkal dengan nilai default dari Kelola Item Bayar
-  const nsPangkal = document.getElementById('ns_pangkal');
-  if (nsPangkal) {
-    const pangkalItem = appState.payItems.find(i => i.id === 'pangkal');
-    nsPangkal.value = pangkalItem && pangkalItem.amount ? pangkalItem.amount : '';
-  }
+  // Prefill nominal pangkal & pendaftaran dengan nilai default dari Kelola Item Bayar
+  const _prefillDefault = (fieldId, itemId) => {
+    const el = document.getElementById(fieldId);
+    if (!el) return;
+    const it = appState.payItems.find(i => i.id === itemId);
+    el.value = it && it.amount ? it.amount : '';
+  };
+  _prefillDefault('ns_pangkal', 'pangkal');
+  _prefillDefault('ns_pendaftaran', 'pendaftaran');
   document.querySelectorAll('#ns_months_wrap input[type=checkbox]').forEach(c => c.checked = false);
   const taInput = document.getElementById('ns_ta');
   if (taInput) taInput.value = getProfil().ta || '';
@@ -319,6 +322,7 @@ async function saveNewSiswa() {
   const paid_months = [...document.querySelectorAll('#ns_months_wrap input[type=checkbox]:checked')].map(c => c.value);
   const spp = Number(document.getElementById('ns_spp').value) || 0;
   const pangkal = Number(document.getElementById('ns_pangkal')?.value) || 0;
+  const pendaftaran = Number(document.getElementById('ns_pendaftaran')?.value) || 0;
 
   const newSiswa = {
     nama, kelas,
@@ -335,6 +339,7 @@ async function saveNewSiswa() {
     appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
     saveSiswa(old);
     if (pangkal > 0) await upsertPangkalTagihan(old, pangkal).catch(() => {});
+    if (pendaftaran > 0) await upsertPendaftaranTagihan(old, pendaftaran).catch(() => {});
     document.getElementById('addSiswaModal').classList.remove('open');
     renderSiswaTable(); renderTunggakan(); renderDashboard();
     toast(`🔄 Data ${old.nama} diperbarui & digabung!`);
@@ -346,9 +351,10 @@ async function saveNewSiswa() {
   saveSiswa(newSiswa);
   document.getElementById('addSiswaModal').classList.remove('open');
   toast(`✅ ${nama} berhasil ditambahkan!`);
-  // Buat tagihan: pangkal pakai nominal per-siswa; item tetap lain pakai default
+  // Buat tagihan: pangkal & pendaftaran pakai nominal per-siswa; item tetap lain default
   try {
     await upsertPangkalTagihan(newSiswa, pangkal);
+    await upsertPendaftaranTagihan(newSiswa, pendaftaran);
     await createTagihanForStudent(newSiswa);
   } catch(e) { console.error('createTagihan saveNewSiswa:', e); }
   renderSiswaTable(); renderTunggakan(); renderDashboard();
@@ -428,6 +434,8 @@ function openEditSiswa(nama) {
   document.getElementById('ed_spp').value = s.spp || '';
   const edPangkal = document.getElementById('ed_pangkal');
   if (edPangkal) { const p = getPangkalNominal(s.nama); edPangkal.value = p || ''; }
+  const edPendaftaran = document.getElementById('ed_pendaftaran');
+  if (edPendaftaran) { const p = getPendaftaranNominal(s.nama); edPendaftaran.value = p || ''; }
   document.getElementById('editSiswaModal').classList.add('open');
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -441,6 +449,7 @@ async function saveEditSiswa() {
   const newNama = document.getElementById('ed_nama').value.trim().toUpperCase();
   const kelas   = document.getElementById('ed_kelas').value;
   const pangkal = Number(document.getElementById('ed_pangkal')?.value) || 0;
+  const pendaftaran = Number(document.getElementById('ed_pendaftaran')?.value) || 0;
   if (!newNama) { toast('⚠️ Nama santri wajib diisi!'); return; }
   if (!kelas)   { toast('⚠️ Kelas wajib dipilih!'); return; }
   // Cek duplikat nama (kecuali nama sendiri)
@@ -470,8 +479,10 @@ async function saveEditSiswa() {
   if (newNama !== origNama) renameStudentInDB(origNama, appState.students[savedIdx]);
   else saveSiswa(appState.students[savedIdx]);
   // Simpan nominal pangkal per-siswa (buat/perbarui tagihan pangkal)
-  try { await upsertPangkalTagihan(appState.students[savedIdx], pangkal); }
-  catch(e) { console.error('upsertPangkalTagihan:', e); }
+  try {
+    await upsertPangkalTagihan(appState.students[savedIdx], pangkal);
+    await upsertPendaftaranTagihan(appState.students[savedIdx], pendaftaran);
+  } catch(e) { console.error('upsert tagihan per-siswa:', e); }
   document.getElementById('editSiswaModal').classList.remove('open');
 
   // Refresh semua tampilan terkait

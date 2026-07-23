@@ -68,7 +68,7 @@ function renderItemList() {
       </div>
       <span class="badge ${item.active?'badge-green':'badge-gray'}" style="white-space:nowrap;">${item.active?'Aktif':'Nonaktif'}</span>
       <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item">✏️</button>
-      ${(item.id === 'spp' || item.id === 'pangkal')
+      ${BAKU_ITEMS.includes(item.id)
         ? `<span title="Item baku — tidak bisa dihapus, hanya bisa diedit" style="color:var(--text-muted);font-size:15px;padding:0 6px;cursor:default;">🔒</span>`
         : `<button class="btn btn-danger btn-sm" onclick="confirmRemoveItem(${idx})" title="Hapus item">🗑️</button>`}
     </div>`;
@@ -132,7 +132,7 @@ async function saveEditItem(idx) {
   // (paid_amount tiap santri dipertahankan) agar sisa tagihan ikut terbarui.
   // 'pangkal' dikecualikan: nominalnya per-siswa (diatur di form Data Siswa),
   // jadi mengubah "default" di sini tak menimpa nilai per-siswa yang sudah ada.
-  if (newType === 'tetap' && amountChanged && it.id !== 'pangkal') {
+  if (newType === 'tetap' && amountChanged && !PER_STUDENT_ITEMS.includes(it.id)) {
     showSyncIndicator('⏳ Menyinkronkan nominal tagihan...');
     try {
       const n = await updateTagihanNominalByItem(it.id, newAmount);
@@ -208,8 +208,8 @@ async function confirmDeactivateDelete() {
 }
 function confirmRemoveItem(idx) {
   const item = appState.payItems[idx];
-  if (item.id === 'spp' || item.id === 'pangkal') {
-    toast('🔒 Item baku (SPP & Uang Pangkal) tidak bisa dihapus — hanya bisa diedit.');
+  if (BAKU_ITEMS.includes(item.id)) {
+    toast('🔒 Item baku (SPP, Uang Pangkal, Uang Pendaftaran) tidak bisa dihapus — hanya bisa diedit.');
     return;
   }
   const name = item.name;

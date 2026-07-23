@@ -10,6 +10,13 @@ function _calonPangkal(c) {
     ? { nominal: t.nominal || 0, paid: t.paid_amount || 0 }
     : { nominal: c.pangkal || 0, paid: c.pangkal_paid || 0 };
 }
+// Idem untuk uang pendaftaran calon (tagihan-first, fallback field lama).
+function _calonPendaftaran(c) {
+  const t = (typeof findTagihan === 'function') ? findTagihan(c.nama, 'pendaftaran') : null;
+  return t
+    ? { nominal: t.nominal || 0, paid: t.paid_amount || 0 }
+    : { nominal: c.uang_pendaftaran || 0, paid: c.uang_pendaftaran_paid || 0 };
+}
 
 // ══════════════════════════════════════════
 // RENDER HALAMAN SPMB
@@ -33,7 +40,7 @@ function _renderSpmbStats(list) {
   const el = document.getElementById('spmbStats');
   if (!el) return;
   const totalCalon = list.length;
-  const totalPendaftaran = list.reduce((s, c) => s + (c.uang_pendaftaran_paid || 0), 0);
+  const totalPendaftaran = list.reduce((s, c) => s + _calonPendaftaran(c).paid, 0);
   const totalPangkal = list.reduce((s, c) => s + _calonPangkal(c).paid, 0);
   const totalSisaPendaftaran = list.reduce((s, c) => s + pendaftaranTunggakan(c), 0);
 
@@ -77,18 +84,19 @@ function _renderSpmbTable(list) {
   }
 
   tbody.innerHTML = list.map((s, i) => {
-    const sisaPendaftaran = pendaftaranTunggakan(s);
+    const _pd = _calonPendaftaran(s);
+    const sisaPendaftaran = Math.max(0, _pd.nominal - _pd.paid);
     const _pk = _calonPangkal(s);
     const sisaPangkal = Math.max(0, _pk.nominal - _pk.paid);
-    const pendaftaranOk = sisaPendaftaran <= 0;
+    const pendaftaranOk = sisaPendaftaran <= 0 && _pd.nominal > 0;
     const pangkalOk = sisaPangkal <= 0 && _pk.nominal > 0;
     const sel = spmbSelectedRows.has(s.nama);
     const nameSafe = escJs(s.nama);
 
-    const pendaftaranBadge = s.uang_pendaftaran > 0
+    const pendaftaranBadge = _pd.nominal > 0
       ? (pendaftaranOk
         ? `<span style="font-size:11px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
-        : `<div style="font-size:12px;">${rp(s.uang_pendaftaran_paid||0)} / ${rp(s.uang_pendaftaran)}</div>
+        : `<div style="font-size:12px;">${rp(_pd.paid)} / ${rp(_pd.nominal)}</div>
            <div style="font-size:11px;color:var(--danger);">Sisa ${rp(sisaPendaftaran)}</div>`)
       : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
 
@@ -208,6 +216,7 @@ async function saveCalonSantri() {
   saveSiswa(newCalon);
   // Simpan pangkal sebagai tagihan (persisten & terbawa saat promosi nanti)
   if (pangkal > 0) { try { await upsertPangkalTagihan(newCalon, pangkal); } catch(e) { console.error('pangkal calon:', e); } }
+  if (uang_pendaftaran > 0) { try { await upsertPendaftaranTagihan(newCalon, uang_pendaftaran); } catch(e) { console.error('pendaftaran calon:', e); } }
   document.getElementById('addCalonModal').classList.remove('open');
   renderSpmbPage();
   toast(`✅ ${nama} berhasil ditambahkan sebagai calon santri!`);
@@ -224,7 +233,8 @@ function openEditCalonModal(nama) {
   document.getElementById('edit_calon_nisn').value = s.nisn || '';
   document.getElementById('edit_calon_kelas').value = s.kelas;
   document.getElementById('edit_calon_spp').value = s.spp || '';
-  document.getElementById('edit_calon_pendaftaran').value = s.uang_pendaftaran || '';
+  const pdNom = (typeof getPendaftaranNominal === 'function') ? getPendaftaranNominal(s.nama) : 0;
+  document.getElementById('edit_calon_pendaftaran').value = (pdNom || s.uang_pendaftaran) || '';
   const pkNom = (typeof getPangkalNominal === 'function') ? getPangkalNominal(s.nama) : 0;
   document.getElementById('edit_calon_pangkal').value = (pkNom || s.pangkal) || '';
   document.getElementById('editCalonModal').classList.add('open');
@@ -255,6 +265,7 @@ async function saveEditCalonSantri() {
   };
 
   const pangkal = Number(document.getElementById('edit_calon_pangkal').value) || 0;
+  const pendaftaran = Number(document.getElementById('edit_calon_pendaftaran').value) || 0;
   if (newNama !== origNama) {
     appState.transactions.forEach(t => { if (t.nama === origNama) t.nama = newNama; });
     appState.tagihan.forEach(t => { if (t.nama === origNama) t.nama = newNama; });
@@ -265,7 +276,10 @@ async function saveEditCalonSantri() {
   if (newNama !== origNama) renameStudentInDB(origNama, saved);
   else saveSiswa(saved);
   // Simpan nominal pangkal per-calon ke tagihan
-  try { await upsertPangkalTagihan(saved, pangkal); } catch(e) { console.error('pangkal calon edit:', e); }
+  try {
+    await upsertPangkalTagihan(saved, pangkal);
+    await upsertPendaftaranTagihan(saved, pendaftaran);
+  } catch(e) { console.error('tagihan calon edit:', e); }
   document.getElementById('editCalonModal').classList.remove('open');
   renderSpmbPage();
   toast(`✅ Data ${newNama} berhasil diperbarui!`);
@@ -511,6 +525,7 @@ async function confirmSpmbImport() {
   await saveState();
   // Buat tagihan pangkal untuk calon yang punya nominal (persisten & terbawa)
   await Promise.all(added.filter(c => (c.pangkal || 0) > 0).map(c => upsertPangkalTagihan(c, c.pangkal).catch(() => {})));
+  await Promise.all(added.filter(c => (c.uang_pendaftaran || 0) > 0).map(c => upsertPendaftaranTagihan(c, c.uang_pendaftaran).catch(() => {})));
   renderSpmbPage();
   toast(`✅ Import: ${ditambah} ditambahkan${dilewati ? ', ' + dilewati + ' dilewati (nama duplikat)' : ''}`);
 }

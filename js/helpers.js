@@ -198,6 +198,8 @@ function totalTunggakan(s) {
 // Calon santri masih memakai field uang_pendaftaran/pangkal + *_paid,
 // bukan tabel tagihan (yang dipakai santri aktif setelah promosi).
 function pendaftaranTunggakan(s) {
+  const t = (typeof findTagihan === 'function') ? findTagihan(s.nama, 'pendaftaran') : null;
+  if (t) return Math.max(0, (t.nominal || 0) - (t.paid_amount || 0));
   return Math.max(0, (s.uang_pendaftaran || 0) - (s.uang_pendaftaran_paid || 0));
 }
 
