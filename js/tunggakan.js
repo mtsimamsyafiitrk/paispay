@@ -7,7 +7,9 @@ function renderItemList() {
   const kelasLabel = k => k === 'calon' ? 'Kls Calon' : 'Kelas ' + k;
   cont.innerHTML = appState.payItems.map((item,idx) => {
     const typeLabel = item.type==='bulanan'?'Bulanan (SPP)':item.type==='custom'?'Custom':'Tetap';
-    const isDefault = idx < 6;
+    // "Default" = item bawaan (bukan tambahan admin). Berbasis id agar tetap
+    // benar walau urutan diubah (item custom ber-id 'custom_...').
+    const isDefault = !String(item.id || '').startsWith('custom_');
     const itemKelas = item.kelas || [];
 
     if (editingItemIdx === idx) {
@@ -53,7 +55,11 @@ function renderItemList() {
       ? itemKelas.map(k => `<span style="background:${k==='calon'?'var(--accent-pale)':'var(--primary-pale)'};color:${k==='calon'?'var(--accent)':'var(--primary)'};border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">${_klsLabel(k)}</span>`).join(' ')
       : `<span style="background:#fee2e2;color:#dc2626;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">Tidak ada kelas</span>`;
 
-    return `<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);">
+    return `<div draggable="true" data-idx="${idx}"
+      ondragstart="onItemDragStart(event, ${idx})" ondragover="onItemDragOver(event)"
+      ondragleave="onItemDragLeave(event)" ondrop="onItemDrop(event, ${idx})" ondragend="onItemDragEnd(event)"
+      style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);border-radius:8px;">
+      <span title="Seret untuk mengubah urutan" style="cursor:grab;color:var(--text-muted);font-size:18px;line-height:1;user-select:none;flex-shrink:0;">⠿</span>
       <label class="toggle"><input type="checkbox" ${item.active?'checked':''} onchange="toggleItem(${idx})"><span class="toggle-slider"></span></label>
       <div style="flex:1;min-width:0;">
         <div style="font-weight:600;font-size:13.5px;">${esc(item.name)}</div>
@@ -65,6 +71,42 @@ function renderItemList() {
       <button class="btn btn-danger btn-sm" onclick="confirmRemoveItem(${idx})" title="Hapus item">🗑️</button>
     </div>`;
   }).join('');
+}
+
+// ── Drag & drop: ubah urutan item bayar ──
+// Urutan array appState.payItems = urutan tampil (di sini & di form Input).
+let _dragItemFrom = -1;
+function onItemDragStart(e, idx) {
+  _dragItemFrom = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', String(idx)); } catch {}
+  e.currentTarget.style.opacity = '0.4';
+}
+function onItemDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.style.background = 'var(--primary-pale)';
+}
+function onItemDragLeave(e) {
+  e.currentTarget.style.background = '';
+}
+function onItemDragEnd() {
+  document.querySelectorAll('#itemList > div').forEach(d => { d.style.background = ''; d.style.opacity = ''; });
+  _dragItemFrom = -1;
+}
+async function onItemDrop(e, idx) {
+  e.preventDefault();
+  e.currentTarget.style.background = '';
+  const from = _dragItemFrom;
+  _dragItemFrom = -1;
+  const arr = appState.payItems;
+  if (from < 0 || from === idx || from >= arr.length || idx >= arr.length) { renderItemList(); return; }
+  const [moved] = arr.splice(from, 1);
+  arr.splice(from < idx ? idx - 1 : idx, 0, moved); // sisip sebelum item target
+  renderItemList();
+  showSyncIndicator('💾 Menyimpan urutan...');
+  await saveSettings();
+  showSyncIndicator('✅ Urutan disimpan', 1500);
 }
 
 function startEditItem(idx) { editingItemIdx = idx; renderItemList(); }
