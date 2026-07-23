@@ -1,84 +1,66 @@
 -- ═══════════════════════════════════════════════════════════════
--- SiPay · Migrasi Keamanan: RLS + Supabase Auth
+-- SiPay · Migrasi Keamanan: RLS Admin-Only + Supabase Auth
 -- Jalankan di: Supabase Dashboard → SQL Editor → Run
 --
 -- APA YANG DILAKUKAN:
 --   Mengganti kebijakan lama "anon_all" (siapa pun bisa baca+tulis+hapus)
---   dengan kebijakan berbasis peran:
---     • anon (publik/wali)  : HANYA BOLEH BACA data + KIRIM laporan
---     • authenticated (admin): akses penuh (baca/tulis/hapus)
+--   dengan model ADMIN-ONLY:
+--     • authenticated (admin) : akses penuh (baca/tulis/hapus)
+--     • anon (publik)         : TIDAK punya akses — kecuali membaca
+--                               branding non-sensitif untuk layar login
+--                               (nama madrasah, logo, item bayar).
 --
---   Setelah migrasi ini, operasi tulis (simpan siswa, input pembayaran,
---   hapus, dll) HANYA berhasil bila dilakukan admin yang login lewat
---   Supabase Auth. Data tidak lagi bisa diubah/dihapus sembarang orang.
+--   Setelah migrasi ini, seluruh data santri hanya bisa diakses admin yang
+--   login lewat Supabase Auth. Mode wali/pengunjung sudah dihapus dari app.
 --
 -- CATATAN: migrasi ini AMAN untuk data — tidak menghapus tabel/baris,
 --          hanya mengganti kebijakan akses.
 -- ═══════════════════════════════════════════════════════════════
 
--- ── Helper: buang policy lama di tiap tabel ──
+-- ── Buang SEMUA policy lama di tiap tabel & pastikan RLS aktif ──
 DO $$
-DECLARE t text;
+DECLARE t text; p text;
 BEGIN
   FOREACH t IN ARRAY ARRAY[
     'students','tagihan','transactions','kuitansi',
     'settings','payment_reports','kuitansi_template'
   ] LOOP
-    EXECUTE format('DROP POLICY IF EXISTS "anon_all" ON %I;', t);
-    EXECUTE format('DROP POLICY IF EXISTS "public_read" ON %I;', t);
-    EXECUTE format('DROP POLICY IF EXISTS "public_insert" ON %I;', t);
-    EXECUTE format('DROP POLICY IF EXISTS "admin_all" ON %I;', t);
-    -- Pastikan RLS aktif
+    FOR p IN SELECT policyname FROM pg_policies
+             WHERE schemaname = 'public' AND tablename = t LOOP
+      EXECUTE format('DROP POLICY IF EXISTS %I ON %I;', p, t);
+    END LOOP;
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY;', t);
   END LOOP;
 END $$;
 
 -- ══════════════════════════════════════════
--- TABEL DATA UMUM
---   anon          : SELECT (agar wali/tamu bisa melihat tagihan)
---   authenticated : ALL    (admin)
+-- TABEL DATA — admin only
+--   authenticated : ALL   |   anon : (tidak ada policy = ditolak)
 -- ══════════════════════════════════════════
--- students
-CREATE POLICY "public_read" ON students        FOR SELECT TO anon          USING (true);
-CREATE POLICY "admin_all"   ON students        FOR ALL    TO authenticated USING (true) WITH CHECK (true);
--- tagihan
-CREATE POLICY "public_read" ON tagihan         FOR SELECT TO anon          USING (true);
-CREATE POLICY "admin_all"   ON tagihan         FOR ALL    TO authenticated USING (true) WITH CHECK (true);
--- transactions
-CREATE POLICY "public_read" ON transactions    FOR SELECT TO anon          USING (true);
-CREATE POLICY "admin_all"   ON transactions    FOR ALL    TO authenticated USING (true) WITH CHECK (true);
--- kuitansi
-CREATE POLICY "public_read" ON kuitansi         FOR SELECT TO anon          USING (true);
-CREATE POLICY "admin_all"   ON kuitansi         FOR ALL    TO authenticated USING (true) WITH CHECK (true);
--- settings (profil, logo, item bayar — perlu dibaca publik untuk tampilan)
-CREATE POLICY "public_read" ON settings         FOR SELECT TO anon          USING (true);
-CREATE POLICY "admin_all"   ON settings         FOR ALL    TO authenticated USING (true) WITH CHECK (true);
--- kuitansi_template
-CREATE POLICY "public_read" ON kuitansi_template FOR SELECT TO anon          USING (true);
-CREATE POLICY "admin_all"   ON kuitansi_template FOR ALL    TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "admin_all" ON students          FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "admin_all" ON tagihan           FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "admin_all" ON transactions      FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "admin_all" ON kuitansi          FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "admin_all" ON payment_reports   FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "admin_all" ON kuitansi_template FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ══════════════════════════════════════════
--- PAYMENT REPORTS (laporan wali)
---   anon          : SELECT + INSERT (wali kirim laporan, lihat status)
---   authenticated : ALL            (admin verifikasi/hapus)
---   -> anon TIDAK boleh UPDATE/DELETE (wali tak bisa ubah status sendiri)
+-- SETTINGS
+--   authenticated : ALL
+--   anon          : SELECT hanya baris branding (bukan data admin)
+--   -> layar login butuh nama madrasah, logo, & daftar item; kolom 'akun'
+--      (email/hp admin) TIDAK boleh terbaca publik.
 -- ══════════════════════════════════════════
-CREATE POLICY "public_read"   ON payment_reports FOR SELECT TO anon          USING (true);
-CREATE POLICY "public_insert" ON payment_reports FOR INSERT TO anon          WITH CHECK (true);
-CREATE POLICY "admin_all"     ON payment_reports FOR ALL    TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "admin_all"    ON settings FOR ALL    TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "public_brand" ON settings FOR SELECT TO anon
+  USING (key IN ('profil', 'logo', 'payItems'));
 
 -- ══════════════════════════════════════════
--- STORAGE: bucket 'bukti-pembayaran'
---   Wali (anon) perlu meng-upload bukti; publik boleh membaca.
---   Jalankan HANYA jika bucket 'bukti-pembayaran' sudah dibuat.
---   (Storage → Create bucket → nama: bukti-pembayaran, Public: ON)
+-- STORAGE: cabut akses anon ke bucket 'bukti-pembayaran'
+--   (dulu dipakai wali untuk upload bukti; kini tak diperlukan)
 -- ══════════════════════════════════════════
 DROP POLICY IF EXISTS "bukti_insert" ON storage.objects;
 DROP POLICY IF EXISTS "bukti_read"   ON storage.objects;
-CREATE POLICY "bukti_insert" ON storage.objects
-  FOR INSERT TO anon WITH CHECK (bucket_id = 'bukti-pembayaran');
-CREATE POLICY "bukti_read"   ON storage.objects
-  FOR SELECT TO anon USING (bucket_id = 'bukti-pembayaran');
 
 -- ═══════════════════════════════════════════════════════════════
 -- LANGKAH MANUAL SETELAH MENJALANKAN SQL DI ATAS
@@ -94,9 +76,8 @@ CREATE POLICY "bukti_read"   ON storage.objects
 --    Tanpa ini, orang asing bisa mendaftar sendiri dan otomatis mendapat
 --    peran 'authenticated' = akses admin penuh.
 --
--- 3) (Opsional) Hapus sisa password lama yang pernah tersimpan di settings:
+-- 3) (Opsional) Bersihkan sisa password lama di settings:
 --    UPDATE settings SET value = value - 'pass' WHERE key = 'akun';
---    -- atau kosongkan sekalian: DELETE FROM settings WHERE key = 'akun';
 --
 -- 4) Buka aplikasi → login dengan email & password dari langkah (1).
 -- ═══════════════════════════════════════════════════════════════

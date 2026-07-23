@@ -28,39 +28,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminLabel').textContent = getAdminCreds().user;
     showPage('dashboard');
-  } else if (isGuest()) {
-    const g = JSON.parse(localStorage.getItem('sipay_guest') || '{}');
-    if (g.nama) {
-      document.getElementById('loginScreen').classList.add('hidden');
-      try {
-        const [allSiswa, txns, tagihan] = await Promise.all([
-          sb('students?select=*&nama=eq.' + encodeURIComponent(g.nama)),
-          sb('transactions?select=*&nama=eq.' + encodeURIComponent(g.nama) + '&order=created_at.desc'),
-          sb('tagihan?select=*&nama=eq.' + encodeURIComponent(g.nama)).catch(() => []),
-        ]);
-        if (!allSiswa.length) throw new Error('Santri tidak ditemukan');
-        const siswa = allSiswa[0];
-        siswa.spp_paid_months = Array.isArray(siswa.spp_paid_months) ? siswa.spp_paid_months : [];
-        guestData = { siswa, txns, tagihan };
-        document.getElementById('adminLabel').textContent = siswa.nama;
-        document.getElementById('guestSidebarSiswa').textContent = siswa.nama;
-        document.getElementById('guestSidebarKelas').textContent = 'Kelas ' + siswa.kelas;
-        const profil = JSON.parse(localStorage.getItem('sipay_profil') || '{}');
-        if (profil.nama) document.getElementById('guestSidebarNama').textContent = profil.nama;
-        renderGuestPage();
-        showPage('pengunjung');
-      } catch {
-        localStorage.removeItem('sipay_auth');
-        localStorage.removeItem('sipay_guest');
-        document.getElementById('loginScreen').classList.remove('hidden');
-        setTimeout(() => document.getElementById('loginUser').focus(), 150);
-      }
-    } else {
-      localStorage.removeItem('sipay_auth');
-      localStorage.removeItem('sipay_guest');
-      setTimeout(() => document.getElementById('loginUser').focus(), 150);
-    }
   } else {
+    // Bersihkan sisa penanda sesi lama (termasuk mode wali yang telah dihapus)
+    localStorage.removeItem('sipay_auth');
+    localStorage.removeItem('sipay_guest');
     setTimeout(() => document.getElementById('loginUser').focus(), 150);
   }
 });

@@ -292,14 +292,9 @@ async function initApp() {
     if (saved?.tagihan)          appState.tagihan      = saved.tagihan;
     if (saved?.payItems?.length) appState.payItems     = saved.payItems;
   }
-  if (isGuest()) return;
   renderDashboard();
   renderSiswaTable();
   renderTunggakan();
-  sb('payment_reports?select=id&status=eq.pending').then(rows => {
-    const b = document.getElementById('adminLaporBadge');
-    if (b && rows.length) { b.textContent = rows.length; b.style.display = 'inline'; }
-  }).catch(()=>{});
   loadTemplateKuitansi().catch(()=>{});
   const sel = document.getElementById('cetakNama');
   if (sel) sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +

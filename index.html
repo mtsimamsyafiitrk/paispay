@@ -16,12 +16,6 @@
     <div class="login-title" id="loginTitle">SiPay</div>
     <div class="login-sub" id="loginSub">Sistem Pembayaran Santri</div>
 
-    <!-- Tab pilih mode -->
-    <div class="login-mode-tabs">
-      <button class="login-mode-tab active" id="tabAdmin" onclick="switchLoginMode('admin')">🔐 Admin</button>
-      <button class="login-mode-tab" id="tabGuest" onclick="switchLoginMode('guest')">👁️ Pengunjung</button>
-    </div>
-
     <!-- Form admin -->
     <div id="loginFormAdmin">
       <div id="loginError" class="login-error">Email atau password salah!</div>
@@ -31,22 +25,9 @@
       </div>
       <div class="login-field">
         <label>Password</label>
-        <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="login-btn" onclick="doLogin()">Masuk sebagai Admin</button>
-    </div>
-
-    <!-- Form pengunjung -->
-    <div id="loginFormGuest" style="display:none;">
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;text-align:left;">Pilih nama santri untuk melihat informasi pembayaran.</div>
-      <div class="login-field">
-        <label>Nama Santri</label>
-        <select id="guestSiswa" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;background:#fff;color:var(--text);outline:none;">
-          <option value="">-- Pilih nama santri --</option>
-        </select>
-      </div>
-      <div id="guestError" style="display:none;color:var(--danger);font-size:12px;margin-bottom:8px;text-align:center;">Pilih nama santri terlebih dahulu.</div>
-      <button class="login-btn" style="background:var(--accent);" onclick="doLoginGuest()">Masuk sebagai Pengunjung</button>
     </div>
 
     <div style="margin-top:18px;font-size:11px;color:var(--text-muted);">TA 2025/2026 • SiPay v1.0</div>
@@ -92,11 +73,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       Tunggakan
     </a>
-    <a class="nav-item" onclick="showPage('laporan-masuk')" href="#">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      Laporan Masuk
-      <span id="adminLaporBadge" style="display:none;margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;"></span>
-    </a>
   </div>
   <div class="nav-section">
     <div class="nav-label">Pengaturan</div>
@@ -130,41 +106,6 @@
   </div>
 </aside>
 
-<!-- ═══ SIDEBAR PENGUNJUNG ═══ -->
-<aside class="sidebar" id="sidebarGuest" style="display:none;">
-  <div class="sidebar-logo">
-    <div id="guestSidebarLogo" style="width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:8px;overflow:hidden;flex-shrink:0;">🕌</div>
-    <div class="school-name" id="guestSidebarNama">Madrasah Terpadu</div>
-    <div class="app-sub">Mode Orang Tua / Wali</div>
-    <div style="margin-top:10px;background:rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;">
-      <div style="font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.5px;">Santri</div>
-      <div style="font-size:13px;font-weight:700;margin-top:2px;" id="guestSidebarSiswa">—</div>
-      <div style="font-size:11px;opacity:.7;margin-top:2px;" id="guestSidebarKelas">—</div>
-    </div>
-  </div>
-  <div class="nav-section">
-    <div class="nav-label">Informasi</div>
-    <a class="nav-item active" onclick="showPage('pengunjung')" href="#">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Info Pembayaran
-    </a>
-    <a class="nav-item" onclick="showPage('lapor')" href="#">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      Lapor Pembayaran
-      <span id="guestLaporBadge" style="display:none;margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;"></span>
-    </a>
-  </div>
-  <div style="flex:1"></div>
-  <div style="padding:12px 12px 4px;">
-    <a class="nav-item" onclick="openLogoutConfirm()" href="#" style="color:rgba(255,100,100,.85);margin-bottom:0;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Keluar
-    </a>
-  </div>
-  <div style="padding:10px 20px 16px; font-size:11px; color:rgba(255,255,255,.35); text-align:center;">
-    Mode Pengunjung • v1.0
-  </div>
-</aside>
 
 <!-- ═══ MAIN ═══ -->
 <main class="main-content">
@@ -713,104 +654,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- ═════════ HALAMAN PENGUNJUNG ═════════ -->
-  <div class="page" id="page-pengunjung">
-    <div style="max-width:640px;margin:0 auto;">
-
-      <!-- Header info siswa -->
-      <div style="background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:16px;margin-bottom:20px;color:#fff;">
-        <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🎓</div>
-        <div style="flex:1;">
-          <div style="font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.5px;">Informasi Santri</div>
-          <div style="font-size:18px;font-weight:800;" id="guestNama">—</div>
-          <div style="font-size:13px;opacity:.8;" id="guestKelas">—</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:10px;opacity:.7;">TA Aktif</div>
-          <div style="font-size:13px;font-weight:700;" id="guestTALabel">—</div>
-        </div>
-      </div>
-
-      <!-- Status ringkas (diisi JS) -->
-      <div id="guestStatGrid"></div>
-
-      <!-- Tunggakan per TA (diisi JS) -->
-      <div class="card" style="margin-bottom:16px;">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:14px;">⚠️ Rincian Tunggakan</div>
-        <div id="guestTunggakanList"></div>
-      </div>
-
-      <!-- Riwayat pembayaran (diisi JS) -->
-      <div class="card" style="margin-bottom:32px;">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:14px;">📋 Riwayat Pembayaran</div>
-        <div id="guestTransaksiList"></div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ═════════ HALAMAN LAPOR PEMBAYARAN (WALI) ═════════ -->
-  <div class="page" id="page-lapor">
-    <div style="max-width:640px;margin:0 auto;">
-
-      <!-- Form lapor -->
-      <div class="card" style="margin-bottom:16px;">
-        <div style="font-weight:700;font-size:16px;color:var(--primary);margin-bottom:4px;">📢 Lapor Pembayaran</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;">Jika pembayaran sudah dilakukan tapi belum terdata, laporkan di sini dengan bukti pembayaran.</div>
-
-        <div style="margin-bottom:14px;">
-          <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Pilih Item yang Dilaporkan</label>
-          <select id="laporItem" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;background:#fff;color:var(--text);outline:none;">
-            <option value="">-- Pilih tunggakan --</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom:14px;">
-          <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Nominal Dibayarkan</label>
-          <input type="number" id="laporNominal" placeholder="0" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
-        </div>
-
-        <div style="margin-bottom:14px;">
-          <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Catatan (opsional)</label>
-          <textarea id="laporCatatan" rows="2" placeholder="Misal: Transfer via BRI tanggal 10 Maret..." style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;outline:none;resize:none;box-sizing:border-box;"></textarea>
-        </div>
-
-        <div style="margin-bottom:18px;">
-          <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Bukti Pembayaran (foto/screenshot)</label>
-          <div id="laporBuktiWrap" style="border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;" onclick="document.getElementById('laporBuktiInput').click()">
-            <div id="laporBuktiPreview" style="font-size:13px;color:var(--text-muted);">📎 Klik untuk upload foto bukti<br><span style="font-size:11px;">JPG/PNG/PDF, maks 5MB</span></div>
-          </div>
-          <input type="file" id="laporBuktiInput" accept="image/*,application/pdf" style="display:none;" onchange="previewBukti(this)">
-        </div>
-
-        <div id="laporError" style="display:none;color:var(--danger);font-size:12px;margin-bottom:10px;padding:10px;background:#fef2f2;border-radius:8px;"></div>
-        <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="kirimLaporan()">
-          📤 Kirim Laporan ke Admin
-        </button>
-      </div>
-
-      <!-- Riwayat laporan -->
-      <div class="card">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:14px;">📋 Riwayat Laporan Saya</div>
-        <div id="laporRiwayat"><div style="text-align:center;color:var(--text-muted);padding:16px;font-size:13px;">Memuat...</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═════════ HALAMAN LAPORAN MASUK (ADMIN) ═════════ -->
-  <div class="page" id="page-laporan-masuk">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:gap;">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="filterPending" onclick="filterLaporan('pending')" style="font-size:12px;">⏳ Pending</button>
-        <button class="btn btn-outline" id="filterDiterima" onclick="filterLaporan('diterima')" style="font-size:12px;">✅ Diterima</button>
-        <button class="btn btn-outline" id="filterDitolak" onclick="filterLaporan('ditolak')" style="font-size:12px;">❌ Ditolak</button>
-        <button class="btn btn-outline" id="filterSemua" onclick="filterLaporan('semua')" style="font-size:12px;">📋 Semua</button>
-      </div>
-      <button class="btn btn-outline" onclick="loadLaporanMasuk()" style="font-size:12px;">🔄 Refresh</button>
-    </div>
-    <div id="laporanMasukList"></div>
   </div>
 
   <!-- ═════════ HALAMAN TEMPLATE KUITANSI ═════════ -->
@@ -1903,7 +1746,6 @@
 <script src="js/kuitansi.js"></script>
 <script src="js/koreksi.js"></script>
 <script src="js/template-kuitansi.js"></script>
-<script src="js/lapor.js"></script>
 <script src="js/spmb.js"></script>
 <script src="js/init.js"></script>
 </body>

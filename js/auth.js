@@ -15,14 +15,6 @@ function getAdminCreds() {
 function isLoggedIn() {
   return hasAdminSession();
 }
-function switchLoginMode(mode) {
-  document.getElementById('tabAdmin').classList.toggle('active', mode === 'admin');
-  document.getElementById('tabGuest').classList.toggle('active', mode === 'guest');
-  document.getElementById('loginFormAdmin').style.display = mode === 'admin' ? 'block' : 'none';
-  document.getElementById('loginFormGuest').style.display = mode === 'guest' ? 'block' : 'none';
-  document.getElementById('loginError').style.display = 'none';
-  if (mode === 'guest') initGuestLogin();
-}
 function showLoginError(msg) {
   const err = document.getElementById('loginError');
   err.textContent = '⚠️ ' + msg;
