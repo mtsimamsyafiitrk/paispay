@@ -249,6 +249,7 @@ async function loadRiwayatKuitansi() {
                 <td>${statusBadge}</td>
                 <td style="white-space:nowrap;">
                   <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang">🖨️</button>
+                  ${(!r.dikoreksi_oleh && !r.is_koreksi) ? `<button class="btn btn-outline btn-sm" onclick="openKoreksiKwt('${r.id}')" title="Edit / koreksi kuitansi">✏️</button>` : ''}
                   ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi">🗑️</button>` : ''}
                 </td>
               </tr>`;

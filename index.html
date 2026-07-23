@@ -175,19 +175,6 @@
   <!-- ═════════ INPUT PEMBAYARAN ═════════ -->
   <div class="page" id="page-input">
 
-    <!-- Tab Navigation -->
-    <div style="display:flex;gap:0;margin-bottom:20px;background:#fff;border-radius:14px;padding:5px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid var(--border);">
-      <button id="tabBayarBtn" onclick="switchInputTab('bayar')"
-        style="flex:1;padding:10px 16px;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:.2s;background:var(--primary);color:#fff;">
-        💳 Pembayaran Baru
-      </button>
-      <button id="tabKoreksiBtn" onclick="switchInputTab('koreksi')"
-        style="flex:1;padding:10px 16px;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:.2s;background:transparent;color:var(--text-muted);">
-        🔄 Koreksi Kuitansi
-      </button>
-    </div>
-
-    <!-- Tab: Pembayaran Baru -->
     <div id="tabBayar">
     <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:20px;align-items:start;">
       <!-- Left: select student -->
@@ -269,65 +256,6 @@
       </div>
     </div>
     </div><!-- end tabBayar -->
-
-    <!-- Tab: Koreksi Kuitansi -->
-    <div id="tabKoreksi" style="display:none;">
-      <div class="card">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:4px;">🔄 Koreksi Kuitansi Pembayaran</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Pilih santri dan kuitansi yang ingin dikoreksi</div>
-
-        <!-- Step 1: Pilih Santri -->
-        <div id="tkStep1">
-          <div style="font-weight:600;font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">① Pilih Santri</div>
-          <div style="position:relative;margin-bottom:20px;">
-            <input type="text" id="koreksiNamaSearch" placeholder="Ketik nama santri..." autocomplete="off"
-              oninput="onKoreksiNamaSearch()" onkeydown="onKoreksiNamaKeydown(event)"
-              onblur="setTimeout(hideKoreksiDropdown,200)"
-              style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
-            <div id="koreksiNamaDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--primary-light);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;max-height:240px;overflow-y:auto;"></div>
-          </div>
-          <input type="hidden" id="koreksiNama">
-        </div>
-
-        <!-- Step 2: Pilih Kuitansi -->
-        <div id="tkStep2" style="display:none;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-            <button class="btn btn-outline btn-sm" onclick="tkBack(1)">← Kembali</button>
-            <div style="font-weight:600;font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">② Pilih Kuitansi yang Salah</div>
-          </div>
-          <div id="koreksiKwtList" style="display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
-
-        <!-- Step 3: Pilih Item & Koreksi -->
-        <div id="tkStep3" style="display:none;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-            <button class="btn btn-outline btn-sm" onclick="tkBack(2)">← Kembali</button>
-            <div style="font-weight:600;font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">③ Pilih Item yang Dikoreksi</div>
-          </div>
-          <div style="font-size:13px;color:var(--primary);font-weight:600;margin-bottom:12px;" id="koreksiRefLabel">—</div>
-          <div id="koreksiItemList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
-
-          <div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#854d0e;">
-            ⚠️ Pastikan item yang dipilih benar. Sistem akan membatalkan item lama dan mencatat nilai koreksi baru.
-          </div>
-          <div class="form-group" style="margin-bottom:16px;">
-            <label>Catatan Koreksi (opsional)</label>
-            <input type="text" id="koreksiCatatan" placeholder="Contoh: Salah input bulan SPP..."
-              style="width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
-          </div>
-          <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="prosesKoreksi()">
-            🔄 Proses Koreksi & Buat Kuitansi Koreksi
-          </button>
-        </div>
-
-        <!-- Loading -->
-        <div id="koreksiLoading" style="display:none;text-align:center;padding:40px;">
-          <div style="font-size:36px;margin-bottom:10px;">⏳</div>
-          <div style="font-weight:600;color:var(--primary);">Memproses koreksi...</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Mohon tunggu sebentar</div>
-        </div>
-      </div>
-    </div><!-- end tabKoreksi -->
 
   </div>
 
@@ -1731,6 +1659,34 @@
     <div style="padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0;display:flex;justify-content:flex-end;gap:10px;">
       <button class="btn btn-outline" onclick="document.getElementById('importCalonModal').classList.remove('open')">Batal</button>
       <button class="btn btn-primary" onclick="confirmSpmbImport()" id="spmbImportConfirmBtn">✅ Import Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ KOREKSI KUITANSI MODAL ═══ -->
+<div class="modal-overlay" id="koreksiModal" onclick="if(event.target===this)closeKoreksiModal()">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">🔄 Koreksi Kuitansi</div>
+      <button class="modal-close" onclick="closeKoreksiModal()">✕</button>
+    </div>
+    <div style="font-size:13px;color:var(--primary);font-weight:600;margin-bottom:12px;" id="koreksiRefLabel">—</div>
+    <div id="koreksiItemList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:50vh;overflow-y:auto;"></div>
+    <div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#854d0e;">
+      ⚠️ Pastikan item yang dipilih benar. Sistem akan membatalkan item lama dan mencatat nilai koreksi baru.
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Catatan Koreksi (opsional)</label>
+      <input type="text" id="koreksiCatatan" placeholder="Contoh: Salah input bulan SPP..."
+        style="width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="prosesKoreksi()">
+      🔄 Proses Koreksi & Buat Kuitansi Koreksi
+    </button>
+    <div id="koreksiLoading" style="display:none;text-align:center;padding:30px;">
+      <div style="font-size:36px;margin-bottom:10px;">⏳</div>
+      <div style="font-weight:600;color:var(--primary);">Memproses koreksi...</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Mohon tunggu sebentar</div>
     </div>
   </div>
 </div>
