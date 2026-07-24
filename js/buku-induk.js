@@ -88,26 +88,32 @@ function indukNo(seq) { return BUKU_INDUK_PREFIX + String(seq).padStart(5, '0');
 
 // ── Render halaman ──
 function renderBukuIndukPage() {
-  biSetMode('manual');
-  biResetManualForm();
   biRenderSession();
   // datalist nama item
   const dl = document.getElementById('bi_item_names');
   if (dl) dl.innerHTML = (appState.payItems || []).map(i => `<option value="${esc(i.name)}">`).join('');
-  // isi default TA dari profil bila kosong
-  const taEl = document.getElementById('bi_ta');
-  if (taEl && !taEl.value) taEl.value = '';
 }
 
-function biSetMode(mode) {
-  document.getElementById('bi_tab_manual').style.display = mode === 'manual' ? 'block' : 'none';
-  document.getElementById('bi_tab_massal').style.display = mode === 'massal' ? 'block' : 'none';
-  const bm = document.getElementById('bi_btn_manual');
-  const bx = document.getElementById('bi_btn_massal');
-  if (bm && bx) {
-    bm.className = 'btn btn-sm ' + (mode === 'manual' ? 'btn-primary' : 'btn-outline');
-    bx.className = 'btn btn-sm ' + (mode === 'massal' ? 'btn-primary' : 'btn-outline');
-  }
+// ── Modal: Input Manual ──
+function openBiManual() {
+  biResetManualForm();
+  document.getElementById('biManualModal').classList.add('open');
+  setTimeout(() => document.getElementById('bi_nama')?.focus(), 60);
+}
+function closeBiManual() {
+  document.getElementById('biManualModal').classList.remove('open');
+}
+
+// ── Modal: Upload Massal ──
+function openBiMassal() {
+  indukBuffer = [];
+  const prev = document.getElementById('bi_preview_wrap'); if (prev) prev.innerHTML = '';
+  const btn  = document.getElementById('bi_confirm_btn');  if (btn) btn.style.display = 'none';
+  const file = document.getElementById('bi_massal_file');  if (file) file.value = '';
+  document.getElementById('biMassalModal').classList.add('open');
+}
+function closeBiMassal() {
+  document.getElementById('biMassalModal').classList.remove('open');
 }
 
 // ══════════════════════════════════════════

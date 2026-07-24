@@ -337,6 +337,27 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .modal-close:hover { background: var(--danger-pale); color: var(--danger); }
 
+/* ══ BUKU INDUK — kartu pilihan metode input ══ */
+.bi-choice {
+  display: flex; align-items: center; gap: 14px; text-align: left;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 16px; padding: 18px 20px; cursor: pointer;
+  font-family: inherit; transition: border-color .18s, box-shadow .18s, transform .18s;
+}
+.bi-choice:hover {
+  border-color: var(--primary-light);
+  box-shadow: 0 8px 22px rgba(0,0,0,.08);
+  transform: translateY(-2px);
+}
+.bi-choice-icon {
+  font-size: 26px; width: 52px; height: 52px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--primary-pale); border-radius: 12px;
+}
+.bi-choice-body { display: flex; flex-direction: column; gap: 3px; }
+.bi-choice-title { font-weight: 800; font-size: 15px; color: var(--primary); }
+.bi-choice-desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.4; }
+
 /* ══ PDF PREVIEW ══ */
 .pdf-preview-wrap { background: #e8e8e8; padding: 20px; border-radius: 8px; overflow-y: auto; }
 .pdf-preview {
