@@ -218,6 +218,8 @@ async function biSubmitManual() {
       total, incomplete: reasons.length > 0, masalah: reasons.join('; '),
     });
     biRenderSession();
+    // Segarkan daftar Buku Induk (halaman riwayat) bila terbuka
+    if (typeof loadRiwayatKuitansi === 'function') loadRiwayatKuitansi();
 
     // Reset untuk entri berikutnya (pertahankan TA & tanggal biar cepat)
     biResetManualForm();
@@ -401,6 +403,7 @@ async function confirmImportInduk() {
     const fileEl = document.getElementById('bi_massal_file');
     if (fileEl) fileEl.value = '';
     toast(`✅ ${n} entri tersimpan ke Buku Induk`);
+    if (typeof loadRiwayatKuitansi === 'function') loadRiwayatKuitansi();
   } catch (e) {
     console.error('confirmImportInduk:', e);
     toast('⚠️ Gagal menyimpan: ' + (e.message || e));

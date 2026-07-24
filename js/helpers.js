@@ -58,8 +58,7 @@ function showPage(id) {
     lapor:['Lapor Pembayaran','Laporkan pembayaran yang belum terdata'],
     'laporan-masuk':['Laporan Masuk','Verifikasi laporan pembayaran dari wali santri'],
     'template-kuitansi':['Template Kuitansi','Atur tampilan kuitansi pembayaran'],
-    'riwayat-kuitansi':['Riwayat Kuitansi','Daftar seluruh kuitansi yang telah dibuat'],
-    'buku-induk':['Buku Induk','Arsip pembayaran angkatan / tahun ajaran sebelumnya']};
+    'riwayat-kuitansi':['Buku Induk','Arsip & pencatatan seluruh pembayaran santri']};
   const t = titles[id]||[id,id];
   document.getElementById('pageTitle').textContent = t[0];
   document.getElementById('pageSubtitle').textContent = t[1];
@@ -73,8 +72,7 @@ function showPage(id) {
   if(id==='input') renderInputPage();
   if(id==='cetak') renderCetakPage();
   if(id==='template-kuitansi') renderTemplateKuitansiPage();
-  if(id==='riwayat-kuitansi') loadRiwayatKuitansi();
-  if(id==='buku-induk') renderBukuIndukPage();
+  if(id==='riwayat-kuitansi') { if(typeof renderBukuIndukPage==='function') renderBukuIndukPage(); loadRiwayatKuitansi(); }
 }
 
 function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarBackdrop').classList.add('show'); }
