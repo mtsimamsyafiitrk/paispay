@@ -61,6 +61,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Riwayat Kuitansi
     </a>
+    <a class="nav-item" onclick="showPage('buku-induk')" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/></svg>
+      Buku Induk
+    </a>
     <a class="nav-item" onclick="showPage('rekap-siswa')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Data Siswa
@@ -781,7 +785,94 @@
     </div>
   </div>
 
+  <!-- ═════════ BUKU INDUK (Input Data Lama) ═════════ -->
+  <div class="page" id="page-buku-induk">
+    <datalist id="bi_item_names"></datalist>
+
+    <div class="card" style="margin-bottom:16px;background:var(--primary-pale);border:1px solid var(--primary-light);">
+      <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:4px;">📖 Buku Induk — Arsip Pembayaran Lama</div>
+      <div style="font-size:12.5px;color:var(--text);line-height:1.6;">
+        Masukkan pembayaran dari angkatan / tahun ajaran sebelumnya. Data tersimpan sebagai arsip
+        (bernomor <strong>BI-…</strong>), <strong>bisa dicari &amp; dibuka detailnya di Riwayat Kuitansi</strong>,
+        dan <strong>tidak</strong> mengubah tagihan / statistik tahun berjalan.
+        Jika ada data yang tidak lengkap, entri tetap bisa disimpan dan akan ditandai — penjelasannya muncul di detail.
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button id="bi_btn_manual" class="btn btn-primary btn-sm" onclick="biSetMode('manual')">✍️ Input Manual</button>
+      <button id="bi_btn_massal" class="btn btn-outline btn-sm" onclick="biSetMode('massal')">📤 Upload Massal</button>
+    </div>
+
+    <!-- ── MODE: INPUT MANUAL ── -->
+    <div id="bi_tab_manual">
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:16px;">✍️ Input Manual</div>
+        <div class="form-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+          <div class="form-group"><label>Tahun Ajaran</label>
+            <input type="text" id="bi_ta" list="bi_ta_list" placeholder="mis. 2024/2025">
+            <datalist id="bi_ta_list"><option value="2022/2023"><option value="2023/2024"><option value="2024/2025"><option value="2025/2026"></datalist>
+          </div>
+          <div class="form-group"><label>Nama Santri *</label><input type="text" id="bi_nama" placeholder="Nama lengkap"></div>
+          <div class="form-group"><label>Kelas</label><input type="text" id="bi_kelas" placeholder="mis. 9 / IX-A"></div>
+          <div class="form-group"><label>NISN</label><input type="text" id="bi_nisn" placeholder="Opsional"></div>
+        </div>
+
+        <div style="font-weight:700;font-size:13px;color:var(--primary);margin:12px 0 8px;">Rincian Pembayaran</div>
+        <div id="bi_items_wrap"></div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="biAddItemRow()">➕ Tambah Item</button>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;align-items:end;">
+          <div class="form-group" style="margin:0;"><label>Tanggal Bayar (opsional)</label><input type="date" id="bi_tanggal"></div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;color:var(--text-muted);">Total</div>
+            <div style="font-size:22px;font-weight:800;color:var(--primary-light);" id="bi_total">Rp 0</div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:12px;"><label>Catatan (opsional)</label><input type="text" id="bi_catatan" placeholder="Keterangan tambahan..."></div>
+
+        <button id="bi_submit_btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" onclick="biSubmitManual()">💾 Simpan ke Buku Induk</button>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:12px;">📋 Entri Tersimpan (Sesi Ini)</div>
+        <div id="bi_session_wrap"></div>
+      </div>
+    </div>
+
+    <!-- ── MODE: UPLOAD MASSAL ── -->
+    <div id="bi_tab_massal" style="display:none;">
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:8px;">📤 Upload Massal (Excel / CSV)</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
+          Kolom: <strong>TAHUN_AJARAN, NAMA, KELAS, NISN, ITEM, NOMINAL, BULAN, TANGGAL, CATATAN</strong>.
+          Satu baris = satu pembayaran. Baris yang kolomnya kosong tetap boleh diunggah — akan ditandai sebagai <em>tidak lengkap</em>.
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn btn-outline btn-sm" onclick="downloadTemplateInduk()">⬇️ Download Template</button>
+          <label class="btn btn-primary btn-sm" style="cursor:pointer;">
+            📁 Pilih File
+            <input type="file" id="bi_massal_file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleIndukFile(this)">
+          </label>
+        </div>
+        <div id="bi_preview_wrap"></div>
+        <button id="bi_confirm_btn" class="btn btn-primary" style="display:none;width:100%;justify-content:center;margin-top:14px;" onclick="confirmImportInduk()">💾 Simpan ke Buku Induk</button>
+      </div>
+    </div>
+  </div>
+
 </main>
+
+<!-- ═══ MODAL DETAIL BUKU INDUK ═══ -->
+<div class="modal-overlay" id="indukDetailModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">📖 Detail Pembayaran</div>
+      <button class="modal-close" onclick="closeIndukDetail()">✕</button>
+    </div>
+    <div id="bi_detail_body"></div>
+  </div>
+</div>
 
 <!-- ═══ MODAL KONFIRMASI HAPUS KUITANSI ═══ -->
 <!-- ═══ MODAL EDIT PEMBAYARAN (dari Tunggakan) ═══ -->
@@ -1716,6 +1807,7 @@
 <script src="js/guest.js"></script>
 <script src="js/akun.js"></script>
 <script src="js/kuitansi.js"></script>
+<script src="js/buku-induk.js"></script>
 <script src="js/koreksi.js"></script>
 <script src="js/template-kuitansi.js"></script>
 <script src="js/spmb.js"></script>
