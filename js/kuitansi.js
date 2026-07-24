@@ -231,6 +231,9 @@ async function loadRiwayatKuitansi() {
               const tgl = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
               const jam = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
               const items = Array.isArray(r.items) ? r.items.map(i => i.name + (i.bulan?' ('+( MONTH_FULL[i.bulan]||i.bulan)+')':'')).join(', ') : '—';
+              const isInduk = typeof isIndukKwt === 'function' && isIndukKwt(r);
+              const isIncomplete = typeof indukIncomplete === 'function' && indukIncomplete(r);
+              const indukBadges = `${isInduk?'<br><span style="background:var(--primary-pale);color:var(--primary);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;">📖 Buku Induk</span>':''}${isIncomplete?`<br><span title="Data tidak lengkap" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;">⚠️ Tidak lengkap</span>`:''}`;
               const statusBadge = r.dikoreksi_oleh
                 ? `<span style="background:#fef9c3;color:#92400e;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">🔄 Dikoreksi</span><br><span style="font-size:10px;color:#999;">${esc(r.dikoreksi_oleh)}</span>`
                 : r.is_koreksi
@@ -246,8 +249,9 @@ async function loadRiwayatKuitansi() {
                 <td><span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${esc(r.ta_label||'—')}</span></td>
                 <td style="font-size:12px;max-width:180px;white-space:normal;">${esc(items)}</td>
                 <td style="text-align:right;font-weight:700;color:var(--primary-light);">Rp ${fmt(r.total)}</td>
-                <td>${statusBadge}</td>
+                <td>${statusBadge}${indukBadges}</td>
                 <td style="white-space:nowrap;">
+                  <button class="btn btn-outline btn-sm" onclick="openIndukDetail('${r.id}')" title="Lihat detail">🔍</button>
                   <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang">🖨️</button>
                   ${(!r.dikoreksi_oleh && !r.is_koreksi) ? `<button class="btn btn-outline btn-sm" onclick="openKoreksiKwt('${r.id}')" title="Edit / koreksi kuitansi">✏️</button>` : ''}
                   ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi">🗑️</button>` : ''}

@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('profilModal').addEventListener('click', function(e) { if(e.target===this) closeProfilModal(); });
   document.getElementById('deleteModal').addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
   document.getElementById('addSiswaModal').addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
+  document.getElementById('indukDetailModal')?.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
   applyProfil();
   await initApp();
 

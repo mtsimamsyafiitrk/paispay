@@ -38,6 +38,22 @@ sipay/
 | 2 blok `<script>` monolitik | 21 file JS modular |
 | Sulit di-debug & di-maintain | Setiap modul punya tanggung jawab jelas |
 
+## Buku Induk — Arsip Pembayaran Lama
+
+Menu **Buku Induk** dipakai untuk memasukkan pembayaran dari angkatan / tahun
+ajaran sebelumnya sebagai **arsip / catatan induk**. Karakteristik:
+
+- Data disimpan ke tabel `kuitansi` yang sama, bernomor **`BI-…`** (berbeda dari
+  kuitansi berjalan `KWT-…`), sehingga otomatis **bisa dicari & dibuka detailnya**
+  di halaman **Riwayat Kuitansi**.
+- **Tidak** menyentuh tabel `tagihan` / statistik tahun berjalan (murni arsip).
+- Dua cara input: **Input Manual** (satu per satu) dan **Upload Massal** (Excel/CSV,
+  kolom: `TAHUN_AJARAN, NAMA, KELAS, NISN, ITEM, NOMINAL, BULAN, TANGGAL, CATATAN`).
+- **Data tidak lengkap tetap boleh disimpan**: entri ditandai otomatis (catatan
+  diawali `[DATA TIDAK LENGKAP]` + alasan) dan ditampilkan sebagai peringatan di
+  modal detail serta badge di Riwayat Kuitansi — sehingga tidak salah dibaca
+  sebagai tunggakan. Tidak perlu perubahan skema database.
+
 ## Deploy ke GitHub Pages
 
 1. Push seluruh isi folder `sipay-merged/` ke repository GitHub Anda (langsung di root repo, bukan dalam subfolder).
