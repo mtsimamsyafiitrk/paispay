@@ -799,69 +799,89 @@
       </div>
     </div>
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button id="bi_btn_manual" class="btn btn-primary btn-sm" onclick="biSetMode('manual')">✍️ Input Manual</button>
-      <button id="bi_btn_massal" class="btn btn-outline btn-sm" onclick="biSetMode('massal')">📤 Upload Massal</button>
+    <!-- Pilihan metode input (klik → popup) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <button type="button" class="bi-choice" onclick="openBiManual()">
+        <span class="bi-choice-icon">✍️</span>
+        <span class="bi-choice-body">
+          <span class="bi-choice-title">Input Manual</span>
+          <span class="bi-choice-desc">Catat pembayaran lama satu per satu lewat form.</span>
+        </span>
+      </button>
+      <button type="button" class="bi-choice" onclick="openBiMassal()">
+        <span class="bi-choice-icon">📤</span>
+        <span class="bi-choice-body">
+          <span class="bi-choice-title">Upload Massal</span>
+          <span class="bi-choice-desc">Impor banyak pembayaran sekaligus dari Excel / CSV.</span>
+        </span>
+      </button>
     </div>
 
-    <!-- ── MODE: INPUT MANUAL ── -->
-    <div id="bi_tab_manual">
-      <div class="card" style="margin-bottom:16px;">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:16px;">✍️ Input Manual</div>
-        <div class="form-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-          <div class="form-group"><label>Tahun Ajaran</label>
-            <input type="text" id="bi_ta" list="bi_ta_list" placeholder="mis. 2024/2025">
-            <datalist id="bi_ta_list"><option value="2022/2023"><option value="2023/2024"><option value="2024/2025"><option value="2025/2026"></datalist>
-          </div>
-          <div class="form-group"><label>Nama Santri *</label><input type="text" id="bi_nama" placeholder="Nama lengkap"></div>
-          <div class="form-group"><label>Kelas</label><input type="text" id="bi_kelas" placeholder="mis. 9 / IX-A"></div>
-          <div class="form-group"><label>NISN</label><input type="text" id="bi_nisn" placeholder="Opsional"></div>
-        </div>
-
-        <div style="font-weight:700;font-size:13px;color:var(--primary);margin:12px 0 8px;">Rincian Pembayaran</div>
-        <div id="bi_items_wrap"></div>
-        <button type="button" class="btn btn-outline btn-sm" onclick="biAddItemRow()">➕ Tambah Item</button>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;align-items:end;">
-          <div class="form-group" style="margin:0;"><label>Tanggal Bayar (opsional)</label><input type="date" id="bi_tanggal"></div>
-          <div style="text-align:right;">
-            <div style="font-size:12px;color:var(--text-muted);">Total</div>
-            <div style="font-size:22px;font-weight:800;color:var(--primary-light);" id="bi_total">Rp 0</div>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:12px;"><label>Catatan (opsional)</label><input type="text" id="bi_catatan" placeholder="Keterangan tambahan..."></div>
-
-        <button id="bi_submit_btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" onclick="biSubmitManual()">💾 Simpan ke Buku Induk</button>
-      </div>
-
-      <div class="card">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:12px;">📋 Entri Tersimpan (Sesi Ini)</div>
-        <div id="bi_session_wrap"></div>
-      </div>
-    </div>
-
-    <!-- ── MODE: UPLOAD MASSAL ── -->
-    <div id="bi_tab_massal" style="display:none;">
-      <div class="card" style="margin-bottom:16px;">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:8px;">📤 Upload Massal (Excel / CSV)</div>
-        <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
-          Kolom: <strong>TAHUN_AJARAN, NAMA, KELAS, NISN, ITEM, NOMINAL, BULAN, TANGGAL, CATATAN</strong>.
-          Satu baris = satu pembayaran. Baris yang kolomnya kosong tetap boleh diunggah — akan ditandai sebagai <em>tidak lengkap</em>.
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-          <button class="btn btn-outline btn-sm" onclick="downloadTemplateInduk()">⬇️ Download Template</button>
-          <label class="btn btn-primary btn-sm" style="cursor:pointer;">
-            📁 Pilih File
-            <input type="file" id="bi_massal_file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleIndukFile(this)">
-          </label>
-        </div>
-        <div id="bi_preview_wrap"></div>
-        <button id="bi_confirm_btn" class="btn btn-primary" style="display:none;width:100%;justify-content:center;margin-top:14px;" onclick="confirmImportInduk()">💾 Simpan ke Buku Induk</button>
-      </div>
+    <!-- Entri tersimpan sesi ini -->
+    <div class="card">
+      <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:12px;">📋 Entri Tersimpan (Sesi Ini)</div>
+      <div id="bi_session_wrap"></div>
     </div>
   </div>
 
 </main>
+
+<!-- ═══ MODAL INPUT MANUAL — BUKU INDUK ═══ -->
+<div class="modal-overlay" id="biManualModal">
+  <div class="modal" style="max-width:660px;">
+    <div class="modal-header">
+      <div class="modal-title">✍️ Input Manual — Buku Induk</div>
+      <button class="modal-close" onclick="closeBiManual()">✕</button>
+    </div>
+    <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label>Tahun Ajaran</label>
+        <input type="text" id="bi_ta" list="bi_ta_list" placeholder="mis. 2024/2025">
+        <datalist id="bi_ta_list"><option value="2022/2023"><option value="2023/2024"><option value="2024/2025"><option value="2025/2026"></datalist>
+      </div>
+      <div class="form-group"><label>Nama Santri *</label><input type="text" id="bi_nama" placeholder="Nama lengkap"></div>
+      <div class="form-group"><label>Kelas</label><input type="text" id="bi_kelas" placeholder="mis. 9 / IX-A"></div>
+      <div class="form-group"><label>NISN</label><input type="text" id="bi_nisn" placeholder="Opsional"></div>
+    </div>
+
+    <div style="font-weight:700;font-size:13px;color:var(--primary);margin:12px 0 8px;">Rincian Pembayaran</div>
+    <div id="bi_items_wrap"></div>
+    <button type="button" class="btn btn-outline btn-sm" onclick="biAddItemRow()">➕ Tambah Item</button>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;align-items:end;">
+      <div class="form-group" style="margin:0;"><label>Tanggal Bayar (opsional)</label><input type="date" id="bi_tanggal"></div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:var(--text-muted);">Total</div>
+        <div style="font-size:22px;font-weight:800;color:var(--primary-light);" id="bi_total">Rp 0</div>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:12px;"><label>Catatan (opsional)</label><input type="text" id="bi_catatan" placeholder="Keterangan tambahan..."></div>
+
+    <button id="bi_submit_btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" onclick="biSubmitManual()">💾 Simpan ke Buku Induk</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL UPLOAD MASSAL — BUKU INDUK ═══ -->
+<div class="modal-overlay" id="biMassalModal">
+  <div class="modal" style="max-width:760px;">
+    <div class="modal-header">
+      <div class="modal-title">📤 Upload Massal — Buku Induk</div>
+      <button class="modal-close" onclick="closeBiMassal()">✕</button>
+    </div>
+    <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
+      Kolom: <strong>TAHUN_AJARAN, NAMA, KELAS, NISN, ITEM, NOMINAL, BULAN, TANGGAL, CATATAN</strong>.
+      Satu baris = satu pembayaran. Baris yang kolomnya kosong tetap boleh diunggah — akan ditandai sebagai <em>tidak lengkap</em>.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button class="btn btn-outline btn-sm" onclick="downloadTemplateInduk()">⬇️ Download Template</button>
+      <label class="btn btn-primary btn-sm" style="cursor:pointer;">
+        📁 Pilih File
+        <input type="file" id="bi_massal_file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleIndukFile(this)">
+      </label>
+    </div>
+    <div id="bi_preview_wrap"></div>
+    <button id="bi_confirm_btn" class="btn btn-primary" style="display:none;width:100%;justify-content:center;margin-top:14px;" onclick="confirmImportInduk()">💾 Simpan ke Buku Induk</button>
+  </div>
+</div>
 
 <!-- ═══ MODAL DETAIL BUKU INDUK ═══ -->
 <div class="modal-overlay" id="indukDetailModal">
