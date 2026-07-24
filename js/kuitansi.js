@@ -171,39 +171,71 @@ async function konfirmasiHapusKwt() {
   }
 }
 
-async function loadRiwayatKuitansi() {
+// ── Riwayat Kuitansi: pencarian di sisi server + paginasi ──
+// Dulu hanya menarik 500 baris lalu menyaring di klien — tak cukup untuk
+// arsip besar (mis. ribuan entri Buku Induk). Kini filter & pencarian
+// dikirim ke server, dan hasilnya dipaginasi.
+let kwtPage = 0;
+const KWT_PAGE_SIZE = 100;
+function kwtNextPage() { kwtPage++; loadRiwayatKuitansi(true); }
+function kwtPrevPage() { if (kwtPage > 0) { kwtPage--; loadRiwayatKuitansi(true); } }
+
+// Susun bagian filter PostgREST (dipakai untuk ambil data & hitung total).
+function kwtBuildFilters() {
+  const q      = document.getElementById('kwt_search')?.value?.trim() || '';
+  const ta     = document.getElementById('kwt_ta')?.value || '';
+  const dari   = document.getElementById('kwt_dari')?.value || '';
+  const sampai = document.getElementById('kwt_sampai')?.value || '';
+  const f = [];
+  if (q) {
+    const v = encodeURIComponent('*' + q + '*');   // ilike wildcard PostgREST
+    f.push(`or=(nama.ilike.${v},no_kuitansi.ilike.${v},ta_label.ilike.${v})`);
+  }
+  if (ta)     f.push('ta_label=eq.' + encodeURIComponent(ta));
+  if (dari)   f.push('created_at=gte.' + dari + 'T00:00:00');
+  if (sampai) f.push('created_at=lte.' + sampai + 'T23:59:59');
+  return f;
+}
+// Hitung total baris yang cocok (best-effort lewat header Content-Range).
+async function kwtCountTotal(filters) {
+  try {
+    const qs = ['select=id'].concat(filters).join('&');
+    const r = await fetch(SB_URL + '/rest/v1/kuitansi?' + qs, {
+      headers: { ...authHeaders(), 'Prefer': 'count=exact', 'Range-Unit': 'items', 'Range': '0-0' },
+    });
+    const cr = r.headers.get('content-range') || '';
+    return parseInt(cr.split('/')[1]);
+  } catch { return NaN; }
+}
+
+async function loadRiwayatKuitansi(keepPage) {
+  if (!keepPage) kwtPage = 0;
   const el = document.getElementById('kwtTableWrap');
   const statsEl = document.getElementById('kwtStats');
   if (!el) return;
   el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;">Memuat...</div>';
 
-  const q       = document.getElementById('kwt_search')?.value?.trim().toLowerCase() || '';
-  const dari    = document.getElementById('kwt_dari')?.value || '';
-  const sampai  = document.getElementById('kwt_sampai')?.value || '';
+  const filters = kwtBuildFilters();
 
   try {
-    // Query semua kuitansi tanpa filter TA — ambil dari semua TA
-    let url = 'kuitansi?select=*&order=created_at.desc&limit=500';
-    if (dari)   url += '&created_at=gte.' + dari + 'T00:00:00';
-    if (sampai) url += '&created_at=lte.' + sampai + 'T23:59:59';
-  let rows = await sb(url);
+    const offset = kwtPage * KWT_PAGE_SIZE;
+    const url = ['kuitansi?select=*', 'order=created_at.desc']
+      .concat(filters)
+      .concat(['limit=' + KWT_PAGE_SIZE, 'offset=' + offset]).join('&');
+    let rows = await sb(url);
+    const total = await kwtCountTotal(filters);              // bisa NaN bila gagal
+    const known = Number.isFinite(total);
+    const totalPages = known ? Math.max(1, Math.ceil(total / KWT_PAGE_SIZE))
+                             : kwtPage + (rows.length === KWT_PAGE_SIZE ? 2 : 1);
+    const hasNext = known ? (kwtPage + 1 < totalPages) : (rows.length === KWT_PAGE_SIZE);
 
-    // Filter nama / no kuitansi di client
-    if (q) rows = rows.filter(r =>
-      r.nama?.toLowerCase().includes(q) ||
-      r.no_kuitansi?.toLowerCase().includes(q) ||
-      r.ta_label?.toLowerCase().includes(q)
-    );
-
-    // Stats
-    const totalNominal = rows.reduce((s,r) => s + (r.total||0), 0);
-    const sudahCetak   = rows.filter(r => r.dicetak).length;
-    // Hitung jumlah TA unik
-    const taUnik = new Set(rows.map(r => r.ta_label).filter(Boolean)).size;
+    // Stats (Total dari server; nominal & cetak dihitung untuk halaman ini)
+    const nominalHal = rows.reduce((s,r) => s + (r.total||0), 0);
+    const sudahCetak = rows.filter(r => r.dicetak).length;
     if (statsEl) statsEl.innerHTML = `
-      <div class="stat-card blue"><div class="stat-label">Total Kuitansi</div><div class="stat-value" style="font-size:22px;">${rows.length}</div><div class="stat-sub">${taUnik} tahun ajaran</div><div class="stat-icon">🧾</div></div>
-      <div class="stat-card green"><div class="stat-label">Total Nominal</div><div class="stat-value" style="font-size:18px;">${rp(totalNominal)}</div><div class="stat-sub">Semua TA tergabung</div><div class="stat-icon">💰</div></div>
-      <div class="stat-card gold"><div class="stat-label">Sudah Dicetak</div><div class="stat-value" style="font-size:22px;">${sudahCetak}</div><div class="stat-sub">${rows.length - sudahCetak} belum dicetak</div><div class="stat-icon">🖨️</div></div>
+      <div class="stat-card blue"><div class="stat-label">Total Kuitansi</div><div class="stat-value" style="font-size:22px;">${known ? total : '—'}</div><div class="stat-sub">${filters.length ? 'sesuai filter' : 'semua data'}</div><div class="stat-icon">🧾</div></div>
+      <div class="stat-card green"><div class="stat-label">Nominal (halaman ini)</div><div class="stat-value" style="font-size:18px;">${rp(nominalHal)}</div><div class="stat-sub">${rows.length} baris ditampilkan</div><div class="stat-icon">💰</div></div>
+      <div class="stat-card gold"><div class="stat-label">Halaman</div><div class="stat-value" style="font-size:22px;">${kwtPage + 1}<span style="font-size:13px;font-weight:500;"> / ${totalPages}</span></div><div class="stat-sub">${KWT_PAGE_SIZE} per halaman</div><div class="stat-icon">📄</div></div>
     `;
 
     if (!rows.length) {
@@ -260,6 +292,11 @@ async function loadRiwayatKuitansi() {
             }).join('')}
           </tbody>
         </table>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" ${kwtPage <= 0 ? 'disabled' : ''} onclick="kwtPrevPage()">← Sebelumnya</button>
+        <span style="font-size:13px;color:var(--text-muted);">Halaman <strong>${kwtPage + 1}</strong> dari ${totalPages}</span>
+        <button class="btn btn-outline btn-sm" ${hasNext ? '' : 'disabled'} onclick="kwtNextPage()">Berikutnya →</button>
       </div>`;
   } catch(e) {
     el.innerHTML = `
