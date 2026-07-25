@@ -181,7 +181,7 @@
       <div class="card">
         <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:16px;">👤 Pilih Santri</div>
         <div class="form-grid">
-          <div class="form-group full">
+          <div class="form-group full" id="inputNamaField">
             <label>Nama Santri</label>
             <!-- Hidden input untuk menyimpan nilai nama terpilih -->
             <input type="hidden" id="inputNama">
@@ -192,7 +192,7 @@
                 oninput="onInputNamaSearch()"
                 onkeydown="onInputNamaKeydown(event)"
                 onfocus="onInputNamaSearch()"
-                onblur="setTimeout(hideInputNamaDropdown, 200)"
+                onblur="onInputNamaBlur()"
                 style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;transition:border-color .2s;">
               <div id="inputNamaDropdown"
                 style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--primary-light);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:100;max-height:260px;overflow-y:auto;">
@@ -200,7 +200,7 @@
             </div>
             <div style="margin-top:6px;">
               <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;">
-                <input type="checkbox" id="inputShowNonAktif" onchange="onInputNamaSearch()"
+                <input type="checkbox" id="inputShowNonAktif" onchange="onToggleShowNonAktif()"
                   style="accent-color:var(--primary);width:13px;height:13px;">
                 Tampilkan santri non-aktif (lulus / pindah / keluar)
               </label>

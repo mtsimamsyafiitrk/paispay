@@ -191,9 +191,27 @@ function hideInputNamaDropdown() {
   inputNamaSuggIdx = -1;
 }
 
-// Tutup dropdown saat klik di luar
+// Toggle "Tampilkan santri non-aktif": fokuskan kolom pencarian lalu refresh
+// dropdown, supaya daftar (termasuk santri lama) langsung muncul & tidak
+// tertutup oleh blur/klik-di-luar saat mencentang.
+function onToggleShowNonAktif() {
+  const searchEl = document.getElementById('inputNamaSearch');
+  if (searchEl) searchEl.focus();
+  onInputNamaSearch();
+}
+
+// Sembunyikan dropdown saat kolom pencarian kehilangan fokus — kecuali fokus
+// pindah ke elemen lain di dalam field nama (mis. checkbox non-aktif).
+function onInputNamaBlur() {
+  setTimeout(() => {
+    const field = document.getElementById('inputNamaField');
+    if (!field || !field.contains(document.activeElement)) hideInputNamaDropdown();
+  }, 200);
+}
+
+// Tutup dropdown saat klik di luar area field nama (search + checkbox non-aktif)
 document.addEventListener('click', function(e) {
-  const wrap = document.getElementById('inputNamaSearch')?.closest('div');
+  const wrap = document.getElementById('inputNamaField') || document.getElementById('inputNamaSearch')?.closest('div');
   if (wrap && !wrap.contains(e.target)) hideInputNamaDropdown();
 });
 
