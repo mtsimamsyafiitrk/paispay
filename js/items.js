@@ -3,8 +3,9 @@ function showDetail(nama) {
   const s = getStudent(nama);
   if (!s) return;
   document.getElementById('modalTitle').textContent = s.nama;
-  const sppT = sppTunggakan(s), itemT = itemsTunggakan(s);
-  const totalT = sppT + itemT;
+  const sppT = sppTunggakan(s), prevT = sppTunggakanPrev(s), itemT = itemsTunggakan(s);
+  const totalT = sppT + prevT + itemT;
+  const prevList = sppTunggakanPrevList(s);
   // Agregat tagihan item (tetap) untuk ringkasan
   const tagT       = appState.tagihan.filter(t => t.nama === s.nama);
   const tagNominal = tagT.reduce((a, t) => a + (t.nominal || 0), 0);
@@ -35,6 +36,8 @@ function showDetail(nama) {
     </div>
     <div style="background:${totalT>0?'var(--danger-pale)':'var(--primary-pale)'};border-radius:10px;padding:14px;">
       ${sppT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan SPP:</strong> ${rp(sppT)}</div>` : ''}
+      ${prevT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan SPP Tahun Lalu:</strong> ${rp(prevT)}
+        <span style="font-size:11px;color:var(--text-muted);">(${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</span></div>` : ''}
       ${itemT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan Item Tagihan:</strong> ${rp(itemT)}</div>` : ''}
       ${totalT===0 ? '<div style="color:var(--primary-light);font-weight:700;">✓ Semua pembayaran lunas!</div>' : `<div style="font-weight:700;margin-top:4px;">Total: ${rp(totalT)}</div>`}
     </div>

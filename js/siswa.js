@@ -196,6 +196,7 @@ function renderTunggakan() {
   const withTk = ss.filter(s => totalTunggakan(s) > 0);
   const totalTk = withTk.reduce((a,s) => a + totalTunggakan(s), 0);
   const sppTk   = ss.reduce((a,s) => a + sppTunggakan(s), 0);
+  const sppPrevTk = ss.reduce((a,s) => a + sppTunggakanPrev(s), 0);
 
   // Hitung tunggakan per item dari tagihan
   const itemStats = {};
@@ -231,6 +232,13 @@ function renderTunggakan() {
       <div class="stat-sub">${ss.filter(s=>sppTunggakan(s)>0).length} santri</div>
       <div class="stat-icon">📅</div>
     </div>
+    ${sppPrevTk > 0 ? `
+    <div class="stat-card red">
+      <div class="stat-label">Tunggakan SPP Th. Lalu</div>
+      <div class="stat-value" style="font-size:18px;">${rp(sppPrevTk)}</div>
+      <div class="stat-sub">${ss.filter(s=>sppTunggakanPrev(s)>0).length} santri</div>
+      <div class="stat-icon">🗓️</div>
+    </div>` : ''}
     ${itemCards}
   `;
   document.getElementById('tunggakanDetail').innerHTML = '';
@@ -329,8 +337,10 @@ function renderTunggakanDetail(s) {
     </div>`;
 
   const sppT   = sppTunggakan(s);
+  const prevT  = sppTunggakanPrev(s);
+  const prevList = sppTunggakanPrevList(s);
   const itemT  = itemsTunggakan(s);
-  const totalT = sppT + itemT;
+  const totalT = sppT + prevT + itemT;
 
   // SPP bulan grid
   const bulanLunas = MONTHS.filter(m => (s.spp_paid_months||[]).includes(m));
@@ -371,6 +381,7 @@ function renderTunggakanDetail(s) {
     ? `<div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-weight:800;font-size:15px;color:var(--danger);">⚠️ Total Tunggakan: ${rp(totalT)}</div>
         ${sppT > 0  ? `<div style="font-size:13px;margin-top:4px;">SPP: ${rp(sppT)} (${bulanBelum.length} bulan belum lunas)</div>` : ''}
+        ${prevT > 0 ? `<div style="font-size:13px;margin-top:2px;">SPP tahun lalu: ${rp(prevT)} (${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</div>` : ''}
         ${itemT > 0 ? `<div style="font-size:13px;margin-top:2px;">Item lain: ${rp(itemT)}</div>` : ''}
       </div>`
     : `<div style="background:var(--primary-pale);border-left:4px solid var(--primary-light);border-radius:10px;padding:14px 16px;margin-bottom:20px;">

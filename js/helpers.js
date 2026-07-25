@@ -190,8 +190,36 @@ function itemsTunggakan(s) {
     .reduce((sum, t) => sum + Math.max(0, t.nominal - t.paid_amount), 0);
 }
 
+// ── Tunggakan SPP tahun ajaran sebelumnya ──
+// Sumber data: s.spp_history = { "2024/2025": { spp, spp_paid_months }, ... }
+// Snapshot ini dibuat saat promosi kelas (pindah TA) sebelum spp_paid_months
+// tahun berjalan direset — jadi bulan yang belum dibayar tahun lalu tetap
+// terhitung sebagai tunggakan dan bisa dibayar di tahun ajaran baru.
+// Mengembalikan array per tahun ajaran: { ta, rate, unpaid:[bulan...], amount }.
+function sppTunggakanPrevList(s) {
+  const hist = (s && s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
+  const out = [];
+  Object.keys(hist).forEach(ta => {
+    const d = hist[ta] || {};
+    const rate = Number(d.spp) || 0;
+    if (rate <= 0) return;
+    const paid = Array.isArray(d.spp_paid_months) ? d.spp_paid_months : [];
+    const unpaid = MONTHS.filter(m => !paid.includes(m));
+    if (!unpaid.length) return;
+    out.push({ ta, rate, unpaid, amount: unpaid.length * rate });
+  });
+  // Urutkan menaik berdasar tahun awal TA (yang paling lama tampil dulu)
+  out.sort((a, b) => (parseInt(a.ta) || 0) - (parseInt(b.ta) || 0));
+  return out;
+}
+
+// Total nominal tunggakan SPP dari seluruh tahun ajaran sebelumnya.
+function sppTunggakanPrev(s) {
+  return sppTunggakanPrevList(s).reduce((sum, y) => sum + y.amount, 0);
+}
+
 function totalTunggakan(s) {
-  return sppTunggakan(s) + itemsTunggakan(s);
+  return sppTunggakan(s) + sppTunggakanPrev(s) + itemsTunggakan(s);
 }
 
 // ── Tunggakan calon santri (SPMB) ──

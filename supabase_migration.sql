@@ -28,6 +28,9 @@ CREATE TABLE students (
   nisn             text        NOT NULL DEFAULT '',
   spp              numeric     NOT NULL DEFAULT 0,
   spp_paid_months  jsonb       NOT NULL DEFAULT '[]',
+  -- Riwayat SPP tahun ajaran sebelumnya: { "2024/2025": { spp, spp_paid_months }, ... }
+  -- Diisi otomatis saat promosi kelas agar tunggakan SPP tahun lalu tetap tercatat.
+  spp_history      jsonb       NOT NULL DEFAULT '{}',
   status_kelulusan text        NOT NULL DEFAULT '',
   created_at       timestamptz DEFAULT now(),
   CONSTRAINT students_nama_unique UNIQUE (nama)

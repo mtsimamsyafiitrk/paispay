@@ -54,6 +54,30 @@ ajaran sebelumnya sebagai **arsip / catatan induk**. Karakteristik:
   modal detail serta badge di Riwayat Kuitansi — sehingga tidak salah dibaca
   sebagai tunggakan. Tidak perlu perubahan skema database.
 
+## Tunggakan SPP Tahun Ajaran Sebelumnya
+
+Saat **Promosi Kelas** (pindah tahun ajaran), `spp_paid_months` tahun berjalan
+direset. Agar tunggakan SPP tahun lalu tidak hilang, sistem menyimpan **snapshot**
+tahun yang ditutup ke kolom `students.spp_history`:
+
+```json
+{ "2024/2025": { "spp": 100000, "spp_paid_months": ["Jul","Agt"] } }
+```
+
+Dampaknya:
+
+- **Input Pembayaran** menampilkan kartu **"⚠️ Tunggakan SPP Tahun Ajaran
+  Sebelumnya"** berisi chip bulan yang belum dibayar per tahun ajaran (bisa dipilih
+  sebagian atau semua). Pembayaran dicatat balik ke `spp_history` tahun terkait
+  (tidak mengubah SPP tahun berjalan) dan tetap tercetak di kuitansi.
+- **Tunggakan** (dashboard, tabel santri, detail, halaman Tunggakan) kini menghitung
+  tunggakan SPP tahun lalu ke dalam total, dengan rincian terpisah.
+
+**Migrasi database:** jalankan `supabase_migration_spp_history.sql` (menambah kolom
+`spp_history jsonb` — aman, tidak menghapus data). Bila migrasi belum dijalankan,
+aplikasi tetap berfungsi normal (fitur riwayat SPP nonaktif otomatis) sampai kolom
+tersedia.
+
 ## Deploy ke GitHub Pages
 
 1. Push seluruh isi folder `sipay-merged/` ke repository GitHub Anda (langsung di root repo, bukan dalam subfolder).
