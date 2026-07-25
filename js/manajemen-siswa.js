@@ -129,15 +129,8 @@ async function confirmPromosiKelas() {
     if (idx < 0) continue;
     const s = appState.students[idx];
 
-    // Simpan snapshot SPP tahun berjalan ke riwayat SEBELUM direset, agar bulan
-    // yang belum dibayar tetap tercatat sebagai tunggakan di tahun ajaran baru.
-    // Hanya disimpan sekali per label TA (tidak menimpa snapshot yang sudah ada).
-    if (ta && (s.spp || 0) > 0) {
-      s.spp_history = (s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
-      if (!s.spp_history[ta]) {
-        s.spp_history[ta] = { spp: s.spp || 0, spp_paid_months: [...(s.spp_paid_months || [])] };
-      }
-    }
+    // Arsipkan SPP tahun berjalan ke riwayat sebelum reset (tunggakan tahun lalu)
+    snapshotSppTahunBerjalan(s, ta);
 
     // Reset bulan SPP untuk tahun ajaran baru
     s.spp_paid_months = [];
@@ -227,9 +220,19 @@ async function confirmBulkStatus() {
   if (!_selectedBulkStatus || !selectedRows.size) return;
   const names = [...selectedRows];
   const statusVal = _selectedBulkStatus === 'aktif' ? '' : _selectedBulkStatus;
+  const ta = getProfil().ta || '';
   names.forEach(nama => {
     const idx = appState.students.findIndex(s => s.nama === nama);
-    if (idx >= 0) appState.students[idx].status_kelulusan = statusVal;
+    if (idx < 0) return;
+    const s = appState.students[idx];
+    // Santri LULUS: arsipkan SPP tahun berjalan ke riwayat lalu reset — sama
+    // seperti promosi kelas — sehingga tunggakannya jadi "tunggakan tahun lalu"
+    // dan tidak lagi tampil sebagai SPP tahun berjalan.
+    if (statusVal === 'lulus' && s.status_kelulusan !== 'lulus') {
+      snapshotSppTahunBerjalan(s, ta);
+      s.spp_paid_months = [];
+    }
+    s.status_kelulusan = statusVal;
   });
   document.getElementById('bulkStatusModal').classList.remove('open');
   clearSelection();

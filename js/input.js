@@ -170,14 +170,50 @@ function onStudentSelect() {
   renderPaymentItems(s);
 }
 
+// Daftar item pembayaran yang berlaku untuk siswa terpilih. Dipakai bersama
+// oleh renderPaymentItems, calcTotal, dan submitPayment agar selalu sinkron.
+//   1. Item aktif yang cocok kelas siswa (atau semua item aktif bila belum
+//      memilih siswa).
+//   2. PLUS item tagihan siswa yang MASIH ada sisa, walaupun itemnya sudah
+//      dinonaktifkan / dihapus atau kelasnya tak lagi cocok — supaya tunggakan
+//      lama tetap bisa dilunasi (penting untuk santri non-aktif: lulus/pindah/keluar).
+//   Pengecualian: santri LULUS tidak menampilkan SPP tahun berjalan (bulanan),
+//      karena kewajibannya sudah pindah ke "tunggakan tahun lalu" (spp_history).
+function getInputItems(student) {
+  const list = [];
+  const seen = new Set();
+  appState.payItems.forEach(i => {
+    if (!i.active) return;
+    if (!i.kelas || !i.kelas.length) return;
+    if (student && !(i.kelas || []).includes(String(student.kelas))) return;
+    if (i.type === 'bulanan' && student && student.status_kelulusan === 'lulus') return;
+    list.push(i);
+    seen.add(i.id);
+  });
+  if (student) {
+    appState.tagihan
+      .filter(t => t.nama === student.nama && Math.max(0, (t.nominal || 0) - (t.paid_amount || 0)) > 0)
+      .forEach(t => {
+        if (seen.has(t.item_id)) return;
+        const def = appState.payItems.find(i => i.id === t.item_id);
+        list.push({
+          id: t.item_id,
+          name: (def && def.name) || t.item_name || t.item_id,
+          amount: t.nominal || 0,
+          type: 'tetap',
+          active: true,
+          kelas: [],
+          _fromTagihan: true, // penanda: berasal dari tagihan lama (item nonaktif/terhapus)
+        });
+        seen.add(t.item_id);
+      });
+  }
+  return list;
+}
+
 function renderPaymentItems(student) {
   const cont = document.getElementById('paymentItems');
-  const activeItems = appState.payItems.filter(i => {
-    if (!i.active) return false;
-    if (!i.kelas || !i.kelas.length) return false;
-    if (student) return (i.kelas || []).includes(String(student.kelas));
-    return true;
-  });
+  const activeItems = getInputItems(student);
   if (!activeItems.length) {
     cont.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">Tidak ada item aktif. Aktifkan di menu "Kelola Item Bayar"</div>';
     return;
@@ -242,7 +278,7 @@ function renderPaymentItems(student) {
     return `<div class="pay-item" ${disabled ? 'style="opacity:.5;pointer-events:none;"' : ''}>
       <input type="checkbox" id="chk_${item.id}" onchange="calcTotal()" ${disabled ? 'disabled' : ''}>
       <div class="pay-item-info">
-        <div class="pay-item-name">${esc(item.name)}</div>
+        <div class="pay-item-name">${esc(item.name)}${item._fromTagihan ? ' <span style="font-size:10px;font-weight:700;color:var(--danger);background:var(--danger-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">tunggakan lama</span>' : ''}</div>
         <div class="pay-item-amount">${
           item.type === 'custom' ? 'Nominal custom'
           : item.type === 'tetap' && student
@@ -416,7 +452,7 @@ function tetapAmountToPay(item, student) {
 function calcTotal() {
   let total = 0;
   const student = getStudent(document.getElementById('inputNama').value);
-  appState.payItems.filter(i=>i.active).forEach(item => {
+  getInputItems(student).forEach(item => {
     const chk = document.getElementById('chk_'+item.id);
     if (!chk || !chk.checked) return;
     if (item.type === 'custom') {
@@ -442,7 +478,7 @@ async function submitPayment() {
   if (!nama) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
   const student = getStudent(nama);
   const items = [];
-  appState.payItems.filter(i=>i.active).forEach(item => {
+  getInputItems(student).forEach(item => {
     const chk = document.getElementById('chk_'+item.id);
     if (!chk || !chk.checked) return;
     let amount = item.amount;

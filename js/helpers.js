@@ -178,9 +178,25 @@ function detectDuplicateNames() {
 }
 
 function sppTunggakan(s) {
+  // Lulusan tidak punya kewajiban SPP tahun berjalan — SPP-nya sudah diarsipkan
+  // ke spp_history (dihitung sebagai tunggakan tahun lalu). Tanpa ini, bulan
+  // yang direset saat lulus akan tampil sebagai 12 bulan "belum bayar" palsu.
+  if (s.status_kelulusan === 'lulus') return 0;
   if (!s.spp || s.spp === 0) return 0;
   const belum = MONTHS.filter(m => !(s.spp_paid_months || []).includes(m)).length;
   return belum * s.spp;
+}
+
+// Arsipkan SPP tahun berjalan ke riwayat (spp_history) SEBELUM spp_paid_months
+// direset, agar bulan yang belum dibayar tetap tercatat sebagai tunggakan tahun
+// lalu & bisa dibayar di tahun ajaran baru. Dipakai saat promosi kelas dan saat
+// menandai santri LULUS. Disimpan sekali per label TA (tidak menimpa snapshot).
+function snapshotSppTahunBerjalan(s, ta) {
+  if (!ta || !((s.spp || 0) > 0)) return;
+  s.spp_history = (s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
+  if (!s.spp_history[ta]) {
+    s.spp_history[ta] = { spp: s.spp || 0, spp_paid_months: [...(s.spp_paid_months || [])] };
+  }
 }
 
 // Tunggakan dari tabel tagihan (semua item tetap)
