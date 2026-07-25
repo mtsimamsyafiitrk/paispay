@@ -99,17 +99,36 @@ function onInputNamaSearch() {
 
   // Default: santri aktif + calon SPMB; centang toggle untuk tampilkan semua
   const showNonAktif = document.getElementById('inputShowNonAktif')?.checked;
+  const isNonAktif = s => !!(s.status_kelulusan && s.status_kelulusan !== 'calon'); // lulus/pindah/keluar
   const base = showNonAktif
     ? appState.students
-    : appState.students.filter(s => !s.status_kelulusan || s.status_kelulusan === 'calon');
+    : appState.students.filter(s => !isNonAktif(s));
 
-  const list = q
+  // Bila toggle dicentang tapi memang tak ada satu pun santri non-aktif,
+  // jelaskan penyebabnya (bukan sekadar "tidak ditemukan").
+  if (showNonAktif && !appState.students.some(isNonAktif)) {
+    dd.innerHTML = `<div style="padding:14px 16px;font-size:12.5px;color:var(--text-muted);line-height:1.55;">
+      Belum ada santri berstatus <strong>lulus / pindah / keluar</strong>.<br>
+      Tandai dulu lewat menu <strong>Data Santri</strong> (pilih santri → ubah status)
+      atau <strong>Promosi Kelas</strong>, lalu mereka akan muncul di sini.
+    </div>`;
+    dd.style.display = 'block';
+    return;
+  }
+
+  let list = q
     ? base.filter(s =>
         s.nama.toLowerCase().includes(q) ||
         (s.nisn && s.nisn.includes(q)) ||
         s.kelas.includes(q)
       )
     : base;
+
+  // Saat toggle non-aktif aktif, tampilkan santri non-aktif lebih dulu agar
+  // langsung terlihat (tidak tenggelam di bawah daftar santri aktif / batas 15).
+  if (showNonAktif) {
+    list = [...list].sort((a, b) => (isNonAktif(b) ? 1 : 0) - (isNonAktif(a) ? 1 : 0));
+  }
 
   if (!list.length) {
     dd.innerHTML = `<div style="padding:14px 16px;font-size:13px;color:var(--text-muted);">Tidak ditemukan</div>`;
@@ -140,7 +159,7 @@ function onInputNamaSearch() {
       onmouseenter="hoverInputNamaItem(${i})"
       style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">
       <div>
-        <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}</div>
+        <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span style="font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">${esc(kelasLabel(s))}</span>` : ''}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
       </div>
       ${tunggakBadge(s)}
