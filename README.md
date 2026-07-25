@@ -78,6 +78,23 @@ Dampaknya:
 aplikasi tetap berfungsi normal (fitur riwayat SPP nonaktif otomatis) sampai kolom
 tersedia.
 
+## Detail Pembayaran (Tanggal, Metode, Penyetor)
+
+Form **Input Pembayaran** mencatat detail tiap transaksi:
+
+- **Tanggal & Jam** — default *Hari ini* (terkunci), atau pilih **Tanggal lain**
+  untuk mencatat pembayaran mundur/berbeda. Jam bisa disesuaikan.
+- **Metode** — **Tunai** atau **Transfer**.
+- **Dibayar oleh** — nama pembayar / pengirim transfer (opsional).
+
+Detail ini disimpan di tabel `transactions` & `kuitansi`, tampil di **kuitansi
+cetak**, kolom Tanggal **Riwayat Kuitansi**, dan modal detail **Buku Induk**.
+Tanggal yang dipilih (`tgl_bayar`) dipakai saat cetak-ulang, bukan waktu server.
+
+**Migrasi database:** jalankan `supabase_migration_payment_meta.sql` (menambah
+kolom `metode`, `dibayar_oleh`, `tgl_bayar` — aman, tidak menghapus data). Bila
+belum dijalankan, aplikasi tetap berfungsi (detail pembayaran nonaktif otomatis).
+
 ## Deploy ke GitHub Pages
 
 1. Push seluruh isi folder `sipay-merged/` ke repository GitHub Anda (langsung di root repo, bukan dalam subfolder).

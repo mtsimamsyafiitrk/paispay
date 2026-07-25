@@ -231,6 +231,8 @@ function renderKTPreview() {
     total:   siswaContoh ? (siswaContoh.spp||250000) + 500000 : 750000,
     time:    new Date().toLocaleDateString('id-ID') + ' 08:30',
     catatan: 'Pembayaran bulan Januari',
+    metode:  'tunai',
+    dibayar_oleh: 'Orang Tua Santri',
     no_kuitansi: noContoh,
   };
   el.innerHTML = buildKuitansiHTML(contoh, kt, 'Lembar Pembayar');
@@ -327,6 +329,7 @@ function buildKuitansiHTML(data, kt, label) {
       ${kt.show_nokwt ? `<tr><td style="width:28%;padding:2px 0;">No. Kuitansi</td><td style="width:2%">:</td><td style="font-weight:700;">${esc(noKwt)}</td><td style="width:24%;text-align:right;">Tanggal</td><td style="width:2%">:</td><td style="font-weight:700;">${esc(data.time)}</td></tr>` : `<tr><td colspan="6" style="text-align:right;padding:2px 0;font-size:${fs-1}px;color:#666;">Tanggal: ${esc(data.time)}</td></tr>`}
       <tr><td style="padding:2px 0;">Nama Santri</td><td>:</td><td style="font-weight:700;" colspan="4">${esc(data.nama)}</td></tr>
       <tr><td style="padding:2px 0;">Kelas</td><td>:</td><td colspan="4">${esc(data.kelas)}${kt.show_nisn && data.nisn ? ' &nbsp;|&nbsp; NISN: ' + esc(data.nisn) : ''}</td></tr>
+      ${data.metode ? `<tr><td style="padding:2px 0;">Metode</td><td>:</td><td colspan="4">${data.metode === 'transfer' ? '🏦 Transfer' : '💵 Tunai'}${data.dibayar_oleh ? ' &nbsp;|&nbsp; Dibayar oleh: <strong>' + esc(data.dibayar_oleh) + '</strong>' : ''}</td></tr>` : (data.dibayar_oleh ? `<tr><td style="padding:2px 0;">Dibayar oleh</td><td>:</td><td colspan="4"><strong>${esc(data.dibayar_oleh)}</strong></td></tr>` : '')}
       ${kt.show_catatan && data.catatan ? `<tr><td style="padding:2px 0;">Keterangan</td><td>:</td><td colspan="4" style="font-style:italic;">${esc(data.catatan)}</td></tr>` : ''}
     </table>
 

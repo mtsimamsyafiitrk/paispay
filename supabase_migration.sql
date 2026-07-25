@@ -66,13 +66,15 @@ CREATE POLICY "anon_all" ON tagihan FOR ALL TO anon USING (true) WITH CHECK (tru
 -- ══════════════════════════════════════════
 CREATE TABLE transactions (
   id         uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
-  nama       text        NOT NULL,
-  kelas      text        NOT NULL DEFAULT '',
-  jenis      text        NOT NULL DEFAULT '',
-  nominal    numeric     NOT NULL DEFAULT 0,
-  time       text        NOT NULL DEFAULT '',
-  catatan    text        NOT NULL DEFAULT '',
-  created_at timestamptz DEFAULT now()
+  nama         text        NOT NULL,
+  kelas        text        NOT NULL DEFAULT '',
+  jenis        text        NOT NULL DEFAULT '',
+  nominal      numeric     NOT NULL DEFAULT 0,
+  time         text        NOT NULL DEFAULT '',
+  catatan      text        NOT NULL DEFAULT '',
+  metode       text        NOT NULL DEFAULT '',
+  dibayar_oleh text        NOT NULL DEFAULT '',
+  created_at   timestamptz DEFAULT now()
 );
 
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
@@ -97,6 +99,9 @@ CREATE TABLE kuitansi (
   ref_no_kuitansi  text,
   dikoreksi_oleh   text,
   ta_label         text        NOT NULL DEFAULT '',
+  metode           text        NOT NULL DEFAULT '',
+  dibayar_oleh     text        NOT NULL DEFAULT '',
+  tgl_bayar        text        NOT NULL DEFAULT '',
   created_at       timestamptz DEFAULT now()
 );
 
