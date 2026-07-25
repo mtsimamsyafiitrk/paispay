@@ -1,5 +1,8 @@
 // ── SiPay · Input Pembayaran ──
 let inputNamaSuggIdx = -1;
+// Daftar tunggakan SPP tahun ajaran sebelumnya untuk siswa terpilih (dari
+// spp_history). Diisi ulang tiap kali renderPaymentItems dipanggil dengan siswa.
+let inputPrevArrears = [];
 
 function renderInputPage() {
   // Reset search field saat halaman dibuka
@@ -132,8 +135,9 @@ function onStudentSelect() {
   document.getElementById('inputNISN').textContent = s.nisn || '(belum diisi)';
 
   const tunggakSPP   = sppTunggakan(s);
+  const tunggakPrev  = sppTunggakanPrev(s);
   const tunggakItem  = itemsTunggakan(s);
-  const totalTungk   = tunggakSPP + tunggakItem;
+  const totalTungk   = tunggakSPP + tunggakPrev + tunggakItem;
 
   // Baris tagihan item (tetap) yang masih ada sisa
   const tagihanRows = appState.tagihan
@@ -154,6 +158,9 @@ function onStudentSelect() {
       <div style="font-size:12px;font-weight:600;">${(s.spp_paid_months||[]).length} bulan</div>
       <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP</div>
       <div style="font-size:12px;font-weight:600;color:${tunggakSPP>0?'var(--danger)':'var(--primary-light)'};">${rp(tunggakSPP)}</div>
+      ${tunggakPrev > 0 ? `
+      <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP Th. Lalu</div>
+      <div style="font-size:12px;font-weight:600;color:var(--danger);">${rp(tunggakPrev)}</div>` : ''}
       ${tagihanRows}
       ${totalTungk > 0
         ? `<div style="font-size:12px;font-weight:700;color:var(--danger);grid-column:1/-1;margin-top:4px;padding-top:6px;border-top:1px solid var(--border);">Total Tunggakan: ${rp(totalTungk)}</div>`
@@ -251,8 +258,105 @@ function renderPaymentItems(student) {
     </div>`;
   }).join('');
 
+  // Blok tunggakan SPP tahun ajaran sebelumnya (dari spp_history) — hanya
+  // muncul bila siswa terpilih & masih ada bulan yang belum dibayar tahun lalu.
+  inputPrevArrears = student ? sppTunggakanPrevList(student) : [];
+  if (inputPrevArrears.length) html += renderPrevArrearsBlock(inputPrevArrears);
+
   cont.innerHTML = html;
   calcTotal();
+}
+
+// Render kartu "Tunggakan SPP Tahun Ajaran Sebelumnya": tiap tahun ajaran
+// menampilkan chip bulan yang belum dibayar (bisa dipilih sebagian).
+function renderPrevArrearsBlock(list) {
+  const totalAll = list.reduce((a, y) => a + y.amount, 0);
+  const rows = list.map((y, yi) => `
+    <div style="margin-top:10px;padding-top:10px;${yi > 0 ? 'border-top:1px dashed var(--border);' : ''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+        <div style="font-size:12px;font-weight:700;">TA ${esc(y.ta)}
+          <span style="font-weight:500;color:var(--text-muted);">· ${rp(y.rate)}/bln</span></div>
+        <span style="font-size:11px;font-weight:700;color:var(--danger);">${y.unpaid.length} bln · ${rp(y.amount)}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        ${y.unpaid.map(m => `
+          <label style="display:flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s;"
+            id="sppPrevLabel_${yi}_${m}" onclick="toggleSppPrevMonth(${yi},'${m}',this)">
+            <input type="checkbox" id="sppPrevChk_${yi}_${m}" value="${m}" style="display:none;">
+            ${MONTH_FULL[m]}
+          </label>`).join('')}
+      </div>
+    </div>`).join('');
+
+  return `<div class="pay-item" style="display:block;border-color:var(--danger);background:var(--danger-pale);">
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <input type="checkbox" id="chk_spp_prev" onchange="toggleAllSppPrev(this)" title="Pilih semua bulan tunggakan">
+      <div class="pay-item-info" style="flex:1;min-width:0;">
+        <div class="pay-item-name" style="color:var(--danger);">⚠️ Tunggakan SPP Tahun Ajaran Sebelumnya</div>
+        <div class="pay-item-amount" style="color:var(--danger);">${rp(totalAll)} <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(total tunggakan)</span></div>
+        ${rows}
+        <div style="margin-top:8px;font-size:12px;color:var(--text-muted);" id="sppPrevInfo">Belum ada bulan dipilih</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Warnai chip bulan tunggakan sesuai status pilih.
+function styleSppPrevLabel(labelEl, on) {
+  if (!labelEl) return;
+  labelEl.style.background   = on ? 'var(--danger)' : '';
+  labelEl.style.color        = on ? '#fff' : '';
+  labelEl.style.borderColor  = on ? 'var(--danger)' : '';
+}
+
+function toggleSppPrevMonth(yi, m, labelEl) {
+  const chk = document.getElementById(`sppPrevChk_${yi}_${m}`);
+  if (!chk) return;
+  chk.checked = !chk.checked;
+  styleSppPrevLabel(labelEl, chk.checked);
+  updateSppPrevInfo();
+  calcTotal();
+}
+
+// Checkbox induk: pilih / batal semua bulan tunggakan tahun lalu sekaligus.
+function toggleAllSppPrev(master) {
+  inputPrevArrears.forEach((y, yi) => y.unpaid.forEach(m => {
+    const chk = document.getElementById(`sppPrevChk_${yi}_${m}`);
+    if (chk) chk.checked = master.checked;
+    styleSppPrevLabel(document.getElementById(`sppPrevLabel_${yi}_${m}`), master.checked);
+  }));
+  updateSppPrevInfo();
+  calcTotal();
+}
+
+// Bulan tunggakan tahun lalu yang dicentang, dikelompokkan per tahun ajaran.
+function getSppPrevSelected() {
+  const out = [];
+  inputPrevArrears.forEach((y, yi) => {
+    const months = y.unpaid.filter(m => document.getElementById(`sppPrevChk_${yi}_${m}`)?.checked);
+    if (months.length) out.push({ ta: y.ta, rate: y.rate, months, amount: months.length * y.rate });
+  });
+  return out;
+}
+
+function updateSppPrevInfo() {
+  const info = document.getElementById('sppPrevInfo');
+  const sel = getSppPrevSelected();
+  const totalMonths = sel.reduce((a, y) => a + y.months.length, 0);
+  const totalAmt    = sel.reduce((a, y) => a + y.amount, 0);
+  if (info) {
+    info.textContent = totalMonths
+      ? `${totalMonths} bulan dipilih · ${rp(totalAmt)}`
+      : 'Belum ada bulan dipilih';
+    info.style.color = totalMonths ? 'var(--danger)' : 'var(--text-muted)';
+  }
+  // Sinkronkan status checkbox induk (checked / indeterminate)
+  const master = document.getElementById('chk_spp_prev');
+  if (master) {
+    const totalUnpaid = inputPrevArrears.reduce((a, y) => a + y.unpaid.length, 0);
+    master.checked = totalMonths > 0 && totalMonths === totalUnpaid;
+    master.indeterminate = totalMonths > 0 && totalMonths < totalUnpaid;
+  }
 }
 
 function toggleSppMonth(m, labelEl) {
@@ -328,6 +432,8 @@ function calcTotal() {
       total += item.amount||0;
     }
   });
+  // Tunggakan SPP tahun ajaran sebelumnya (dipilih per bulan)
+  getSppPrevSelected().forEach(y => total += y.amount);
   document.getElementById('inputTotal').textContent = rp(total);
 }
 
@@ -364,13 +470,28 @@ async function submitPayment() {
       items.push({ id: item.id, type: item.type, name: payName, amount, bulan: null });
     }
   });
-  if (!items.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
+
+  // Tunggakan SPP tahun ajaran sebelumnya (dari spp_history) — tiap TA jadi
+  // satu item pembayaran tersendiri, bulan dibayar dicatat balik ke history.
+  const prevSel = getSppPrevSelected();
+  if (!items.length && !prevSel.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
+  prevSel.forEach(y => {
+    items.push({ id: 'spp', type: 'spp_prev', name: `SPP Tunggakan TA ${y.ta}`,
+      amount: y.amount, ta: y.ta, rate: y.rate, bulanList: y.months });
+  });
 
   // Update student SPP months & tagihan paid_amount
   const si = appState.students.findIndex(s=>s.nama===nama);
   const tagihanUpdates = []; // { id, newPaidAmount }
   items.forEach(it => {
-    if (it.bulanList?.length) {
+    if (it.type === 'spp_prev') {
+      // Catat bulan yang dibayar ke riwayat tahun ajaran terkait (bukan tahun berjalan)
+      const stu = appState.students[si];
+      stu.spp_history = (stu.spp_history && typeof stu.spp_history === 'object') ? stu.spp_history : {};
+      const rec = stu.spp_history[it.ta] || (stu.spp_history[it.ta] = { spp: it.rate || 0, spp_paid_months: [] });
+      if (!Array.isArray(rec.spp_paid_months)) rec.spp_paid_months = [];
+      (it.bulanList || []).forEach(b => { if (!rec.spp_paid_months.includes(b)) rec.spp_paid_months.push(b); });
+    } else if (it.bulanList?.length) {
       it.bulanList.forEach(b => {
         if (!appState.students[si].spp_paid_months.includes(b))
           appState.students[si].spp_paid_months.push(b);

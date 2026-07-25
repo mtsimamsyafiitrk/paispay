@@ -1,8 +1,14 @@
 // ── SiPay · Database Layer (Supabase) ──
 
 // ══ STUDENTS ══
+// Kompatibilitas mundur: kolom spp_history mungkin belum ada bila migrasi
+// (supabase_migration_spp_history.sql) belum dijalankan. Bila server menolak
+// karena kolom itu tidak ada, flag ini dimatikan agar penyimpanan tetap jalan
+// (tanpa riwayat SPP tahun lalu) sampai migrasi dijalankan.
+let _sppHistorySupported = true;
+
 function _buildStudentRow(s) {
-  return {
+  const row = {
     nama: s.nama,
     kelas: s.kelas,
     nisn: s.nisn || '',
@@ -10,6 +16,16 @@ function _buildStudentRow(s) {
     spp_paid_months: s.spp_paid_months || [],
     status_kelulusan: s.status_kelulusan || '',
   };
+  if (_sppHistorySupported) {
+    row.spp_history = (s.spp_history && typeof s.spp_history === 'object' && !Array.isArray(s.spp_history)) ? s.spp_history : {};
+  }
+  return row;
+}
+
+// Deteksi error "kolom spp_history belum ada" (PostgREST / schema cache).
+function _isMissingSppHistory(e) {
+  const msg = String((e && e.message) || e || '');
+  return /spp_history/.test(msg);
 }
 
 async function loadStudents() {
@@ -20,6 +36,7 @@ async function loadStudents() {
     nisn: r.nisn || '',
     spp: Number(r.spp) || 0,
     spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
+    spp_history: (r.spp_history && typeof r.spp_history === 'object' && !Array.isArray(r.spp_history)) ? r.spp_history : {},
     status_kelulusan: r.status_kelulusan || '',
   }));
 }
@@ -32,6 +49,10 @@ async function saveSiswa(s) {
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
     showSyncIndicator('✅ Tersimpan', 1500);
   } catch(e) {
+    if (_sppHistorySupported && _isMissingSppHistory(e)) {
+      _sppHistorySupported = false;
+      return saveSiswa(s); // ulangi tanpa kolom spp_history
+    }
     console.error('saveSiswa error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
   }
@@ -53,6 +74,10 @@ async function renameStudentInDB(origNama, s) {
     appState.tagihan.forEach(t => { if (t.nama === origNama) t.nama = s.nama; });
     showSyncIndicator('✅ Tersimpan', 1500);
   } catch(e) {
+    if (_sppHistorySupported && _isMissingSppHistory(e)) {
+      _sppHistorySupported = false;
+      return renameStudentInDB(origNama, s); // ulangi tanpa kolom spp_history
+    }
     console.error('renameStudentInDB error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
   }
@@ -66,6 +91,10 @@ async function saveState() {
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
     showSyncIndicator('✅ Tersimpan', 2000);
   } catch(e) {
+    if (_sppHistorySupported && _isMissingSppHistory(e)) {
+      _sppHistorySupported = false;
+      return saveState(); // ulangi tanpa kolom spp_history
+    }
     console.error('saveState error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
   }

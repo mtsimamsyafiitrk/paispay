@@ -129,6 +129,16 @@ async function confirmPromosiKelas() {
     if (idx < 0) continue;
     const s = appState.students[idx];
 
+    // Simpan snapshot SPP tahun berjalan ke riwayat SEBELUM direset, agar bulan
+    // yang belum dibayar tetap tercatat sebagai tunggakan di tahun ajaran baru.
+    // Hanya disimpan sekali per label TA (tidak menimpa snapshot yang sudah ada).
+    if (ta && (s.spp || 0) > 0) {
+      s.spp_history = (s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
+      if (!s.spp_history[ta]) {
+        s.spp_history[ta] = { spp: s.spp || 0, spp_paid_months: [...(s.spp_paid_months || [])] };
+      }
+    }
+
     // Reset bulan SPP untuk tahun ajaran baru
     s.spp_paid_months = [];
 
