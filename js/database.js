@@ -28,6 +28,30 @@ function _isMissingSppHistory(e) {
   return /spp_history/.test(msg);
 }
 
+// Kompatibilitas mundur untuk metadata pembayaran (metode / dibayar_oleh /
+// tgl_bayar). Bila migrasi supabase_migration_payment_meta.sql belum dijalankan,
+// kolom-kolom ini belum ada; flag dimatikan agar simpan tetap jalan tanpa metadata.
+let _paymentMetaSupported = true;
+function _isMissingPaymentMeta(e) {
+  const msg = String((e && e.message) || e || '');
+  return /metode|dibayar_oleh|tgl_bayar/.test(msg);
+}
+
+// Insert kuitansi dengan fallback bila kolom metadata pembayaran belum ada.
+async function insertKuitansi(kwtData) {
+  const strip = (o) => { const c = { ...o }; delete c.metode; delete c.dibayar_oleh; delete c.tgl_bayar; return c; };
+  const payload = _paymentMetaSupported ? kwtData : strip(kwtData);
+  try {
+    return await sb('kuitansi', 'POST', payload, { 'Prefer': 'return=representation' });
+  } catch(e) {
+    if (_paymentMetaSupported && _isMissingPaymentMeta(e)) {
+      _paymentMetaSupported = false;
+      return await sb('kuitansi', 'POST', strip(kwtData), { 'Prefer': 'return=representation' });
+    }
+    throw e;
+  }
+}
+
 async function loadStudents() {
   const rows = await sb('students?select=*&order=nama');
   return rows.map(r => ({
@@ -269,16 +293,28 @@ async function loadTransactions() {
   return rows.map(r => ({
     nama: r.nama, kelas: r.kelas, jenis: r.jenis,
     nominal: Number(r.nominal) || 0, time: r.time, catatan: r.catatan || '',
+    metode: r.metode || '', dibayar_oleh: r.dibayar_oleh || '',
   }));
 }
 
 async function saveTransaction(t) {
+  const row = {
+    nama: t.nama, kelas: t.kelas, jenis: t.jenis,
+    nominal: t.nominal || 0, time: t.time, catatan: t.catatan || '',
+  };
+  if (_paymentMetaSupported) {
+    row.metode = t.metode || '';
+    row.dibayar_oleh = t.dibayar_oleh || '';
+  }
   try {
-    await sb('transactions', 'POST', {
-      nama: t.nama, kelas: t.kelas, jenis: t.jenis,
-      nominal: t.nominal || 0, time: t.time, catatan: t.catatan || '',
-    }, { 'Prefer': 'return=minimal' });
-  } catch(e) { console.error('saveTransaction error:', e); }
+    await sb('transactions', 'POST', row, { 'Prefer': 'return=minimal' });
+  } catch(e) {
+    if (_paymentMetaSupported && _isMissingPaymentMeta(e)) {
+      _paymentMetaSupported = false;
+      return saveTransaction(t); // ulangi tanpa kolom metadata pembayaran
+    }
+    console.error('saveTransaction error:', e);
+  }
 }
 
 // ══ SETTINGS ══

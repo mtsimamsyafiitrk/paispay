@@ -468,7 +468,8 @@ function closeIndukDetail() {
   document.getElementById('indukDetailModal')?.classList.remove('open');
 }
 function renderIndukDetail(r) {
-  const tgl = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+  const tgl = r.tgl_bayar || (r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '—');
+  const metodeLabel = r.metode === 'transfer' ? '🏦 Transfer' : (r.metode === 'tunai' ? '💵 Tunai' : '');
   const incomplete = indukIncomplete(r);
   const masalah = indukMasalah(r);
   const catatan = indukCatatanAsli(r);
@@ -500,6 +501,8 @@ function renderIndukDetail(r) {
       <div><div style="font-size:11px;color:var(--text-muted);">Tanggal</div><div style="font-weight:700;">${tgl}</div></div>
       <div><div style="font-size:11px;color:var(--text-muted);">No.</div><div style="font-weight:700;">${esc(r.no_kuitansi || '—')}</div></div>
       <div><div style="font-size:11px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${esc(r.nisn || '—')}</div></div>
+      ${metodeLabel ? `<div><div style="font-size:11px;color:var(--text-muted);">Metode</div><div style="font-weight:700;">${metodeLabel}</div></div>` : ''}
+      ${r.dibayar_oleh ? `<div><div style="font-size:11px;color:var(--text-muted);">Dibayar oleh</div><div style="font-weight:700;">${esc(r.dibayar_oleh)}</div></div>` : ''}
     </div>
     <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:6px;">📋 Rincian Pembayaran</div>
     <div class="table-wrap" style="margin-bottom:12px;"><table class="data-table">

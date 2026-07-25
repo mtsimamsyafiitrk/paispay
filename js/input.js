@@ -12,7 +12,83 @@ function renderInputPage() {
   const chk = document.getElementById('inputShowNonAktif');
   if (chk) chk.checked = false;
   hideInputNamaDropdown();
+  resetPaymentMeta();
   renderPaymentItems();
+}
+
+// ── Metadata pembayaran: tanggal & jam, metode, dibayar oleh ──
+function _todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function _nowHM() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function resetPaymentMeta() {
+  const jam = document.getElementById('inputJam');
+  if (jam) jam.value = _nowHM();
+  setTglMode('today');   // juga mengisi tanggal = hari ini
+  setMetode('tunai');
+  const oleh = document.getElementById('inputDibayarOleh');
+  if (oleh) oleh.value = '';
+}
+
+// Mode tanggal: 'today' (kunci ke hari ini) atau 'other' (bisa pilih tanggal lain).
+function setTglMode(mode) {
+  const todayBtn = document.getElementById('tglTodayBtn');
+  const otherBtn = document.getElementById('tglOtherBtn');
+  const tgl = document.getElementById('inputTanggal');
+  if (todayBtn) todayBtn.classList.toggle('active', mode === 'today');
+  if (otherBtn) otherBtn.classList.toggle('active', mode === 'other');
+  if (tgl) {
+    if (mode === 'today') { tgl.value = _todayISO(); tgl.disabled = true; }
+    else { tgl.disabled = false; }
+  }
+}
+
+// Bila admin mengubah tanggal ke selain hari ini, otomatis pindah ke mode 'other'.
+function onInputTanggalChange() {
+  const tgl = document.getElementById('inputTanggal');
+  if (tgl && tgl.value && tgl.value !== _todayISO()) setTglMode('other');
+}
+
+function setMetode(m) {
+  const hid = document.getElementById('inputMetode');
+  if (hid) hid.value = m;
+  const bt = document.getElementById('metodeTunaiBtn');
+  const btr = document.getElementById('metodeTransferBtn');
+  if (bt)  bt.classList.toggle('active', m === 'tunai');
+  if (btr) btr.classList.toggle('active', m === 'transfer');
+  const lbl = document.getElementById('dibayarOlehLabel');
+  const inp = document.getElementById('inputDibayarOleh');
+  if (m === 'transfer') {
+    if (lbl) lbl.innerHTML = 'Dibayar oleh <span style="color:var(--text-muted);font-weight:400;">(pengirim transfer)</span>';
+    if (inp) inp.placeholder = 'Nama pengirim transfer...';
+  } else {
+    if (lbl) lbl.innerHTML = 'Dibayar oleh <span style="color:var(--text-muted);font-weight:400;">(opsional)</span>';
+    if (inp) inp.placeholder = 'Nama pembayar / penyetor...';
+  }
+}
+
+// Rangkai string tampilan "DD/MM/YYYY HH:MM" dari input tanggal & jam.
+function buildInputTimeStr() {
+  const dVal = document.getElementById('inputTanggal')?.value; // YYYY-MM-DD
+  const jVal = document.getElementById('inputJam')?.value;     // HH:MM
+  const now = new Date();
+  let dateObj = now;
+  if (dVal) { const p = dVal.split('-').map(Number); dateObj = new Date(p[0], p[1]-1, p[2]); }
+  const tglStr = dateObj.toLocaleDateString('id-ID');
+  const jamStr = jVal || now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+  return tglStr + ' ' + jamStr;
+}
+
+function getPaymentMeta() {
+  return {
+    metode: document.getElementById('inputMetode')?.value || 'tunai',
+    dibayar_oleh: (document.getElementById('inputDibayarOleh')?.value || '').trim(),
+  };
 }
 
 function onInputNamaSearch() {
@@ -543,13 +619,15 @@ async function submitPayment() {
     }
   });
 
-  const now = new Date();
-  const timeStr = now.toLocaleDateString('id-ID')+' '+now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  // Tanggal/jam & metode pembayaran dari form (bisa hari ini atau tanggal lain)
+  const timeStr = buildInputTimeStr();
+  const meta = getPaymentMeta();
   const totalAmt = items.reduce((a,i)=>a+i.amount,0);
   const txn = {
     nama, kelas: student.kelas,
     jenis: items.map(i => i.bulanList?.length ? i.name+' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')' : i.name).join(', '),
-    nominal: totalAmt, time: timeStr, catatan: document.getElementById('inputCatatan').value
+    nominal: totalAmt, time: timeStr, catatan: document.getElementById('inputCatatan').value,
+    metode: meta.metode, dibayar_oleh: meta.dibayar_oleh,
   };
   appState.transactions.push(txn);
   saveSiswa(appState.students[si]);
@@ -576,9 +654,10 @@ async function submitPayment() {
     }),
     total: totalAmt, catatan: txn.catatan, dicetak: false,
     ta_label: getProfil().ta || '',
+    metode: meta.metode, dibayar_oleh: meta.dibayar_oleh, tgl_bayar: timeStr,
   };
   try {
-    const res = await sb('kuitansi', 'POST', kwtData, {'Prefer':'return=representation'});
+    const res = await insertKuitansi(kwtData);
     pendingKwtId = res?.[0]?.id || null;
   } catch { pendingKwtId = null; }
 
@@ -592,6 +671,7 @@ async function submitPayment() {
   document.getElementById('inputNISN').textContent='—';
   document.getElementById('studentSummary').innerHTML='';
   document.getElementById('inputCatatan').value='';
+  resetPaymentMeta();
   renderPaymentItems();
 
   // Tampilkan popup konfirmasi cetak

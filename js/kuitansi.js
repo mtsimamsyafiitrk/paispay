@@ -33,7 +33,7 @@ async function cetakKuitansiById(nama, timeStr) {
       sb('kuitansi?id=eq.' + match.id, 'PATCH',
         { dicetak: true, dicetak_at: new Date().toISOString() },
         { 'Prefer': 'return=minimal' }).catch(()=>{});
-      await cetakKuitansi({ ...match, time: timeStr || match.created_at });
+      await cetakKuitansi({ ...match, time: match.tgl_bayar || timeStr || match.created_at });
       return;
     }
   } catch {}
@@ -52,9 +52,9 @@ async function cetakKuitansiFromRiwayat(id) {
     sb('kuitansi?id=eq.' + id, 'PATCH',
       { dicetak: true, dicetak_at: new Date().toISOString() },
       { 'Prefer': 'return=minimal' }).catch(()=>{});
-    const timeStr = r.created_at
+    const timeStr = r.tgl_bayar || (r.created_at
       ? new Date(r.created_at).toLocaleDateString('id-ID') + ' ' + new Date(r.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})
-      : '—';
+      : '—');
     await cetakKuitansi({ ...r, time: timeStr });
     // Refresh tabel
     loadRiwayatKuitansi();
@@ -260,8 +260,16 @@ async function loadRiwayatKuitansi(keepPage) {
           </tr></thead>
           <tbody>
             ${rows.map(r => {
-              const tgl = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-              const jam = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+              // Utamakan tanggal pembayaran yang dipilih admin (tgl_bayar), fallback created_at
+              let tgl, jam;
+              if (r.tgl_bayar) {
+                const parts = String(r.tgl_bayar).split(' ');
+                tgl = parts[0] || '—';
+                jam = parts[1] || '';
+              } else {
+                tgl = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+                jam = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+              }
               const items = Array.isArray(r.items) ? r.items.map(i => i.name + (i.bulan?' ('+( MONTH_FULL[i.bulan]||i.bulan)+')':'')).join(', ') : '—';
               const isInduk = typeof isIndukKwt === 'function' && isIndukKwt(r);
               const isIncomplete = typeof indukIncomplete === 'function' && indukIncomplete(r);

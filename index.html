@@ -234,6 +234,29 @@
             <span style="font-size:20px;font-weight:800;color:var(--primary-light);" id="inputTotal">Rp 0</span>
           </div>
           <div class="form-group" style="margin-bottom:12px;">
+            <label>Tanggal &amp; Jam Pembayaran</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+              <button type="button" id="tglTodayBtn" class="seg-btn active" onclick="setTglMode('today')">Hari ini</button>
+              <button type="button" id="tglOtherBtn" class="seg-btn" onclick="setTglMode('other')">Tanggal lain</button>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <input type="date" id="inputTanggal" style="flex:1;" disabled onchange="onInputTanggalChange()">
+              <input type="time" id="inputJam" style="width:120px;">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label>Metode Pembayaran</label>
+            <input type="hidden" id="inputMetode" value="tunai">
+            <div style="display:flex;gap:6px;">
+              <button type="button" id="metodeTunaiBtn" class="seg-btn active" onclick="setMetode('tunai')">💵 Tunai</button>
+              <button type="button" id="metodeTransferBtn" class="seg-btn" onclick="setMetode('transfer')">🏦 Transfer</button>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label id="dibayarOlehLabel">Dibayar oleh <span style="color:var(--text-muted);font-weight:400;">(opsional)</span></label>
+            <input type="text" id="inputDibayarOleh" placeholder="Nama pembayar / penyetor...">
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
             <label>Catatan</label>
             <input type="text" id="inputCatatan" placeholder="Opsional...">
           </div>
