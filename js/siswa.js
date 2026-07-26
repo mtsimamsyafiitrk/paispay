@@ -133,8 +133,10 @@ function renderSiswaTable(resetPage = true) {
     let monthBadges;
     if (taKeys.length > 1) {
       monthBadges = taKeys.map(ta => {
-        const d = history[ta];
-        const lunas = !d.spp || MONTHS.every(m => (d.spp_paid_months||[]).includes(m));
+        // Lunas bila tak ada satu pun bulan bersisa pada TA tersebut. Dihitung
+        // lewat sppHistMonths agar TA yang hanya ditagih sebagian bulan (mis.
+        // santri masuk di tengah tahun) tidak keliru dianggap menunggak.
+        const lunas = !sppHistMonths(history[ta]).some(x => x.sisa > 0);
         const short = ta.replace(/20(\d\d)\/20(\d\d)/, '$1/$2');
         return `<span style="font-size:11px;padding:2px 7px;border-radius:5px;margin:1px;background:${lunas?'var(--primary-pale)':'var(--accent-pale)'};color:${lunas?'var(--primary)':'#7a5c10'};">${short}: ${lunas?'✅':'⚠️'}</span>`;
       }).join('');
@@ -352,6 +354,21 @@ function renderTunggakanDetail(s) {
       font-size:11px;font-weight:600;text-align:center;">${m}</div>`;
   }).join('');
 
+  // Rincian tunggakan SPP tiap tahun ajaran sebelumnya (bulan + nominal sisa)
+  const prevGrids = prevList.length ? `
+    <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--danger);">🗓️ Tunggakan SPP Tahun Ajaran Sebelumnya</div>
+    ${prevList.map(y => `
+      <div style="background:var(--danger-pale);border-radius:12px;padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:700;">TA ${esc(y.ta)}${y.kelas ? ` · Kelas ${esc(y.kelas)}` : ''}</div>
+          <div style="font-size:13px;font-weight:800;color:var(--danger);">${y.unpaid.length} bln · ${rp(y.amount)}</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${y.detail.map(d => `<span style="font-size:11px;font-weight:600;background:#fff;border:1.5px solid var(--danger);color:var(--danger);border-radius:7px;padding:3px 8px;">
+            ${MONTH_FULL[d.m]} · ${rp(d.sisa)}${d.dibayar > 0 ? ' <span style="font-weight:400;">(angsuran ' + rp(d.dibayar) + ')</span>' : ''}</span>`).join('')}
+        </div>
+      </div>`).join('')}` : '';
+
   // Tagihan item cards
   const tagihanSiswa = appState.tagihan.filter(t => t.nama === s.nama);
   const tagihanCards = tagihanSiswa.map(t => {
@@ -406,8 +423,9 @@ function renderTunggakanDetail(s) {
           <div style="font-size:18px;font-weight:800;color:${itemT>0?'var(--danger)':'var(--primary-light)'};">${tagihanSiswa.length}</div>
         </div>
       </div>
-      <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">📅 Status SPP per Bulan</div>
+      <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">📅 Status SPP per Bulan (TA berjalan)</div>
       <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:20px;">${monthGrid}</div>
+      ${prevGrids}
       ${tagihanCards}
     </div>`;
 }

@@ -20,6 +20,7 @@ sipay/
 │   ├── profil.js           # Profil madrasah (nama, alamat, logo)
 │   ├── manajemen-siswa.js  # Tambah/edit/hapus/bulk siswa
 │   ├── import.js           # Import siswa dari Excel/CSV
+│   ├── import-tunggakan.js # Import tunggakan lama lintas tahun ajaran
 │   ├── auth.js             # Login admin via Supabase Auth
 │   ├── guest.js            # Modal logout (sisa mode wali telah dihapus)
 │   ├── kuitansi.js         # Modal kuitansi, hapus, cetak, riwayat
@@ -33,9 +34,9 @@ sipay/
 
 | Sebelum | Sesudah |
 |---------|---------|
-| 1 file `index.html` (7.005 baris) | `index.html` (1.703 baris) + 21 JS module + 1 CSS |
+| 1 file `index.html` (7.005 baris) | `index.html` (1.703 baris) + 23 JS module + 1 CSS |
 | CSS inline di `<style>` | `css/main.css` (440 baris) |
-| 2 blok `<script>` monolitik | 21 file JS modular |
+| 2 blok `<script>` monolitik | 23 file JS modular |
 | Sulit di-debug & di-maintain | Setiap modul punya tanggung jawab jelas |
 
 ## Buku Induk — Arsip Pembayaran Lama
@@ -54,6 +55,50 @@ ajaran sebelumnya sebagai **arsip / catatan induk**. Karakteristik:
   modal detail serta badge di Riwayat Kuitansi — sehingga tidak salah dibaca
   sebagai tunggakan. Tidak perlu perubahan skema database.
 
+## Import Tunggakan Lintas Tahun Ajaran
+
+Menu **Tunggakan → 📥 Import Tunggakan** memasukkan tunggakan lama (SPP per bulan
+dari beberapa tahun ajaran sekaligus, uang pangkal, uang pembangunan, dll) dari
+file rekap. Setelah diimport, **semua tunggakan seorang santri langsung muncul**
+saat namanya dipilih di **Input Pembayaran** — tidak peduli tunggakan itu berasal
+dari tahun ajaran yang mana.
+
+**Format file yang didukung**
+
+| Format | Isi |
+|--------|-----|
+| `.json` per santri | Array objek: `nama`, `status`, `kelas_terakhir`, `ta_masuk`, `ta_terakhir`, `tunggakan_pangkal`, `tunggakan_pembangunan`, `tagihan_spp[]` |
+| `.csv` / `.xlsx` / `.json` baris-per-bulan | Kolom `nama_santri`, `tahun_ajaran`, `kelas`, `bulan` (atau `periode`), `nominal`, `dibayar`, `sisa` |
+
+Setiap field/kolom bernama `tunggakan_<item>` otomatis menjadi tagihan item
+dengan id `<item>` (mis. `tunggakan_pembangunan` → item `pembangunan`). Definisi
+item yang belum ada ditambahkan otomatis ke *Kelola Item Bayar*.
+
+**Ke mana data masuk**
+
+- Tahun ajaran **berjalan** (bisa dipilih di layar pratinjau; default = TA terbaru
+  di file) → kolom SPP normal: `students.spp` + `spp_paid_months`.
+- Tahun ajaran **lainnya** → `students.spp_history[TA]` sebagai tunggakan tahun lalu.
+- `tunggakan_<item>` → tabel `tagihan` (nominal disetel agar sisanya sama dengan
+  angka di file).
+
+**Pengaman yang perlu diketahui**
+
+- **Import ulang aman.** Bulan yang sudah dilunasi lewat aplikasi tidak akan
+  dijadikan tunggakan lagi. Nominal tagihan item yang sudah ada juga tidak
+  ditimpa kecuali kotak *"Timpa nominal tagihan item yang sudah ada"* dicentang.
+- **Nama kembar.** Bila file memuat dua santri berbeda dengan nama persis sama,
+  layar pratinjau memberi peringatan dan (secara default) memisahkannya dengan
+  menambahkan keterangan angkatan pada nama — karena satu nama = satu baris di
+  database.
+- **Pencocokan nama mirip** dipakai untuk menyambung ke santri yang sudah
+  terdaftar, tapi satu santri lama hanya bisa diklaim satu baris file. Daftar
+  hasil pencocokan mirip ditampilkan di pratinjau untuk diperiksa.
+- **Angsuran pada TA berjalan.** Alur SPP tahun berjalan hanya mengenal
+  lunas/belum per bulan, jadi bulan yang baru terbayar sebagian dicatat *belum
+  lunas* (nominal penuh) dan dilaporkan di pratinjau.
+- **Nilai tunggakan negatif** (kelebihan bayar) dianggap **0** dan dilaporkan.
+
 ## Tunggakan SPP Tahun Ajaran Sebelumnya
 
 Saat **Promosi Kelas** (pindah tahun ajaran), `spp_paid_months` tahun berjalan
@@ -64,19 +109,41 @@ tahun yang ditutup ke kolom `students.spp_history`:
 { "2024/2025": { "spp": 100000, "spp_paid_months": ["Jul","Agt"] } }
 ```
 
+Entri juga bisa berbentuk **rinci** — dipakai bila nominal SPP berubah di tengah
+tahun atau ada bulan yang baru diangsur sebagian (`n` = nominal bulan itu,
+`d` = sudah dibayar). Bulan yang tidak ada di `months` berarti tidak ditagih:
+
+```json
+{ "2024/2025": {
+    "spp": 700000, "spp_paid_months": ["Jul"], "kelas": "7",
+    "months": { "Jul": { "n": 700000, "d": 700000 },
+                "Agt": { "n": 700000, "d": 200000 } } } }
+```
+
 Dampaknya:
 
 - **Input Pembayaran** menampilkan kartu **"⚠️ Tunggakan SPP Tahun Ajaran
   Sebelumnya"** berisi chip bulan yang belum dibayar per tahun ajaran (bisa dipilih
-  sebagian atau semua). Pembayaran dicatat balik ke `spp_history` tahun terkait
-  (tidak mengubah SPP tahun berjalan) dan tetap tercetak di kuitansi.
+  sebagian atau semua), lengkap dengan sisa per bulan bila nominalnya berbeda-beda.
+  Pembayaran dicatat balik ke `spp_history` tahun terkait (tidak mengubah SPP tahun
+  berjalan) dan tetap tercetak di kuitansi dengan nominal asli tiap bulan.
 - **Tunggakan** (dashboard, tabel santri, detail, halaman Tunggakan) kini menghitung
-  tunggakan SPP tahun lalu ke dalam total, dengan rincian terpisah.
+  tunggakan SPP tahun lalu ke dalam total, dengan rincian terpisah per tahun ajaran.
 
 **Migrasi database:** jalankan `supabase_migration_spp_history.sql` (menambah kolom
 `spp_history jsonb` — aman, tidak menghapus data). Bila migrasi belum dijalankan,
 aplikasi tetap berfungsi normal (fitur riwayat SPP nonaktif otomatis) sampai kolom
-tersedia.
+tersedia. Bentuk `months` di atas hanya menambah isi JSON — **tidak** perlu migrasi
+tambahan.
+
+### Panel "Semua Tunggakan" di Input Pembayaran
+
+Begitu nama santri dipilih, di atas daftar item muncul panel ringkas berisi
+**seluruh kewajiban** santri tersebut — SPP tahun berjalan, SPP tiap tahun ajaran
+sebelumnya, dan setiap item tagihan yang masih bersisa (uang pangkal, pembangunan,
+dll) — beserta tombol **"✔️ Centang semua tunggakan"** untuk melunasi semuanya
+sekaligus. Tunggakan item dari item yang sudah dinonaktifkan tetap ikut muncul
+(ditandai badge *tunggakan lama*), termasuk untuk santri lulus/pindah/keluar.
 
 ## Detail Pembayaran (Tanggal, Metode, Penyetor)
 
