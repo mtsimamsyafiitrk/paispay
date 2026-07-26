@@ -73,7 +73,8 @@ function parseRows(rows) {
     KELAS: ['KELAS','CLASS','GRADE','TINGKAT - ROMBEL','TINGKAT_ROMBEL','ROMBEL'],
     NISN: ['NISN'],
     TA: ['TAHUN_AJARAN','TA','TAHUN AJARAN','YEAR'],
-    SPP: ['SPP','SPP_BULANAN','SPP BULANAN']
+    SPP: ['SPP','SPP_BULANAN','SPP BULANAN'],
+    STATUS: ['STATUS','STATUS_KELULUSAN','STATUS KELULUSAN','STATUS_SANTRI','STATUS SANTRI','STATUS_SISWA','STATUS SISWA','KETERANGAN','KET']
   };
   function findKey(obj, keys) {
     for (const k of keys) {
@@ -90,6 +91,17 @@ function parseRows(rows) {
     if (/IX/i.test(k))   return '9';
     if (/VII/i.test(k))  return '7';
     return k;
+  }
+  // Petakan status dari kolom data ke nilai internal (lulus/pindah/keluar).
+  // Aktif/kosong → '' agar santri tetap dianggap aktif. Nilai tak dikenal
+  // dibiarkan aktif ('') supaya tidak keliru menyembunyikan santri.
+  function normalizeStatus(v) {
+    const t = String(v || '').trim().toLowerCase();
+    if (!t) return '';
+    if (/lulus|alumni|tamat|graduat/.test(t))              return 'lulus';
+    if (/pindah|mutasi|transfer/.test(t))                  return 'pindah';
+    if (/keluar|berhenti|mengundurkan|resign|\bdo\b|drop/.test(t)) return 'keluar';
+    return ''; // aktif / active / nilai lain
   }
   rows.forEach(row => {
     const nama = String(findKey(row, MAP.NAMA)||'').trim().toUpperCase();
@@ -113,10 +125,11 @@ function parseRows(rows) {
     const nisn = String(findKey(row, MAP.NISN)||'').trim().replace(/'/g,'');
     const spp  = Number(String(findKey(row, MAP.SPP)||'0').replace(/[^0-9]/g,''))||0;
     const ta   = String(findKey(row, MAP.TA)||'').trim() || (getProfil ? getProfil().ta : '') || '';
-    importBuffer.push({ nama, kelas, nisn, spp, spp_paid_months, ta });
+    const status_kelulusan = normalizeStatus(findKey(row, MAP.STATUS));
+    importBuffer.push({ nama, kelas, nisn, spp, spp_paid_months, ta, status_kelulusan });
   });
   if (!importBuffer.length) { toast('⚠️ Tidak ada data valid ditemukan di file'); return; }
-  // Update header tabel: tambah kolom TA
+  // Update header tabel: tambah kolom TA lalu Status
   const thead = document.querySelector('#importPreviewTable thead tr');
   if (thead && !thead.querySelector('.col-ta')) {
     const th = document.createElement('th');
@@ -124,12 +137,23 @@ function parseRows(rows) {
     th.textContent = 'TA';
     thead.insertBefore(th, thead.children[2]);
   }
+  if (thead && !thead.querySelector('.col-status')) {
+    const th = document.createElement('th');
+    th.className = 'col-status';
+    th.textContent = 'Status';
+    // Setelah kolom Kelas (No, Nama, TA, Kelas → sisipkan di indeks 4)
+    thead.insertBefore(th, thead.children[4]);
+  }
+  const STATUS_LABEL = { '': 'Aktif', lulus: 'Lulus', pindah: 'Pindah', keluar: 'Keluar' };
   const tbody = document.querySelector('#importPreviewTable tbody');
   tbody.innerHTML = importBuffer.map((s,i) => {
     const bulanLabel = s.spp_paid_months.length
       ? `<span style="color:var(--primary);font-weight:600;">${s.spp_paid_months.length} bln</span> <span style="font-size:10px;color:var(--text-muted);">(${esc(s.spp_paid_months.join(', '))})</span>`
       : '<span style="color:var(--text-muted);">—</span>';
-    return `<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${esc(s.ta||'—')}</td><td>${esc(s.kelas||'—')}</td><td>${esc(s.nisn||'—')}</td><td>${rp(s.spp)}</td><td>${bulanLabel}</td></tr>`;
+    const statusLabel = s.status_kelulusan
+      ? `<span style="font-size:11px;font-weight:600;color:var(--accent);">${esc(STATUS_LABEL[s.status_kelulusan] || s.status_kelulusan)}</span>`
+      : '<span style="color:var(--text-muted);">Aktif</span>';
+    return `<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${esc(s.ta||'—')}</td><td>${esc(s.kelas||'—')}</td><td>${statusLabel}</td><td>${esc(s.nisn||'—')}</td><td>${rp(s.spp)}</td><td>${bulanLabel}</td></tr>`;
   }).join('');
   document.getElementById('importPreviewLabel').textContent = `✅ ${importBuffer.length} data santri siap diimport`;
   impGoStep(3);
@@ -144,7 +168,10 @@ function confirmImport() {
     const key = (row.nisn && row.nisn.trim())
       ? 'nisn:' + row.nisn.trim()
       : 'nama:' + normNama(row.nama);
-    if (!groups[key]) groups[key] = { base: row, taMap: {} };
+    if (!groups[key]) groups[key] = { base: row, taMap: {}, status: row.status_kelulusan || '' };
+    // Status non-aktif terakhir yang tercatat menang (mis. baris TA terbaru
+    // menandai santri sudah lulus/pindah/keluar).
+    if (row.status_kelulusan) groups[key].status = row.status_kelulusan;
     const ta = row.ta || '';
     if (ta) {
       if (!groups[key].taMap[ta]) {
@@ -158,7 +185,7 @@ function confirmImport() {
     }
   });
 
-  Object.values(groups).forEach(({ base, taMap }) => {
+  Object.values(groups).forEach(({ base, taMap, status }) => {
     const candidateNisn = base.nisn || '';
     const existIdx = findExistingSiswaIdx({ nama: base.nama, nisn: candidateNisn });
 
@@ -171,6 +198,9 @@ function confirmImport() {
         siswa.spp_paid_months = [...new Set([...(siswa.spp_paid_months||[]), ...(taData.spp_paid_months||[])])];
       });
       if (candidateNisn && !siswa.nisn) siswa.nisn = candidateNisn;
+      // Status dari file menang bila diisi (mis. tandai alumni/pindah/keluar);
+      // bila kosong, status santri yang sudah ada dipertahankan.
+      if (status) siswa.status_kelulusan = status;
       appState.students[existIdx] = siswa;
       diperbarui++;
     } else {
@@ -182,6 +212,7 @@ function confirmImport() {
         kelas: latestData.kelas || base.kelas,
         spp: latestData.spp || base.spp,
         spp_paid_months: latestData.spp_paid_months || base.spp_paid_months,
+        status_kelulusan: status || '',
       };
       appState.students.push(newSiswa);
       ditambahkan++;
@@ -199,18 +230,18 @@ function confirmImport() {
 
 function downloadTemplate() {
   if (typeof XLSX !== 'undefined') {
-    const headers = ['NAMA','KELAS','TAHUN_AJARAN','NISN','SPP',
+    const headers = ['NAMA','KELAS','TAHUN_AJARAN','NISN','STATUS','SPP',
       'SPP_Jul','SPP_Agt','SPP_Sep','SPP_Okt','SPP_Nov','SPP_Des',
       'SPP_Jan','SPP_Feb','SPP_Mar','SPP_Apr','SPP_Mei','SPP_Jun'];
-    const c1a = ['AHMAD FAUZI','7','2023/2024','1234567890',450000, 1,1,1,1,1,1, 1,1,1,1,1,1];
-    const c1b = ['AHMAD FAUZI','8','2024/2025','1234567890',500000, 1,1,1,1,1,0, 0,0,0,0,0,0];
-    const c1c = ['AHMAD FAUZI','9','2025/2026','1234567890',600000, 1,0,0,0,0,0, 0,0,0,0,0,0];
-    const c2  = ['NAMA SANTRI DUA','8','2024/2025','',500000, 1,1,1,1,1,1, 0,0,0,0,0,0];
-    const c3  = ['NAMA SANTRI TIGA','9','2025/2026','',600000, 0,0,0,0,0,0, 0,0,0,0,0,0];
+    const c1a = ['AHMAD FAUZI','7','2023/2024','1234567890','', 450000, 1,1,1,1,1,1, 1,1,1,1,1,1];
+    const c1b = ['AHMAD FAUZI','8','2024/2025','1234567890','', 500000, 1,1,1,1,1,0, 0,0,0,0,0,0];
+    const c1c = ['AHMAD FAUZI','9','2025/2026','1234567890','Lulus', 600000, 1,0,0,0,0,0, 0,0,0,0,0,0];
+    const c2  = ['NAMA SANTRI DUA','8','2024/2025','','Pindah', 500000, 1,1,1,1,1,1, 0,0,0,0,0,0];
+    const c3  = ['NAMA SANTRI TIGA','9','2025/2026','','Keluar', 600000, 0,0,0,0,0,0, 0,0,0,0,0,0];
     const wsData = [headers, c1a, c1b, c1c, c2, c3];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = [
-      {wch:30},{wch:8},{wch:14},{wch:14},{wch:12},
+      {wch:30},{wch:8},{wch:14},{wch:14},{wch:10},{wch:12},
       {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
       {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
     ];
@@ -220,7 +251,7 @@ function downloadTemplate() {
     toast('📋 Template Excel berhasil didownload');
   } else {
     const months = 'SPP_Jul,SPP_Agt,SPP_Sep,SPP_Okt,SPP_Nov,SPP_Des,SPP_Jan,SPP_Feb,SPP_Mar,SPP_Apr,SPP_Mei,SPP_Jun';
-    const csv = `NAMA,KELAS,TAHUN_AJARAN,NISN,SPP,${months}\nAHMAD FAUZI,7,2023/2024,1234567890,450000,1,1,1,1,1,1,1,1,1,1,1,1\nAHMAD FAUZI,8,2024/2025,1234567890,500000,1,1,1,1,1,0,0,0,0,0,0,0\n`;
+    const csv = `NAMA,KELAS,TAHUN_AJARAN,NISN,STATUS,SPP,${months}\nAHMAD FAUZI,7,2023/2024,1234567890,,450000,1,1,1,1,1,1,1,1,1,1,1,1\nAHMAD FAUZI,9,2025/2026,1234567890,Lulus,600000,1,0,0,0,0,0,0,0,0,0,0,0\n`;
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
     a.download = 'template_import_santri.csv';
