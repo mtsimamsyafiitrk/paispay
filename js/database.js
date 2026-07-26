@@ -268,6 +268,54 @@ async function updateTagihanNominalByItem(itemId, newNominal) {
   return rows.length;
 }
 
+// Simpan banyak tagihan sekaligus (dipakai Import Tunggakan).
+// rows: array { id?, nama, kelas, item_id, item_name, nominal, paid_amount }.
+// Baris ber-id = memperbarui record lama (upsert lewat primary key), baris tanpa
+// id = record baru. Keduanya dikirim terpisah karena PostgREST memakai satu
+// daftar kolom untuk seluruh batch (id null akan melanggar primary key).
+async function upsertTagihanBatch(rows) {
+  const toRow = r => ({
+    nama: r.nama, kelas: r.kelas || '', item_id: r.item_id, item_name: r.item_name,
+    nominal: Number(r.nominal) || 0, paid_amount: Number(r.paid_amount) || 0,
+  });
+  const baru = rows.filter(r => !r.id);
+  const lama = rows.filter(r => r.id);
+
+  if (lama.length) {
+    await sb('tagihan?on_conflict=id', 'POST', lama.map(r => ({ id: r.id, ...toRow(r) })),
+      { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
+    lama.forEach(r => {
+      const t = appState.tagihan.find(x => x.id === r.id);
+      if (t) { t.nominal = Number(r.nominal) || 0; t.paid_amount = Number(r.paid_amount) || 0; t.kelas = r.kelas || t.kelas; }
+    });
+  }
+  if (baru.length) {
+    const res = await sb('tagihan', 'POST', baru.map(toRow), { 'Prefer': 'return=representation' });
+    if (Array.isArray(res)) res.forEach(r => appState.tagihan.push({
+      id: r.id, nama: r.nama, kelas: r.kelas,
+      item_id: r.item_id, item_name: r.item_name,
+      nominal: Number(r.nominal) || 0, paid_amount: Number(r.paid_amount) || 0,
+    }));
+  }
+  return rows.length;
+}
+
+// Upsert banyak siswa sekaligus tanpa mengirim seluruh appState.students
+// (saveState mengirim semuanya; ini dipakai import agar payload tetap kecil).
+async function saveStudentsBatch(list) {
+  if (!list || !list.length) return;
+  try {
+    await sb('students?on_conflict=nama', 'POST', list.map(_buildStudentRow),
+      { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
+  } catch(e) {
+    if (_sppHistorySupported && _isMissingSppHistory(e)) {
+      _sppHistorySupported = false;
+      return saveStudentsBatch(list); // ulangi tanpa kolom spp_history
+    }
+    throw e;
+  }
+}
+
 // Hapus semua tagihan satu item (saat admin pilih "hapus record")
 async function deleteTagihanByItemId(itemId) {
   await sb('tagihan?item_id=eq.' + encodeURIComponent(itemId), 'DELETE', null, { 'Prefer': 'return=minimal' });

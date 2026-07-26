@@ -207,26 +207,81 @@ function itemsTunggakan(s) {
 }
 
 // ── Tunggakan SPP tahun ajaran sebelumnya ──
-// Sumber data: s.spp_history = { "2024/2025": { spp, spp_paid_months }, ... }
-// Snapshot ini dibuat saat promosi kelas (pindah TA) sebelum spp_paid_months
-// tahun berjalan direset — jadi bulan yang belum dibayar tahun lalu tetap
-// terhitung sebagai tunggakan dan bisa dibayar di tahun ajaran baru.
-// Mengembalikan array per tahun ajaran: { ta, rate, unpaid:[bulan...], amount }.
+// Sumber data: s.spp_history = { "2024/2025": { … }, ... }
+// Snapshot dibuat saat promosi kelas (pindah TA) sebelum spp_paid_months tahun
+// berjalan direset, atau diisi lewat menu "Import Tunggakan" dari data lama —
+// jadi bulan yang belum dibayar di tahun-tahun sebelumnya tetap terhitung dan
+// bisa dibayar di tahun ajaran berjalan.
+//
+// Dua bentuk entri didukung:
+//   Ringkas (lama)  : { spp: 500000, spp_paid_months: ['Jul','Agt'] }
+//                     → semua bulan bernominal sama.
+//   Rinci  (baru)   : { spp, spp_paid_months, kelas, months: { Jul:{n,d}, … } }
+//                     → n = nominal tagihan bulan itu, d = sudah dibayar.
+//                     Dipakai bila nominal SPP berubah di tengah tahun atau ada
+//                     pembayaran sebagian. Bulan yang tidak ada di `months`
+//                     dianggap tidak ditagih pada TA tersebut.
+//
+// sppHistMonths(): normalisasi satu entri jadi [{ m, nominal, dibayar, sisa }].
+function sppHistMonths(rec) {
+  const out = [];
+  if (!rec || typeof rec !== 'object') return out;
+  const rich = (rec.months && typeof rec.months === 'object' && !Array.isArray(rec.months)) ? rec.months : null;
+  const rate = Number(rec.spp) || 0;
+  const paid = Array.isArray(rec.spp_paid_months) ? rec.spp_paid_months : [];
+  MONTHS.forEach(m => {
+    if (rich) {
+      const r = rich[m];
+      if (!r) return; // bulan tidak ditagih pada TA ini
+      const nominal = Math.max(0, Number(r.n) || 0);
+      const dibayar = Math.min(nominal, Math.max(0, Number(r.d) || 0));
+      out.push({ m, nominal, dibayar, sisa: nominal - dibayar });
+    } else {
+      if (rate <= 0) return;
+      const lunas = paid.includes(m);
+      out.push({ m, nominal: rate, dibayar: lunas ? rate : 0, sisa: lunas ? 0 : rate });
+    }
+  });
+  return out;
+}
+
+// Daftar tunggakan per tahun ajaran:
+//   { ta, kelas, rate, unpaid:['Jul',…], detail:[{m,nominal,dibayar,sisa}], amount }
+// `unpaid` tetap array kode bulan agar pemakaian lama (y.unpaid.length) tetap jalan.
 function sppTunggakanPrevList(s) {
   const hist = (s && s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
   const out = [];
   Object.keys(hist).forEach(ta => {
-    const d = hist[ta] || {};
-    const rate = Number(d.spp) || 0;
-    if (rate <= 0) return;
-    const paid = Array.isArray(d.spp_paid_months) ? d.spp_paid_months : [];
-    const unpaid = MONTHS.filter(m => !paid.includes(m));
-    if (!unpaid.length) return;
-    out.push({ ta, rate, unpaid, amount: unpaid.length * rate });
+    const rec = hist[ta] || {};
+    const belum = sppHistMonths(rec).filter(x => x.sisa > 0);
+    if (!belum.length) return;
+    const amount = belum.reduce((a, x) => a + x.sisa, 0);
+    out.push({
+      ta,
+      kelas: rec.kelas || '',
+      rate: Number(rec.spp) || Math.round(amount / belum.length),
+      unpaid: belum.map(x => x.m),
+      detail: belum,
+      amount,
+    });
   });
   // Urutkan menaik berdasar tahun awal TA (yang paling lama tampil dulu)
   out.sort((a, b) => (parseInt(a.ta) || 0) - (parseInt(b.ta) || 0));
   return out;
+}
+
+// Tandai bulan-bulan tunggakan TA lama sebagai LUNAS setelah dibayar.
+// Menyentuh dua tempat sekaligus supaya bentuk ringkas & rinci tetap konsisten.
+function markSppHistPaid(stu, ta, rate, monthCodes) {
+  if (!stu || !ta) return;
+  stu.spp_history = (stu.spp_history && typeof stu.spp_history === 'object' && !Array.isArray(stu.spp_history))
+    ? stu.spp_history : {};
+  const rec = stu.spp_history[ta] || (stu.spp_history[ta] = { spp: Number(rate) || 0, spp_paid_months: [] });
+  if (!Array.isArray(rec.spp_paid_months)) rec.spp_paid_months = [];
+  (monthCodes || []).forEach(m => {
+    if (rec.months && rec.months[m]) rec.months[m].d = Math.max(0, Number(rec.months[m].n) || 0);
+    if (!rec.spp_paid_months.includes(m)) rec.spp_paid_months.push(m);
+  });
 }
 
 // Total nominal tunggakan SPP dari seluruh tahun ajaran sebelumnya.

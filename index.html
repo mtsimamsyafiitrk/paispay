@@ -414,6 +414,20 @@
 
   <!-- ═════════ TUNGGAKAN ═════════ -->
   <div class="page" id="page-tunggakan">
+    <!-- Import tunggakan lama (lintas tahun ajaran) -->
+    <div class="card" style="margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:240px;">
+        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:4px;">📥 Import Data Tunggakan</div>
+        <div style="font-size:12.5px;color:var(--text-muted);line-height:1.6;">
+          Masukkan tunggakan lama (SPP per bulan lintas tahun ajaran, uang pangkal, pembangunan, dll)
+          dari file rekap <strong>.json</strong>, <strong>.csv</strong>, atau <strong>.xlsx</strong>.
+          Setelah diimport, seluruh tunggakan santri langsung muncul saat namanya dipilih di
+          <strong>Input Pembayaran</strong>.
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="openImportTunggakanModal()">📥 Import Tunggakan</button>
+    </div>
+
     <!-- Stat cards ringkasan -->
     <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;" id="tunggakanStats"></div>
 
@@ -1238,6 +1252,53 @@
     </div>
   </div>
 </div>
+<!-- ═══ IMPORT TUNGGAKAN MODAL ═══ -->
+<div class="modal-overlay" id="importTunggakanModal">
+  <div class="modal" style="max-width:900px;max-height:92vh;overflow-y:auto;">
+    <div class="modal-header" style="position:sticky;top:0;background:#fff;z-index:2;">
+      <div class="modal-title">📥 Import Data Tunggakan &amp; Riwayat Pembayaran</div>
+      <button class="modal-close" onclick="closeImportTunggakanModal()">✕</button>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div id="tg_step1">
+      <div style="background:var(--accent-pale);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;color:#7a5c10;line-height:1.7;">
+        <div style="font-weight:700;margin-bottom:6px;">Format file yang didukung</div>
+        <div><strong>1. JSON per santri</strong> — array objek berisi
+          <code>nama</code>, <code>status</code>, <code>kelas_terakhir</code>,
+          <code>tunggakan_pangkal</code>, <code>tunggakan_pembangunan</code>, dan
+          <code>tagihan_spp</code> (daftar tagihan per bulan).</div>
+        <div style="margin-top:6px;"><strong>2. Baris per bulan</strong> (CSV / XLSX / JSON) — kolom
+          <code>nama_santri</code>, <code>tahun_ajaran</code>, <code>kelas</code>,
+          <code>bulan</code> (atau <code>periode</code>), <code>nominal</code>,
+          <code>dibayar</code>, <code>sisa</code>.</div>
+        <div style="margin-top:8px;">Nama santri dicocokkan dengan data yang sudah ada (persis / mirip).
+          Santri yang belum terdaftar akan <strong>ditambahkan otomatis</strong>. Bulan yang sudah
+          dilunasi lewat aplikasi <strong>tidak akan dijadikan tunggakan lagi</strong>.</div>
+      </div>
+      <div class="import-zone" id="tgZone" onclick="document.getElementById('tgFile').click()"
+        style="border:2px dashed var(--border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);">
+        <div style="font-size:40px;margin-bottom:10px;">🗂️</div>
+        <p style="font-weight:700;font-size:14px;margin-bottom:4px;">Klik untuk pilih file rekap tunggakan</p>
+        <p style="font-size:12px;color:var(--text-muted);">atau drag &amp; drop di sini • Format: .json, .csv, .xlsx</p>
+        <input type="file" id="tgFile" accept=".json,.csv,.xlsx,.xls" style="display:none" onchange="handleTunggakanFile(this)">
+      </div>
+    </div>
+
+    <!-- Step 2: Preview & Confirm -->
+    <div id="tg_step2" style="display:none;">
+      <div id="tgPreview"></div>
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="tgGoStep(1)">← Pilih File Lain</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-outline" onclick="closeImportTunggakanModal()">Batal</button>
+          <button class="btn btn-primary" id="tgConfirmBtn" onclick="confirmImportTunggakan()">💾 Terapkan ke Aplikasi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ IMPORT MASSAL MODAL ═══ -->
 <div class="modal-overlay" id="importModal">
   <div class="modal" style="max-width:680px;max-height:90vh;overflow-y:auto;">
@@ -1811,6 +1872,7 @@
 <script src="js/profil.js"></script>
 <script src="js/manajemen-siswa.js"></script>
 <script src="js/import.js"></script>
+<script src="js/import-tunggakan.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/guest.js"></script>
 <script src="js/akun.js"></script>

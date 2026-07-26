@@ -5,6 +5,28 @@
 const MONTHS = ['Jul','Agt','Sep','Okt','Nov','Des','Jan','Feb','Mar','Apr','Mei','Jun'];
 const MONTH_FULL = {Jul:'Juli',Agt:'Agustus',Sep:'September',Okt:'Oktober',Nov:'November',Des:'Desember',Jan:'Januari',Feb:'Februari',Mar:'Maret',Apr:'April',Mei:'Mei',Jun:'Juni'};
 
+// Nama bulan (penuh, singkatan, atau angka periode) → kode bulan internal.
+// Dipakai importir data tunggakan yang memakai nama bulan penuh ("Juli") atau
+// periode "2024-07".
+const MONTH_ALIAS = (() => {
+  const map = {};
+  MONTHS.forEach(m => { map[m.toLowerCase()] = m; map[MONTH_FULL[m].toLowerCase()] = m; });
+  Object.assign(map, { agu:'Agt', ags:'Agt', agst:'Agt', peb:'Feb', pebruari:'Feb', okto:'Okt', nop:'Nov', nopember:'Nov' });
+  // Angka bulan kalender (1–12) → kode bulan tahun ajaran (Juli = awal tahun).
+  ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des']
+    .forEach((m, i) => { map[String(i + 1)] = m; map[String(i + 1).padStart(2,'0')] = m; });
+  return map;
+})();
+
+// monthCode('Juli') → 'Jul'; monthCode('2024-07') → 'Jul'; '' bila tak dikenal.
+function monthCode(v) {
+  const t = String(v == null ? '' : v).trim();
+  if (!t) return '';
+  const periode = t.match(/^\d{4}-(\d{2})$/);
+  if (periode) return MONTH_ALIAS[periode[1]] || '';
+  return MONTH_ALIAS[t.toLowerCase()] || '';
+}
+
 // No pre-loaded student data — import via Excel atau tambah manual
 const STUDENTS_RAW = [];
 
@@ -110,6 +132,7 @@ const defaultState = {
   payItems: [
     { id:'spp',         name:'SPP Bulanan',      amount:0,      type:'bulanan', active:true,  kelas:['7','8','9'] },
     { id:'pangkal',     name:'Uang Pangkal',     amount:0,      type:'tetap',   active:false, kelas:['7','8','9'] },
+    { id:'pembangunan', name:'Uang Pembangunan', amount:0,      type:'tetap',   active:false, kelas:['7','8','9'] },
     { id:'pendaftaran', name:'Uang Pendaftaran', amount:0,      type:'tetap',   active:true,  kelas:['7','8','9'] },
     { id:'buku',        name:'Uang Buku',        amount:0,      type:'tetap',   active:false, kelas:['7','8','9'] },
     { id:'seragam',     name:'Uang Seragam',     amount:0,      type:'tetap',   active:false, kelas:['7','8','9'] },
@@ -122,9 +145,10 @@ const appState = JSON.parse(JSON.stringify(defaultState));
 
 // Item "baku": tak bisa dihapus (hanya edit). SPP + item per-siswa.
 const BAKU_ITEMS = ['spp', 'pangkal', 'pendaftaran'];
-// Item bernominal per-siswa (diatur di form Data Siswa / SPMB, disimpan sebagai
-// tagihan per-siswa) — dikecualikan dari pembuatan tagihan otomatis & propagasi.
-const PER_STUDENT_ITEMS = ['pangkal', 'pendaftaran'];
+// Item bernominal per-siswa (diatur di form Data Siswa / SPMB / Import Tunggakan,
+// disimpan sebagai tagihan per-siswa) — dikecualikan dari pembuatan tagihan
+// otomatis & propagasi nominal massal.
+const PER_STUDENT_ITEMS = ['pangkal', 'pembangunan', 'pendaftaran'];
 // Definisi item baku untuk memastikan selalu ada walau settings lama tak punya.
 const BAKU_ITEM_DEFS = [
   { id:'spp',         name:'SPP Bulanan',      amount:0, type:'bulanan', active:true,  kelas:['7','8','9'] },
