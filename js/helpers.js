@@ -177,14 +177,87 @@ function detectDuplicateNames() {
   return dupes;
 }
 
+// ══════════════════════════════════════════
+// BULAN JATUH TEMPO SPP (TAHUN BERJALAN)
+// ══════════════════════════════════════════
+// SPP dihitung BERJALAN, bukan sekaligus satu tahun ajaran penuh: yang dianggap
+// menunggak hanya bulan yang sudah tiba — dari Juli (awal TA) sampai bulan
+// aktif saat ini. Bulan yang belum tiba TIDAK dihitung tunggakan, tapi tetap
+// boleh dibayar di muka lewat form Input Pembayaran.
+//
+// Contoh: TA 2025/2026, hari ini Oktober 2025 dan belum bayar sama sekali →
+// tunggakan = 4 bulan (Jul, Agt, Sep, Okt), bukan 12 bulan.
+
+// Tahun awal TA aktif, diambil dari Profil Madrasah ("2025/2026" → 2025).
+// Bila profil belum diisi/tidak terbaca, turunkan dari tanggal hari ini
+// (tahun ajaran dianggap mulai Juli).
+function taStartYear(ref) {
+  const d = ref || new Date();
+  const label = (typeof getProfil === 'function') ? String(getProfil().ta || '') : '';
+  const m = label.match(/(\d{4})/);
+  if (m) return parseInt(m[1], 10);
+  return d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
+}
+
+// Posisi bulan hari ini di dalam TA aktif (Jul=0 … Jun=11).
+//   < 0  → TA belum mulai (belum ada bulan yang jatuh tempo)
+//   > 11 → TA sudah lewat (seluruh 12 bulan jatuh tempo)
+function sppMonthIndex(ref) {
+  const d = ref || new Date();
+  return (d.getFullYear() - taStartYear(d)) * 12 + (d.getMonth() - 6);
+}
+
+// Cache kecil: dipanggil sekali per siswa per render, sedangkan hasilnya hanya
+// berubah saat ganti bulan atau saat TA di profil diubah.
+let _sppDueCache = { key: '', months: [] };
+
+// Bulan SPP yang sudah jatuh tempo per tanggal `ref` (default: hari ini).
+// Bulan berjalan IKUT dihitung — SPP bulan ini sudah menjadi kewajiban.
+function sppDueMonths(ref) {
+  const d = ref || new Date();
+  const key = d.getFullYear() + '-' + d.getMonth() + '|' +
+    ((typeof getProfil === 'function') ? String(getProfil().ta || '') : '');
+  if (_sppDueCache.key === key) return _sppDueCache.months;
+  const idx = sppMonthIndex(d);
+  const months = idx < 0 ? [] : idx > 11 ? MONTHS.slice() : MONTHS.slice(0, idx + 1);
+  _sppDueCache = { key, months };
+  return months;
+}
+
+// true bila bulan `m` sudah jatuh tempo pada TA berjalan.
+function isSppDue(m, ref) { return sppDueMonths(ref).includes(m); }
+
+// Nama bulan terakhir yang jatuh tempo — untuk keterangan "dihitung s/d …".
+function sppDueMonthLabel(ref) {
+  const due = sppDueMonths(ref);
+  if (!due.length) return '';
+  return MONTH_FULL[due[due.length - 1]] || due[due.length - 1];
+}
+
+// Bulan jatuh tempo yang belum dibayar — dasar perhitungan tunggakan SPP
+// tahun berjalan (dipakai juga untuk menampilkan rincian bulannya).
+function sppUnpaidDueMonths(s, ref) {
+  if (!s || s.status_kelulusan === 'lulus') return [];
+  const paid = s.spp_paid_months || [];
+  return sppDueMonths(ref).filter(m => !paid.includes(m));
+}
+
+// Bulan yang belum jatuh tempo & belum dibayar — bukan tunggakan, tapi tetap
+// bisa dipilih di form Input Pembayaran sebagai pembayaran di muka.
+function sppUpcomingMonths(s, ref) {
+  if (!s || s.status_kelulusan === 'lulus') return [];
+  const paid = s.spp_paid_months || [];
+  const due = sppDueMonths(ref);
+  return MONTHS.filter(m => !due.includes(m) && !paid.includes(m));
+}
+
 function sppTunggakan(s) {
   // Lulusan tidak punya kewajiban SPP tahun berjalan — SPP-nya sudah diarsipkan
   // ke spp_history (dihitung sebagai tunggakan tahun lalu). Tanpa ini, bulan
   // yang direset saat lulus akan tampil sebagai 12 bulan "belum bayar" palsu.
   if (s.status_kelulusan === 'lulus') return 0;
   if (!s.spp || s.spp === 0) return 0;
-  const belum = MONTHS.filter(m => !(s.spp_paid_months || []).includes(m)).length;
-  return belum * s.spp;
+  return sppUnpaidDueMonths(s).length * s.spp;
 }
 
 // Arsipkan SPP tahun berjalan ke riwayat (spp_history) SEBELUM spp_paid_months

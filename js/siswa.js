@@ -141,7 +141,16 @@ function renderSiswaTable(resetPage = true) {
         return `<span style="font-size:11px;padding:2px 7px;border-radius:5px;margin:1px;background:${lunas?'var(--primary-pale)':'var(--accent-pale)'};color:${lunas?'var(--primary)':'#7a5c10'};">${short}: ${lunas?'✅':'⚠️'}</span>`;
       }).join('');
     } else {
-      monthBadges = MONTHS.map(m=>`<span style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${(s.spp_paid_months||[]).includes(m)?'var(--primary)':'#e5e0d8'};color:${(s.spp_paid_months||[]).includes(m)?'#fff':'#999'};">${m}</span>`).join('');
+      // Lunas = hijau, menunggak (sudah jatuh tempo) = merah,
+      // belum jatuh tempo = abu-abu (tidak dihitung tunggakan).
+      monthBadges = MONTHS.map(m => {
+        const paid = (s.spp_paid_months||[]).includes(m);
+        const due  = isSppDue(m);
+        const bg   = paid ? 'var(--primary)' : due ? 'var(--danger-pale)' : '#e5e0d8';
+        const fg   = paid ? '#fff' : due ? 'var(--danger)' : '#999';
+        const ttl  = paid ? 'Lunas' : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo';
+        return `<span title="${ttl}" style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${bg};color:${fg};">${m}</span>`;
+      }).join('');
     }
     const nama_safe = escJs(s.nama);
     const no = start + i + 1;
@@ -231,7 +240,7 @@ function renderTunggakan() {
     <div class="stat-card gold">
       <div class="stat-label">Tunggakan SPP</div>
       <div class="stat-value" style="font-size:18px;">${rp(sppTk)}</div>
-      <div class="stat-sub">${ss.filter(s=>sppTunggakan(s)>0).length} santri</div>
+      <div class="stat-sub">${ss.filter(s=>sppTunggakan(s)>0).length} santri${sppDueMonthLabel() ? ' · s/d ' + esc(sppDueMonthLabel()) : ''}</div>
       <div class="stat-icon">📅</div>
     </div>
     ${sppPrevTk > 0 ? `
@@ -344,13 +353,19 @@ function renderTunggakanDetail(s) {
   const itemT  = itemsTunggakan(s);
   const totalT = sppT + prevT + itemT;
 
-  // SPP bulan grid
+  // SPP bulan grid — tiga status: lunas, menunggak (sudah jatuh tempo),
+  // dan belum jatuh tempo (tidak dihitung sebagai tunggakan).
   const bulanLunas = MONTHS.filter(m => (s.spp_paid_months||[]).includes(m));
-  const bulanBelum = MONTHS.filter(m => !(s.spp_paid_months||[]).includes(m));
+  const bulanBelum = sppUnpaidDueMonths(s);
   const monthGrid  = MONTHS.map(m => {
     const paid = (s.spp_paid_months||[]).includes(m);
-    return `<div style="padding:5px 2px;border-radius:8px;border:1.5px solid ${paid?'var(--primary)':'var(--border)'};
-      background:${paid?'var(--primary)':'var(--card)'};color:${paid?'#fff':'var(--text-muted)'};
+    const due  = isSppDue(m);
+    const border = paid ? 'var(--primary)' : due ? 'var(--danger)' : 'var(--border)';
+    const bg     = paid ? 'var(--primary)' : due ? 'var(--danger-pale)' : 'var(--card)';
+    const fg     = paid ? '#fff' : due ? 'var(--danger)' : 'var(--text-muted)';
+    return `<div title="${paid ? 'Lunas' : due ? 'Belum bayar (sudah jatuh tempo)' : 'Belum jatuh tempo'}"
+      style="padding:5px 2px;border-radius:8px;border:1.5px solid ${border};
+      background:${bg};color:${fg};${paid || due ? '' : 'border-style:dashed;'}
       font-size:11px;font-weight:600;text-align:center;">${m}</div>`;
   }).join('');
 
@@ -397,7 +412,7 @@ function renderTunggakanDetail(s) {
   const totalBanner = totalT > 0
     ? `<div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
         <div style="font-weight:800;font-size:15px;color:var(--danger);">⚠️ Total Tunggakan: ${rp(totalT)}</div>
-        ${sppT > 0  ? `<div style="font-size:13px;margin-top:4px;">SPP: ${rp(sppT)} (${bulanBelum.length} bulan belum lunas)</div>` : ''}
+        ${sppT > 0  ? `<div style="font-size:13px;margin-top:4px;">SPP: ${rp(sppT)} (${bulanBelum.length} bulan belum lunas${sppDueMonthLabel() ? ' s/d ' + sppDueMonthLabel() : ''})</div>` : ''}
         ${prevT > 0 ? `<div style="font-size:13px;margin-top:2px;">SPP tahun lalu: ${rp(prevT)} (${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</div>` : ''}
         ${itemT > 0 ? `<div style="font-size:13px;margin-top:2px;">Item lain: ${rp(itemT)}</div>` : ''}
       </div>`
@@ -424,7 +439,11 @@ function renderTunggakanDetail(s) {
         </div>
       </div>
       <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">📅 Status SPP per Bulan (TA berjalan)</div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:20px;">${monthGrid}</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px;">${monthGrid}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;">
+        Tunggakan dihitung sampai bulan berjalan${sppDueMonthLabel() ? ' (<strong>' + esc(sppDueMonthLabel()) + '</strong>)' : ''} —
+        bulan bergaris putus-putus belum jatuh tempo &amp; tidak dihitung menunggak.
+      </div>
       ${prevGrids}
       ${tagihanCards}
     </div>`;

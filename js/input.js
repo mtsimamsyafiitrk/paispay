@@ -269,8 +269,8 @@ function onStudentSelect() {
       <div style="font-size:12px;font-weight:600;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);">Belum diisi</span>'}</div>
       <div style="font-size:12px;color:var(--text-muted);">Bulan dibayar</div>
       <div style="font-size:12px;font-weight:600;">${(s.spp_paid_months||[]).length} bulan</div>
-      <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP</div>
-      <div style="font-size:12px;font-weight:600;color:${tunggakSPP>0?'var(--danger)':'var(--primary-light)'};">${rp(tunggakSPP)}</div>
+      <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP <span style="font-size:10px;">(s/d bulan berjalan)</span></div>
+      <div style="font-size:12px;font-weight:600;color:${tunggakSPP>0?'var(--danger)':'var(--primary-light)'};">${rp(tunggakSPP)}${tunggakSPP>0?` <span style="font-weight:400;font-size:10px;">(${sppUnpaidDueMonths(s).length} bln)</span>`:''}</div>
       ${sppTunggakanPrevList(s).map(y => `
       <div style="font-size:12px;color:var(--text-muted);padding-left:8px;">↳ SPP TA ${esc(y.ta)} <span style="font-size:10px;">(${y.unpaid.length} bln)</span></div>
       <div style="font-size:12px;font-weight:600;color:var(--danger);">${rp(y.amount)}</div>`).join('')}
@@ -339,21 +339,35 @@ function renderPaymentItems(student) {
 
     if (item.type === 'bulanan' && student) {
       amount = student.spp || item.amount || 0;
-      const unpaid = MONTHS.filter(m => !(student.spp_paid_months || []).includes(m));
-      if (unpaid.length === 0) {
+      // Bulan menunggak = yang sudah jatuh tempo (Juli s/d bulan berjalan) &
+      // belum dibayar. Bulan yang belum tiba tetap ditampilkan terpisah agar
+      // wali yang ingin membayar di muka tetap bisa memilihnya.
+      const tunggak  = sppUnpaidDueMonths(student);
+      const dimuka   = sppUpcomingMonths(student);
+      const chip = (m, jatuhTempo) => `
+        <label style="display:flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px solid ${jatuhTempo?'var(--danger)':'var(--border)'};border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s;${jatuhTempo?'color:var(--danger);':'color:var(--text-muted);'}"
+          id="sppMonthLabel_${m}" onclick="toggleSppMonth('${m}',this)">
+          <input type="checkbox" id="sppChk_${m}" value="${m}" style="display:none;">
+          ${MONTH_FULL[m]}
+        </label>`;
+      if (tunggak.length === 0 && dimuka.length === 0) {
         extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Semua bulan sudah lunas</div>`;
         disabled = true;
       } else if (amount > 0) {
         extra = `<div style="margin-top:8px;">
-          <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Pilih bulan (bisa lebih dari 1):</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;" id="sppMonthWrap">
-            ${unpaid.map(m=>`
-              <label style="display:flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s;"
-                id="sppMonthLabel_${m}" onclick="toggleSppMonth('${m}',this)">
-                <input type="checkbox" id="sppChk_${m}" value="${m}" style="display:none;">
-                ${MONTH_FULL[m]}
-              </label>`).join('')}
-          </div>
+          ${tunggak.length ? `
+          <div style="font-size:11px;font-weight:600;color:var(--danger);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Tunggakan — ${tunggak.length} bulan (s/d bulan berjalan):</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            ${tunggak.map(m => chip(m, true)).join('')}
+          </div>` : `
+          <div style="font-size:12px;color:var(--primary-light);font-weight:600;margin-bottom:6px;">✅ Tidak ada tunggakan SPP s/d bulan berjalan</div>`}
+          ${dimuka.length ? `
+          <details style="margin-top:10px;">
+            <summary style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;cursor:pointer;">Bayar di muka (${dimuka.length} bulan belum jatuh tempo)</summary>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+              ${dimuka.map(m => chip(m, false)).join('')}
+            </div>
+          </details>` : ''}
           <div style="margin-top:6px;font-size:12px;color:var(--text-muted);" id="sppMonthInfo">Belum ada bulan dipilih</div>
         </div>`;
       }
@@ -422,8 +436,9 @@ function renderPaymentItems(student) {
 // petugas langsung melihat seluruh kewajiban tanpa menelusuri satu per satu.
 function renderArrearsBanner(student, prevList) {
   const sppNow = sppTunggakan(student);
-  const bulanNow = (student.spp || 0) > 0 && student.status_kelulusan !== 'lulus'
-    ? MONTHS.filter(m => !(student.spp_paid_months || []).includes(m)).length : 0;
+  // Hanya bulan yang sudah jatuh tempo (s/d bulan berjalan) yang dihitung —
+  // sejalan dengan nominal sppNow.
+  const bulanNow = (student.spp || 0) > 0 ? sppUnpaidDueMonths(student).length : 0;
   const tagihanRows = appState.tagihan
     .filter(t => t.nama === student.nama && Math.max(0, (t.nominal || 0) - (t.paid_amount || 0)) > 0)
     .map(t => ({ label: t.item_name, amount: Math.max(0, t.nominal - t.paid_amount) }));
@@ -470,7 +485,9 @@ function selectAllTunggakan() {
       if (mode) { mode.value = 'lunas'; onTetapModeChange(item.id); }
       chk.checked = true;
     } else if (item.type === 'bulanan') {
-      const unpaid = MONTHS.filter(m => !(student.spp_paid_months || []).includes(m));
+      // Hanya bulan yang benar-benar menunggak (sudah jatuh tempo) yang
+      // dicentang — bulan bayar di muka tetap harus dipilih manual.
+      const unpaid = sppUnpaidDueMonths(student);
       if (!unpaid.length || !(student.spp || item.amount || 0)) return;
       unpaid.forEach(m => setSppMonth(m, true));
       updateSppMonthInfo();
@@ -597,9 +614,13 @@ function updateSppPrevInfo() {
 
 function styleSppMonthLabel(labelEl, on) {
   if (!labelEl) return;
+  // Saat tidak terpilih, kembalikan ke warna asalnya: merah untuk bulan yang
+  // sudah jatuh tempo (tunggakan), abu-abu untuk bulan bayar di muka.
+  const m = (labelEl.id || '').replace('sppMonthLabel_', '');
+  const jatuhTempo = isSppDue(m);
   labelEl.style.background  = on ? 'var(--primary)' : '';
-  labelEl.style.color       = on ? '#fff' : '';
-  labelEl.style.borderColor = on ? 'var(--primary)' : '';
+  labelEl.style.color       = on ? '#fff' : (jatuhTempo ? 'var(--danger)' : 'var(--text-muted)');
+  labelEl.style.borderColor = on ? 'var(--primary)' : (jatuhTempo ? 'var(--danger)' : 'var(--border)');
 }
 
 function updateSppMonthInfo() {

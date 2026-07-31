@@ -18,7 +18,9 @@ function renderDashboard() {
   const tbody = document.querySelector('#dashKelasTable tbody');
   tbody.innerHTML = kelasList.map(k => {
     const ks = ss.filter(s=>s.kelas===k);
-    const lunas = ks.filter(s=>MONTHS.every(m=>!s.spp||s.spp_paid_months.includes(m))).length;
+    // "Lunas" = tidak ada tunggakan s/d bulan berjalan (bulan yang belum tiba
+    // tidak membuat santri dianggap menunggak).
+    const lunas = ks.filter(s => !s.spp || sppUnpaidDueMonths(s).length === 0).length;
     const tkItems = ks.reduce((a,s)=>a+itemsTunggakan(s),0);
     const pct_ = pct(lunas,ks.length);
     return `<tr>
@@ -36,11 +38,14 @@ function renderDashboard() {
     const paid = ss.filter(s=>s.spp>0&&s.spp_paid_months.includes(m)).length;
     const total = ss.filter(s=>s.spp>0).length;
     const p = pct(paid,total);
-    return `<div style="margin-bottom:10px;">
+    // Bulan yang belum jatuh tempo ditandai netral — capaian rendah di situ
+    // wajar (belum ditagih), jadi jangan diberi warna "merah".
+    const due = isSppDue(m);
+    return `<div style="margin-bottom:10px;${due?'':'opacity:.6;'}">
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
-        <span style="font-weight:600;">${MONTH_FULL[m]}</span><span style="color:var(--text-muted);">${paid}/${total}</span>
+        <span style="font-weight:600;">${MONTH_FULL[m]}${due?'':' <span style="font-weight:400;font-size:10px;color:var(--text-muted);">(belum jatuh tempo)</span>'}</span><span style="color:var(--text-muted);">${paid}/${total}</span>
       </div>
-      <div class="progress-wrap"><div class="progress-bar ${p>80?'green':p>40?'yellow':'red'}" style="width:${p}%"></div></div>
+      <div class="progress-wrap"><div class="progress-bar ${!due?'yellow':p>80?'green':p>40?'yellow':'red'}" style="width:${p}%"></div></div>
     </div>`;
   }).join('');
 
