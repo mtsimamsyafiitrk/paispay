@@ -52,6 +52,7 @@ function siswaToRow(s) {
   const tunggak = totalTunggakan(s);
   const bulanLunas = MONTHS.filter(m => (s.spp_paid_months||[]).includes(m)).map(m => MONTH_FULL[m]).join(', ');
   const tkItems = itemsTunggakan(s);
+  const prevList = sppTunggakanPrevList(s);
   return {
     'Nama': s.nama,
     'Kelas': s.kelas,
@@ -59,6 +60,9 @@ function siswaToRow(s) {
     'SPP/Bulan': s.spp || 0,
     'Bulan SPP Lunas': sppBayar,
     'Bulan Lunas (detail)': bulanLunas,
+    'Tunggakan SPP': sppTunggakan(s),
+    'Tunggakan SPP TA Lalu': sppTunggakanPrev(s),
+    'Rincian TA Lalu': prevList.map(y => 'TA ' + y.ta + ': ' + y.unpaid.length + ' bln').join('; '),
     'Tunggakan Item': tkItems,
     'Total Tunggakan': tunggak,
     'Status': tunggak > 0 ? 'Belum Lunas' : 'Lunas',
@@ -71,7 +75,7 @@ async function exportSiswaExcel(mode) {
     try {
       const rows = appState.students.map(s => siswaToRow(s));
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws['!cols'] = [24,6,12,10,8,32,14,12,10].map(w => ({wch: w}));
+      ws['!cols'] = [24,6,12,10,8,32,14,18,28,14,12,10].map(w => ({wch: w}));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Data Santri');
       const tgl = new Date().toISOString().slice(0,10);
@@ -147,7 +151,7 @@ async function exportBackupLengkap() {
           spp_paid_months: Array.isArray(s.spp_paid_months) ? s.spp_paid_months : [],
         }))
       );
-      wsSiswa['!cols'] = [24,6,12,10,8,32,14,12,10].map(w => ({wch: w}));
+      wsSiswa['!cols'] = [24,6,12,10,8,32,14,18,28,14,12,10].map(w => ({wch: w}));
       XLSX.utils.book_append_sheet(wb, wsSiswa, 'Data Santri');
 
       // Sheet 2: Transaksi
@@ -180,12 +184,14 @@ async function exportBackupLengkap() {
         appState.students.map(s => ({
           'Nama': s.nama, 'Kelas': s.kelas, 'NISN': s.nisn || '',
           'Tunggakan SPP': sppTunggakan(s),
+          'Tunggakan SPP TA Lalu': sppTunggakanPrev(s),
+          'Rincian TA Lalu': sppTunggakanPrevList(s).map(y => 'TA ' + y.ta + ': ' + y.unpaid.length + ' bln').join('; '),
           'Tunggakan Item': itemsTunggakan(s),
           'Total Tunggakan': totalTunggakan(s),
           'Status': totalTunggakan(s) > 0 ? 'Belum Lunas' : 'Lunas',
         }))
       );
-      wsTk['!cols'] = [24,6,12,14,14,14,10].map(w => ({wch: w}));
+      wsTk['!cols'] = [24,6,12,14,18,28,14,14,10].map(w => ({wch: w}));
       XLSX.utils.book_append_sheet(wb, wsTk, 'Tunggakan');
 
       const tgl = new Date().toISOString().slice(0,10);
@@ -197,12 +203,18 @@ async function exportBackupLengkap() {
 
 function buildSuratHTML(s, tgl) {
   const sppT  = sppTunggakan(s);
+  const prevList = sppTunggakanPrevList(s);   // tunggakan SPP TA sebelumnya
+  const prevT    = sppTunggakanPrev(s);
   const totalT = totalTunggakan(s);
   const tglFmt = new Date(tgl).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  // Baris SPP tahun berjalan hanya untuk santri yang masih menempuh TA aktif.
+  // Santri LULUS sudah tidak punya kewajiban SPP berjalan (sppTunggakan = 0) —
+  // kewajibannya pindah ke spp_history dan tampil sebagai baris TA sebelumnya.
+  const sppAktif = s.spp > 0 && s.status_kelulusan !== 'lulus';
   // Surat tagihan hanya memuat kewajiban yang SUDAH jatuh tempo (Juli s/d
   // bulan berjalan) supaya angkanya sama dengan tunggakan di aplikasi.
-  const bulanBelum = s.spp > 0 ? sppUnpaidDueMonths(s) : [];
-  const bulanDue   = s.spp > 0 ? sppDueMonths() : [];
+  const bulanBelum = sppAktif ? sppUnpaidDueMonths(s) : [];
+  const bulanDue   = sppAktif ? sppDueMonths() : [];
   const bulanLunasDue = bulanDue.filter(m => (s.spp_paid_months||[]).includes(m));
   const bulanDimuka   = (s.spp_paid_months||[]).filter(m => !bulanDue.includes(m));
   const sppTagihanDue = (s.spp || 0) * bulanDue.length;
@@ -230,12 +242,20 @@ function buildSuratHTML(s, tgl) {
         NISN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(s.nisn||'—')}
       </p>
       <p style="text-align:justify;line-height:1.8;margin-bottom:12px;font-size:11pt;">
-        Dengan hormat, bersama surat ini kami sampaikan informasi pembayaran santri yang bersangkutan untuk Tahun Ajaran Berjalan${sppDueMonthLabel() ? ' (SPP dihitung sampai bulan ' + esc(sppDueMonthLabel()) + ')' : ''} sebagaimana tercantum di bawah ini:
+        Dengan hormat, bersama surat ini kami sampaikan informasi pembayaran santri yang bersangkutan untuk Tahun Ajaran Berjalan${sppDueMonthLabel() ? ' (SPP dihitung sampai bulan ' + esc(sppDueMonthLabel()) + ')' : ''}${prevList.length ? ', termasuk tunggakan SPP Tahun Ajaran sebelumnya (' + prevList.map(y => esc(y.ta)).join(', ') + ') yang belum dilunasi,' : ''} sebagaimana tercantum di bawah ini:
       </p>
       <table class="data-table-pdf">
         <thead><tr><th style="width:30px">No</th><th>Jenis Pembayaran</th><th>Keterangan</th><th style="width:110px">Tagihan (Rp)</th><th style="width:110px">Terbayar (Rp)</th><th style="width:110px">Sisa (Rp)</th></tr></thead>
         <tbody>
-          ${s.spp > 0 ? `<tr>
+          ${prevList.map(y => `<tr>
+            <td style="text-align:center">${++no}</td>
+            <td>Tunggakan SPP T.A. ${esc(y.ta)}${y.kelas ? ` <span style="font-size:9pt">(Kelas ${esc(y.kelas)})</span>` : ''}</td>
+            <td style="font-size:10pt">${y.bulanLunas} dari ${y.bulanTagih} bulan lunas;<br>Belum: ${y.unpaid.map(m=>MONTH_FULL[m]).join(', ')}</td>
+            <td style="text-align:right">${y.tagihan.toLocaleString('id-ID')}</td>
+            <td style="text-align:right">${y.dibayar.toLocaleString('id-ID')}</td>
+            <td style="text-align:right;color:#c0392b;font-weight:bold;">${y.amount.toLocaleString('id-ID')}</td>
+          </tr>`).join('')}
+          ${sppAktif ? `<tr>
             <td style="text-align:center">${++no}</td>
             <td>SPP Bulanan <span style="font-size:9pt">(s/d ${esc(sppDueMonthLabel() || '—')})</span></td>
             <td style="font-size:10pt">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}</td>
@@ -392,19 +412,20 @@ function buildRekapTotalHTML(kelasFil, tgl) {
     <div class="surat-body">
       <h3>REKAP PEMBAYARAN SANTRI ${kelasFil?'KELAS '+esc(kelasFil):'SELURUH KELAS'}</h3>
       <p style="margin-bottom:10px;">Tahun Ajaran 2025/2026 &nbsp;|&nbsp; Per Tanggal: ${tglFmt}<br>
-      Total Santri: <strong>${list.length}</strong> orang${sppDueMonthLabel() ? ' &nbsp;|&nbsp; Tunggakan SPP dihitung s/d bulan ' + esc(sppDueMonthLabel()) : ''}</p>
+      Total Santri: <strong>${list.length}</strong> orang${sppDueMonthLabel() ? ' &nbsp;|&nbsp; Tunggakan SPP dihitung s/d bulan ' + esc(sppDueMonthLabel()) : ''}${list.some(s => sppTunggakanPrev(s) > 0) ? ' &nbsp;|&nbsp; Kolom Tunggakan sudah termasuk sisa SPP Tahun Ajaran sebelumnya' : ''}</p>
       <table class="data-table-pdf">
         <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>SPP Dibayar</th><th>Item Terbayar</th><th>Tunggakan</th></tr></thead>
         <tbody>
           ${list.map((s,i)=>{
             const tk = totalTunggakan(s);
+            const prev = sppTunggakanPrev(s);
             const itemBayar = appState.tagihan.filter(t=>t.nama===s.nama).reduce((a,t)=>a+(t.paid_amount||0),0);
             return `<tr${tk>0?' style="background:#fff5f5;"':''}>
               <td style="text-align:center">${i+1}</td>
               <td>${esc(s.nama)}</td><td>${esc(s.kelas)}</td>
               <td style="text-align:right">${((s.spp_paid_months||[]).length*(s.spp||0)).toLocaleString('id-ID')}</td>
               <td style="text-align:right">${itemBayar.toLocaleString('id-ID')}</td>
-              <td style="text-align:right;${tk>0?'color:#c0392b;font-weight:bold;':''}">${tk>0?tk.toLocaleString('id-ID'):'Lunas'}</td>
+              <td style="text-align:right;${tk>0?'color:#c0392b;font-weight:bold;':''}">${tk>0?tk.toLocaleString('id-ID'):'Lunas'}${prev>0?`<br><span style="font-size:9pt;font-weight:normal;">termasuk T.A. lalu ${prev.toLocaleString('id-ID')}</span>`:''}</td>
             </tr>`;
           }).join('')}
           <tr style="background:#f0f0f0;font-weight:bold;">
