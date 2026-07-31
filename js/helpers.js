@@ -319,14 +319,20 @@ function sppHistMonths(rec) {
 }
 
 // Daftar tunggakan per tahun ajaran:
-//   { ta, kelas, rate, unpaid:['Jul',…], detail:[{m,nominal,dibayar,sisa}], amount }
+//   { ta, kelas, rate, unpaid:['Jul',…], detail:[{m,nominal,dibayar,sisa}], amount,
+//     bulanTagih, bulanLunas, tagihan, dibayar }
+// `unpaid`/`detail` hanya memuat bulan yang MASIH menunggak (dipakai form input &
+// halaman detail), sedangkan `tagihan`/`dibayar`/`bulanTagih` memuat gambaran
+// penuh TA tersebut — dibutuhkan surat tagihan agar kolom Tagihan/Terbayar/Sisa
+// tiap tahun bisa ditampilkan utuh.
 // `unpaid` tetap array kode bulan agar pemakaian lama (y.unpaid.length) tetap jalan.
 function sppTunggakanPrevList(s) {
   const hist = (s && s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
   const out = [];
   Object.keys(hist).forEach(ta => {
     const rec = hist[ta] || {};
-    const belum = sppHistMonths(rec).filter(x => x.sisa > 0);
+    const semua = sppHistMonths(rec);
+    const belum = semua.filter(x => x.sisa > 0);
     if (!belum.length) return;
     const amount = belum.reduce((a, x) => a + x.sisa, 0);
     out.push({
@@ -336,6 +342,10 @@ function sppTunggakanPrevList(s) {
       unpaid: belum.map(x => x.m),
       detail: belum,
       amount,
+      bulanTagih: semua.length,
+      bulanLunas: semua.length - belum.length,
+      tagihan: semua.reduce((a, x) => a + x.nominal, 0),
+      dibayar: semua.reduce((a, x) => a + x.dibayar, 0),
     });
   });
   // Urutkan menaik berdasar tahun awal TA (yang paling lama tampil dulu)
