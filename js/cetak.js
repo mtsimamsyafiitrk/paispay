@@ -199,7 +199,14 @@ function buildSuratHTML(s, tgl) {
   const sppT  = sppTunggakan(s);
   const totalT = totalTunggakan(s);
   const tglFmt = new Date(tgl).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-  const bulanBelum = MONTHS.filter(m=>!s.spp_paid_months.includes(m)&&s.spp>0);
+  // Surat tagihan hanya memuat kewajiban yang SUDAH jatuh tempo (Juli s/d
+  // bulan berjalan) supaya angkanya sama dengan tunggakan di aplikasi.
+  const bulanBelum = s.spp > 0 ? sppUnpaidDueMonths(s) : [];
+  const bulanDue   = s.spp > 0 ? sppDueMonths() : [];
+  const bulanLunasDue = bulanDue.filter(m => (s.spp_paid_months||[]).includes(m));
+  const bulanDimuka   = (s.spp_paid_months||[]).filter(m => !bulanDue.includes(m));
+  const sppTagihanDue = (s.spp || 0) * bulanDue.length;
+  const sppTerbayarDue = (s.spp || 0) * bulanLunasDue.length;
   const P = getProfil();
   const siswaTagihan = appState.tagihan.filter(t => t.nama === s.nama);
   let no = 0;
@@ -223,17 +230,17 @@ function buildSuratHTML(s, tgl) {
         NISN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(s.nisn||'—')}
       </p>
       <p style="text-align:justify;line-height:1.8;margin-bottom:12px;font-size:11pt;">
-        Dengan hormat, bersama surat ini kami sampaikan informasi pembayaran santri yang bersangkutan untuk Tahun Ajaran Berjalan sebagaimana tercantum di bawah ini:
+        Dengan hormat, bersama surat ini kami sampaikan informasi pembayaran santri yang bersangkutan untuk Tahun Ajaran Berjalan${sppDueMonthLabel() ? ' (SPP dihitung sampai bulan ' + esc(sppDueMonthLabel()) + ')' : ''} sebagaimana tercantum di bawah ini:
       </p>
       <table class="data-table-pdf">
         <thead><tr><th style="width:30px">No</th><th>Jenis Pembayaran</th><th>Keterangan</th><th style="width:110px">Tagihan (Rp)</th><th style="width:110px">Terbayar (Rp)</th><th style="width:110px">Sisa (Rp)</th></tr></thead>
         <tbody>
           ${s.spp > 0 ? `<tr>
             <td style="text-align:center">${++no}</td>
-            <td>SPP Bulanan</td>
-            <td style="font-size:10pt">${(s.spp_paid_months||[]).length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]).join(', '):''}</td>
-            <td style="text-align:right">${(s.spp*12).toLocaleString('id-ID')}</td>
-            <td style="text-align:right">${((s.spp_paid_months||[]).length*s.spp).toLocaleString('id-ID')}</td>
+            <td>SPP Bulanan <span style="font-size:9pt">(s/d ${esc(sppDueMonthLabel() || '—')})</span></td>
+            <td style="font-size:10pt">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}</td>
+            <td style="text-align:right">${sppTagihanDue.toLocaleString('id-ID')}</td>
+            <td style="text-align:right">${sppTerbayarDue.toLocaleString('id-ID')}</td>
             <td style="text-align:right;${sppT>0?'color:#c0392b;font-weight:bold;':''}">${sppT.toLocaleString('id-ID')}</td>
           </tr>` : ''}
           ${siswaTagihan.map(t => {
@@ -385,7 +392,7 @@ function buildRekapTotalHTML(kelasFil, tgl) {
     <div class="surat-body">
       <h3>REKAP PEMBAYARAN SANTRI ${kelasFil?'KELAS '+esc(kelasFil):'SELURUH KELAS'}</h3>
       <p style="margin-bottom:10px;">Tahun Ajaran 2025/2026 &nbsp;|&nbsp; Per Tanggal: ${tglFmt}<br>
-      Total Santri: <strong>${list.length}</strong> orang</p>
+      Total Santri: <strong>${list.length}</strong> orang${sppDueMonthLabel() ? ' &nbsp;|&nbsp; Tunggakan SPP dihitung s/d bulan ' + esc(sppDueMonthLabel()) : ''}</p>
       <table class="data-table-pdf">
         <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>SPP Dibayar</th><th>Item Terbayar</th><th>Tunggakan</th></tr></thead>
         <tbody>

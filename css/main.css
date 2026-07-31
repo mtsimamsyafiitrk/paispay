@@ -296,6 +296,10 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .month-btn.paid { background: var(--primary); color: #fff; border-color: var(--primary); }
 .month-btn.partial { background: var(--accent-pale); color: #7a5c10; border-color: var(--accent); }
+/* Belum bayar & sudah jatuh tempo → dihitung sebagai tunggakan. */
+.month-btn.due { background: var(--danger-pale); color: var(--danger); border-color: var(--danger); }
+/* Belum jatuh tempo → bukan tunggakan, tetap boleh dibayar di muka. */
+.month-btn.upcoming { color: var(--text-muted); border-style: dashed; }
 
 /* ══ SEARCH BAR ══ */
 .search-bar { position: relative; }

@@ -99,6 +99,36 @@ item yang belum ada ditambahkan otomatis ke *Kelola Item Bayar*.
   lunas* (nominal penuh) dan dilaporkan di pratinjau.
 - **Nilai tunggakan negatif** (kelebihan bayar) dianggap **0** dan dilaporkan.
 
+## Tunggakan SPP Tahun Berjalan (dihitung s/d bulan aktif)
+
+Tunggakan SPP tahun ajaran berjalan dihitung **berjalan**, bukan langsung satu
+tahun penuh: yang dianggap menunggak hanya bulan yang **sudah tiba**, yaitu dari
+Juli (awal tahun ajaran) sampai **bulan aktif saat ini**. Bulan yang belum tiba
+tidak menambah tunggakan.
+
+> Contoh: TA 2025/2026, hari ini Oktober 2025, santri belum bayar sama sekali →
+> tunggakan = **4 bulan** (Jul–Okt), bukan 12 bulan.
+
+- Awal tahun ajaran diambil dari **Profil Madrasah → Tahun Ajaran** (mis.
+  `2025/2026` → mulai Juli 2025). Bila profil kosong/tidak terbaca, tahun ajaran
+  disimpulkan dari tanggal hari ini (Juli sebagai awal tahun).
+- Bila tanggal hari ini sudah **melewati** tahun ajaran di profil, seluruh 12
+  bulan dihitung jatuh tempo (perilaku lama) — jadi tunggakan tahun yang sudah
+  selesai tetap utuh sampai promosi kelas dijalankan.
+- **Bayar di muka tetap bisa.** Di form Input Pembayaran, bulan dipisah menjadi
+  dua kelompok: *Tunggakan* (jatuh tempo, chip merah) dan *Bayar di muka* (belum
+  jatuh tempo, chip abu-abu). Tombol **"✔️ Centang semua tunggakan"** hanya
+  mencentang bulan yang sudah jatuh tempo.
+- Penanda status bulan di tabel santri, detail santri, dan modal detail: hijau =
+  lunas, merah = menunggak (jatuh tempo), abu-abu/garis putus-putus = belum jatuh
+  tempo.
+- **Surat tagihan** ikut menyesuaikan: kolom tagihan/terbayar SPP dihitung
+  sebatas bulan yang sudah jatuh tempo, dan bulan yang dibayar di muka
+  dicantumkan terpisah pada keterangan.
+
+Fungsi terkait ada di `js/helpers.js`: `sppDueMonths()`, `isSppDue()`,
+`sppUnpaidDueMonths()`, `sppUpcomingMonths()`, `sppDueMonthLabel()`.
+
 ## Tunggakan SPP Tahun Ajaran Sebelumnya
 
 Saat **Promosi Kelas** (pindah tahun ajaran), `spp_paid_months` tahun berjalan
