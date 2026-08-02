@@ -253,11 +253,11 @@ function buildKuitansiHTML(data, kt, label) {
   const isKoreksi = !!data.is_koreksi;
   const warnaBorder = isKoreksi ? '#b45309' : w;
 
-  // Lembar arsip diberi ruang kosong ±2 cm di bawah label "LEMBAR ARSIP"
+  // Lembar arsip diberi kotak kosong 2 cm x 1 cm di bawah label "LEMBAR ARSIP"
   // untuk catatan tulis tangan petugas.
   const isArsip = /arsip/i.test(label || '');
   const ruangArsipHtml = isArsip
-    ? `<div style="height:2cm;min-height:2cm;"></div>`
+    ? `<div style="width:2cm;height:1cm;margin:0 0 6px auto;border:1px solid #bbb;box-sizing:border-box;"></div>`
     : '';
 
   const logoHtml = (kt.show_logo && logoB64)
