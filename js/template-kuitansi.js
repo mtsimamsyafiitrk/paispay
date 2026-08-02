@@ -253,11 +253,11 @@ function buildKuitansiHTML(data, kt, label) {
   const isKoreksi = !!data.is_koreksi;
   const warnaBorder = isKoreksi ? '#b45309' : w;
 
-  // Lembar arsip diberi kotak kosong 2 cm x 1 cm di bawah label "LEMBAR ARSIP"
-  // untuk catatan tulis tangan petugas.
+  // Lembar arsip diberi kotak kosong 2 cm x 0,5 cm tepat di atas label
+  // "LEMBAR ARSIP" (jarak 0,2 cm) untuk catatan tulis tangan petugas.
   const isArsip = /arsip/i.test(label || '');
   const ruangArsipHtml = isArsip
-    ? `<div style="width:2cm;height:1cm;margin:0 0 6px auto;border:1px solid #bbb;box-sizing:border-box;"></div>`
+    ? `<div style="width:2cm;height:0.5cm;margin:0 0 0.2cm auto;border:1px solid #bbb;box-sizing:border-box;"></div>`
     : '';
 
   const logoHtml = (kt.show_logo && logoB64)
@@ -319,11 +319,10 @@ function buildKuitansiHTML(data, kt, label) {
         ${kontakLbg ? `<div style="font-size:${fs-1}px;color:#555;">${esc(kontakLbg)}</div>` : ''}
       </div>
       <div style="text-align:right;min-width:80px;">
+        ${ruangArsipHtml}
         <span style="background:${warnaBorder};color:#fff;padding:3px 8px;border-radius:4px;font-size:${fs-1}px;font-weight:700;">${label}</span>
       </div>
     </div>
-
-    ${ruangArsipHtml}
 
     <!-- Judul -->
     <div style="text-align:center;margin-bottom:8px;">
