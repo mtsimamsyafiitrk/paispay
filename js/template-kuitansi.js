@@ -253,6 +253,13 @@ function buildKuitansiHTML(data, kt, label) {
   const isKoreksi = !!data.is_koreksi;
   const warnaBorder = isKoreksi ? '#b45309' : w;
 
+  // Lembar arsip diberi ruang kosong ±2 cm di bawah label "LEMBAR ARSIP"
+  // untuk catatan tulis tangan petugas.
+  const isArsip = /arsip/i.test(label || '');
+  const ruangArsipHtml = isArsip
+    ? `<div style="height:2cm;min-height:2cm;"></div>`
+    : '';
+
   const logoHtml = (kt.show_logo && logoB64)
     ? `<img src="${safeUrl(logoB64)}" style="width:52px;height:52px;object-fit:contain;">`
     : (kt.show_logo ? `<div style="width:52px;height:52px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🕌</div>` : '');
@@ -315,6 +322,8 @@ function buildKuitansiHTML(data, kt, label) {
         <span style="background:${warnaBorder};color:#fff;padding:3px 8px;border-radius:4px;font-size:${fs-1}px;font-weight:700;">${label}</span>
       </div>
     </div>
+
+    ${ruangArsipHtml}
 
     <!-- Judul -->
     <div style="text-align:center;margin-bottom:8px;">
