@@ -223,23 +223,24 @@ async function prosesKoreksi() {
     const fmt = n => Number(n||0).toLocaleString('id-ID');
 
     // === 1. Rollback & terapkan koreksi ke data siswa & tagihan ===
-    let sppMonths = [...(appState.students[si]?.spp_paid_months || [])];
-    let sppChanged = false;
+    // Perubahan dicatat sebagai SELISIH, lalu digabungkan ke kondisi terbaru di
+    // server — koreksi dari device ini tidak boleh menghapus pembayaran yang
+    // sudah diinput dari device lain.
+    const sppMonthsLokal = new Set(appState.students[si]?.spp_paid_months || []);
+    const sppRemove = [];
     const keteranganKoreksi = [];
-    const tagihanUpdates = [];
+    const tagihanUpdates = [];   // { id, delta }
 
     koreksiItems.forEach(({ item, idx, aksi, nilaBaru }) => {
       if (aksi === 'batalkan') {
-        if (item.bulan && sppMonths.includes(item.bulan)) {
-          sppMonths = sppMonths.filter(m => m !== item.bulan);
+        if (item.bulan && sppMonthsLokal.has(item.bulan)) {
+          sppRemove.push(item.bulan);
           keteranganKoreksi.push(`SPP ${MONTH_FULL[item.bulan]||item.bulan} dibatalkan`);
-          sppChanged = true;
         }
         if (item.item_id && item.item_id !== 'spp') {
           const t = findTagihan(kwt.nama, item.item_id);
           if (t) {
-            const newPaid = Math.max(0, t.paid_amount - item.amount);
-            tagihanUpdates.push({ id: t.id, newPaid });
+            tagihanUpdates.push({ id: t.id, delta: -item.amount });
             keteranganKoreksi.push(`${item.name} Rp ${fmt(item.amount)} dibatalkan`);
           }
         }
@@ -248,23 +249,16 @@ async function prosesKoreksi() {
         keteranganKoreksi.push(`${item.name}${item.bulan?' ('+(MONTH_FULL[item.bulan]||item.bulan)+')':''}: Rp ${fmt(item.amount)} → Rp ${fmt(nilaBaru)}`);
         if (item.item_id && item.item_id !== 'spp') {
           const t = findTagihan(kwt.nama, item.item_id);
-          if (t) {
-            const newPaid = Math.max(0, t.paid_amount + selisih);
-            tagihanUpdates.push({ id: t.id, newPaid });
-          }
+          if (t) tagihanUpdates.push({ id: t.id, delta: selisih });
         }
       }
     });
 
     // Update SPP months di siswa & Supabase
-    if (sppChanged && si >= 0) {
-      appState.students[si].spp_paid_months = sppMonths;
-      await sb('students?nama=eq.' + encodeURIComponent(kwt.nama),
-        'PATCH', { spp_paid_months: sppMonths }, { 'Prefer': 'return=minimal' });
-    }
+    if (sppRemove.length) await adjustSppPaidMonths(kwt.nama, [], sppRemove);
     // Update tagihan paid_amount
     for (const u of tagihanUpdates) {
-      await updateTagihanPaid(u.id, u.newPaid);
+      await addTagihanPaid(u.id, u.delta);
     }
 
     // === 2. Buat kuitansi koreksi baru ===

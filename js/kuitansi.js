@@ -107,10 +107,11 @@ async function konfirmasiHapusKwt() {
     const kwt = rows[0];
 
     // 2. Balik efek pembayaran ke data siswa & tagihan
+    // Perubahan dikumpulkan sebagai SELISIH lalu digabungkan ke kondisi terbaru
+    // di server — supaya pembayaran yang diinput dari device lain sesudah
+    // kuitansi ini dibuat tidak ikut terhapus.
     if (kwt.nama && kwt.items?.length) {
-      const si = appState.students.findIndex(s => s.nama === kwt.nama);
-      let sppMonths = si >= 0 ? [...(appState.students[si].spp_paid_months || [])] : [];
-      let sppChanged = false;
+      const sppAdd = [], sppRemove = [];
 
       for (const item of kwt.items) {
         const dibatalkan = item._dibatalkan || item._tipe === 'batalkan';
@@ -119,33 +120,30 @@ async function konfirmasiHapusKwt() {
         if (kwt.is_koreksi) {
           // Kuitansi koreksi: balik efek koreksi
           if (dibatalkan) {
-            if (item.bulan && !sppMonths.includes(item.bulan)) { sppMonths.push(item.bulan); sppChanged = true; }
+            if (item.bulan) sppAdd.push(item.bulan);
             if (item.item_id && item.item_id !== 'spp') {
               const t = findTagihan(kwt.nama, item.item_id);
-              if (t) await updateTagihanPaid(t.id, t.paid_amount + item.amount);
+              if (t) await addTagihanPaid(t.id, item.amount);
             }
           } else if (dikoreksi) {
             if (item.item_id && item.item_id !== 'spp') {
               const t = findTagihan(kwt.nama, item.item_id);
-              if (t) await updateTagihanPaid(t.id, Math.max(0, t.paid_amount - item.amount));
+              if (t) await addTagihanPaid(t.id, -item.amount);
             }
           }
         } else {
           // Kuitansi biasa: kurangi pembayaran
           if (item.bulan) {
-            sppMonths = sppMonths.filter(m => m !== item.bulan);
-            sppChanged = true;
+            sppRemove.push(item.bulan);
           } else if (item.item_id && item.item_id !== 'spp') {
             const t = findTagihan(kwt.nama, item.item_id);
-            if (t) await updateTagihanPaid(t.id, Math.max(0, t.paid_amount - item.amount));
+            if (t) await addTagihanPaid(t.id, -item.amount);
           }
         }
       }
 
-      if (sppChanged && si >= 0) {
-        appState.students[si].spp_paid_months = sppMonths;
-        await sb('students?nama=eq.' + encodeURIComponent(kwt.nama),
-          'PATCH', { spp_paid_months: sppMonths }, { 'Prefer': 'return=minimal' });
+      if (sppAdd.length || sppRemove.length) {
+        await adjustSppPaidMonths(kwt.nama, sppAdd, sppRemove);
       }
 
       // Hapus tanda "dikoreksi" dari kuitansi lama jika ini kuitansi koreksi

@@ -159,7 +159,7 @@ function parseRows(rows) {
   impGoStep(3);
 }
 
-function confirmImport() {
+async function confirmImport() {
   let ditambahkan = 0, diperbarui = 0;
 
   // Group baris berdasarkan NISN (jika ada) atau nama ternormalisasi
@@ -185,6 +185,7 @@ function confirmImport() {
     }
   });
 
+  const touched = [];   // santri yang benar-benar disentuh import ini
   Object.values(groups).forEach(({ base, taMap, status }) => {
     const candidateNisn = base.nisn || '';
     const existIdx = findExistingSiswaIdx({ nama: base.nama, nisn: candidateNisn });
@@ -202,6 +203,7 @@ function confirmImport() {
       // bila kosong, status santri yang sudah ada dipertahankan.
       if (status) siswa.status_kelulusan = status;
       appState.students[existIdx] = siswa;
+      touched.push(siswa);
       diperbarui++;
     } else {
       // Siswa baru
@@ -215,12 +217,27 @@ function confirmImport() {
         status_kelulusan: status || '',
       };
       appState.students.push(newSiswa);
+      touched.push(newSiswa);
       ditambahkan++;
     }
   });
 
   appState.students.sort((a,b) => a.nama.localeCompare(b.nama));
-  saveState();
+
+  // Kirim hanya santri hasil import (bukan seluruh tabel), supaya perubahan
+  // santri lain yang dibuat dari device lain tidak ikut tertimpa.
+  pauseAutoSync();
+  showSyncIndicator('💾 Menyimpan...');
+  try {
+    for (let i = 0; i < touched.length; i += 50) await saveStudentsBatch(touched.slice(i, i + 50));
+    showSyncIndicator('✅ Tersimpan', 2000);
+  } catch (e) {
+    console.error('confirmImport save:', e);
+    showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
+    toast('⚠️ Import gagal tersimpan ke server — cek koneksi lalu ulangi');
+    return;
+  } finally { resumeAutoSync(); }
+
   document.getElementById('importModal').classList.remove('open');
   renderSiswaTable();
   renderTunggakan();

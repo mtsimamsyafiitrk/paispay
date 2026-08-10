@@ -30,6 +30,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (isLoggedIn()) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminLabel').textContent = getAdminCreds().user;
+    // Sinkron berkala + saat tab kembali aktif, supaya data yang diinput di
+    // device lain langsung tampil tanpa perlu reload halaman.
+    startAutoSync();
     showPage('dashboard');
   } else {
     // Bersihkan sisa penanda sesi lama (termasuk mode wali yang telah dihapus)

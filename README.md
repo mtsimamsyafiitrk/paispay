@@ -26,6 +26,9 @@ sipay/
 │   ├── kuitansi.js         # Modal kuitansi, hapus, cetak, riwayat
 │   ├── koreksi.js          # Alur koreksi pembayaran (multi-step)
 │   ├── template-kuitansi.js# Builder & preview template kuitansi
+│   ├── audit.js            # Periksa & pulihkan data dari buku besar kuitansi
+│   ├── realtime.js         # Langganan Supabase Realtime (WebSocket)
+│   ├── sync.js             # Auto-sync lintas device (polling + on-focus)
 │   └── init.js             # DOMContentLoaded & inisialisasi app
 └── README.md
 ```
@@ -226,17 +229,161 @@ Seluruh data santri tertutup dari publik.
 > Supabase SQL Editor, lalu buat 1 akun admin di *Authentication → Users* dan
 > **matikan pendaftaran publik**. Langkah lengkap ada di komentar file SQL tersebut.
 
-## Status Koneksi Supabase
+## Sinkronisasi Multi-Device
 
-SiPay menggunakan **Supabase REST API** (bukan Realtime WebSocket). Artinya:
+SiPay memakai Supabase sebagai satu-satunya sumber data — semua device (HP
+bendahara, laptop TU, komputer kantor) membaca dan menulis ke database yang
+sama. Yang dulu bermasalah adalah **kapan** data itu ditarik ulang: data hanya
+dimuat **satu kali saat halaman dibuka**, sehingga tab yang dibiarkan terbuka
+di device B tetap menampilkan kondisi lama walau device A sudah menginput — dan
+penyimpanan berikutnya dari device B bisa **menimpa** hasil input device A.
 
-| Fitur | Status |
-|-------|--------|
-| Simpan/muat data (CRUD) | ✅ Berfungsi |
-| Auto-refresh jika ada perubahan dari perangkat lain | ❌ Tidak otomatis |
-| Indikator 🟢 Terhubung / 🔴 Offline | ✅ Berfungsi (dicek saat load) |
+Sekarang ada dua lapis pengaman.
 
-Data **tidak diperbarui otomatis secara realtime** — jika dua perangkat membuka SiPay bersamaan, perubahan dari satu perangkat tidak langsung terlihat di perangkat lain tanpa refresh manual. Untuk mengaktifkan realtime sejati, perlu mengintegrasikan Supabase Realtime (WebSocket) di masa mendatang.
+### 1. Realtime (WebSocket) + polling sebagai jaring pengaman
+
+**Jalur utama — `js/realtime.js`.** Satu channel Supabase Realtime mendengarkan
+perubahan pada tabel `students`, `tagihan`, `transactions`, `kuitansi`, dan
+`settings`. Begitu ada perubahan dari device mana pun, device lain menarik
+ulang data — dalam pengujian **±0,4 detik**, tanpa refresh halaman.
+
+> ⚠️ **Wajib dijalankan sekali:** `supabase_migration_realtime.sql` di Supabase
+> Dashboard → SQL Editor. Tanpa itu tabel belum terdaftar di publication
+> `supabase_realtime` dan tidak ada event yang mengalir. Ulangi juga setiap
+> kali `supabase_migration.sql` (reset penuh) dijalankan.
+
+Cek berhasil atau tidak lewat indikator di kanan atas:
+
+| Tampilan | Artinya |
+|----------|---------|
+| 🟢 **Realtime** | WebSocket aktif — perubahan masuk seketika |
+| 🟢 **Terhubung** | Realtime tidak tersedia — memakai polling berkala |
+| 🔴 **Offline** | Server tidak terjangkau |
+
+**Jalur cadangan — `js/sync.js`.** Polling tetap berjalan sebagai jaring
+pengaman, hanya jedanya menyesuaikan:
+
+| Kondisi | Jeda polling |
+|---------|--------------|
+| Realtime aktif | 2 menit |
+| Realtime tidak aktif | 20 detik |
+| Ada perubahan tertunda | 1,2 detik |
+
+Ditambah pemicu langsung: tab kembali aktif (`visibilitychange`), jendela
+di-fokus, koneksi pulih (`online`), tombol 🔄 di topbar, dan saat santri
+dipilih di Input Pembayaran (`refreshStudent`).
+
+Aplikasi **tidak rusak** bila Realtime gagal: CDN diblokir, WebSocket ditutup
+jaringan sekolah, atau migrasi publication belum dijalankan — semuanya otomatis
+jatuh kembali ke polling 20 detik.
+
+**Yang dilewati tidak hilang.** Sinkron sengaja ditahan saat ada modal terbuka
+atau saat proses panjang berjalan (import, promosi kelas —
+`pauseAutoSync()` / `resumeAutoSync()`), dan form Input Pembayaran tidak
+digambar ulang bila sudah ada centangnya. Setiap sinkron yang dilewati ditandai
+"tertunda" dan otomatis dicoba lagi 1,2 detik kemudian. Bila data santri yang
+sedang dikerjakan berubah di server, muncul peringatan
+`🔄 Data santri ini berubah di device lain` alih-alih menghapus isian.
+
+**Keamanan.** Realtime tunduk pada RLS yang sama (admin-only, `TO
+authenticated`), jadi koneksi WebSocket memakai **access token admin**, bukan
+anon key — hanya sesi admin yang login yang menerima event. Pustaka Supabase
+dimuat dengan `persistSession: false` agar tidak mengganggu sesi yang dikelola
+`config.js`; token diperbarui otomatis tiap kali sesi di-refresh.
+
+### 2. Tulis-gabung (merge), bukan tulis-timpa
+
+Penulisan tidak lagi mengirim hasil hitungan dari salinan lokal (yang bisa
+usang), melainkan **membaca kondisi terbaru di server lalu menambahkan selisih**:
+
+| Operasi | Fungsi | Cara kerja |
+|---------|--------|------------|
+| Bayar SPP | `commitSppPayment()` | gabungkan (union) bulan yang sudah lunas di server dengan bulan baru |
+| Bayar item tetap | `addTagihanPaid(id, delta)` | `paid_amount` server **+ selisih**, bukan angka lokal |
+| Hapus kuitansi / koreksi | `adjustSppPaidMonths()` | tambah/hapus bulan tertentu di atas kondisi server |
+| Import, promosi kelas, ubah status massal | `saveStudentsBatch(touched)` | kirim **hanya santri yang disentuh**, bukan seluruh tabel |
+| Profil / akun / logo | `saveSettings()` | tidak dikirim bila settings server belum sempat terbaca (cegah menimpa dengan nilai kosong) |
+
+> `saveState()` (kirim seluruh `appState.students`) sengaja **tidak dipakai lagi**
+> oleh alur mana pun karena berpotensi menimpa perubahan device lain.
+
+**Efek nyata:** dua orang bisa menginput bersamaan di device berbeda. Bila
+device A melunasi SPP September dan device B (yang datanya masih lama)
+melunasi Oktober, hasil akhirnya **Sep + Okt keduanya tersimpan** — bukan yang
+satu menghapus yang lain.
+
+### Yang masih perlu diketahui
+
+- Bila dua orang membayar **item yang sama** untuk santri yang sama dalam
+  hitungan detik yang bersamaan, keduanya tetap tercatat sebagai dua kuitansi.
+  Yang dicegah adalah **data hilang**, bukan input ganda yang disengaja.
+- Indikator status dan jam "Tersinkron HH:MM" di topbar ikut diperbarui tiap
+  kali sinkron berhasil.
+- Realtime butuh WebSocket keluar ke `*.supabase.co`. Bila jaringan sekolah
+  memblokirnya, indikator tetap "Terhubung" dan aplikasi memakai polling —
+  datanya tetap benar, hanya tidak seketika.
+
+## Periksa & Pulihkan Data (Pengaturan → 🩺)
+
+Alat rekonsiliasi untuk **memulihkan pembayaran yang hilang** karena input dari
+dua device saling menimpa (sebelum perbaikan sinkronisasi di atas).
+
+**Kenapa masih bisa dipulihkan.** Tabel `kuitansi` bersifat *tambah-saja* —
+tiap pembayaran menulis satu baris kuitansi dan baris itu tidak pernah ditimpa
+oleh device lain. Yang dulu tertimpa hanyalah data **turunannya**:
+`students.spp_paid_months`, `students.spp_history`, dan `tagihan.paid_amount`.
+Jadi kuitansi berfungsi sebagai buku besar yang bisa dibaca ulang untuk mencari
+pembayaran yang kuitansinya ada tapi tidak tercatat lunas.
+
+**Cara pakai:** Pengaturan → 🩺 Periksa & Pulihkan Data → *Mulai Periksa*.
+Pemeriksaan **hanya membaca**. Hasilnya ditampilkan per santri, lalu Anda pilih
+mana yang mau diterapkan.
+
+**Prinsip keamanan — hanya menambah, tidak pernah mengurangi.** Bug-nya
+menyebabkan data hilang, bukan data palsu. Jadi pemulihan hanya menandai yang
+belum tertandai: tidak ada bulan yang dibatalkan, tidak ada nominal yang
+diturunkan. Alat ini tidak bisa merusak data yang sudah benar, dan aman
+dijalankan berulang kali (idempoten).
+
+Yang sudah ditangani dengan benar saat membaca buku besar:
+
+| Kasus | Perlakuan |
+|-------|-----------|
+| Kuitansi Buku Induk (`BI-…`) | dilewati — murni arsip, bukan pembayaran TA berjalan |
+| Kuitansi koreksi "batalkan" | efeknya dinetralkan, bulan tidak ikut ditandai lunas |
+| Kuitansi koreksi "ubah nilai" | selisihnya dihitung dari kuitansi asal (`ref_no_kuitansi`) |
+| `SPP Tunggakan TA 2024/2025` | TA-nya dibaca dari nama item → masuk `spp_history`, bukan TA berjalan |
+
+**Yang tidak bisa dipulihkan** (tidak ada jejaknya di buku besar) — dilaporkan
+sebagai peringatan, tidak diperbaiki otomatis:
+
+- Perubahan identitas santri (nama/kelas/NISN/nominal SPP) yang tertimpa.
+- Nominal tagihan (`tagihan.nominal`) yang tertimpa.
+- Profil madrasah yang sempat terkosongkan.
+- Pembayaran tunggakan TA lama untuk santri yang belum punya entri riwayat SPP
+  tahun tersebut — memulihkannya berarti menebak nominal SPP tahun itu.
+- Isian yang belum sempat disimpan sama sekali (browser ditutup di tengah form).
+
+> ⚠️ Bagian **tagihan item** perlu diperiksa manual dulu dan tidak dicentang
+> secara default. Bila Anda pernah memakai *Import Tunggakan*, nominal terbayar
+> sebagian santri disetel langsung dari file (bukan dari kuitansi), sehingga
+> selisih yang muncul bisa saja bukan data hilang.
+
+## Batas 1000 Baris Supabase (paginasi)
+
+Supabase membatasi jumlah baris per respons API — bawaannya **1000**
+(Dashboard → Settings → API → *Max rows*). Batas ini **tidak memunculkan error
+apa pun**, datanya hanya terpotong diam-diam.
+
+Sebelumnya `loadStudents()`, `loadTagihan()`, dan `loadTransactions()` mengambil
+data tanpa paginasi. Untuk madrasah dengan >1000 baris tagihan (mis. 300 santri
+× 4 item = 1.200 baris) atau >1000 transaksi, sisanya **tidak ikut termuat** —
+tagihan sebagian santri terlihat kosong dan tunggakannya salah hitung. Ini bisa
+jadi penyebab lain dari gejala "data seperti tidak masuk".
+
+Sekarang ketiganya memakai `sbAll()` yang mengambil per 1.000 baris sampai
+habis, dengan urutan stabil (`created_at.asc,id.asc`) supaya tidak ada baris
+yang terlewat atau terhitung dua kali.
 
 ## Urutan Load JS
 
@@ -248,4 +395,7 @@ File JS di-load secara berurutan (bukan ES modules). Urutan penting karena modul
 4. `helpers.js` — utility & nav
 5. Halaman-halaman (`dashboard`, `input`, `siswa`, dst.)
 6. `auth.js`, `guest.js` — auth layer
-7. `init.js` — harus terakhir (DOMContentLoaded)
+7. `audit.js` — periksa & pulihkan data dari buku besar kuitansi
+8. `realtime.js` — langganan WebSocket (butuh `SB_URL`, `SB_KEY`, `sbSession`)
+9. `sync.js` — auto-sync lintas device (butuh `loadDataForTA`, `isLoggedIn`, `isRealtimeActive`)
+10. `init.js` — harus terakhir (DOMContentLoaded)

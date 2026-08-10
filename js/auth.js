@@ -40,6 +40,7 @@ async function doLogin() {
     document.getElementById('adminLabel').textContent = label;
     // Muat ulang data dengan hak akses admin (token kini terpasang di sb())
     try { await loadDataForTA(); } catch { /* biarkan; UI tetap tampil */ }
+    startAutoSync(); // jaga layar tetap pada kondisi data terakhir
     showPage('dashboard');
   } catch (e) {
     showLoginError('Email atau password salah');

@@ -123,34 +123,53 @@ async function confirmPromosiKelas() {
   if (!promosiMap.size) return;
   const ta = getProfil().ta || '';
   let count = 0;
+  const touched = [];   // hanya santri yang benar-benar diproses yang dikirim
 
-  for (const [nama, action] of promosiMap) {
-    const idx = appState.students.findIndex(s => s.nama === nama);
-    if (idx < 0) continue;
-    const s = appState.students[idx];
+  // Tahan sinkronisasi latar belakang selama proses: kalau data ditarik ulang
+  // di tengah jalan, hasil promosi yang belum tersimpan bisa tertimpa.
+  pauseAutoSync();
+  try {
+    for (const [nama, action] of promosiMap) {
+      const idx = appState.students.findIndex(s => s.nama === nama);
+      if (idx < 0) continue;
+      const s = appState.students[idx];
 
-    // Arsipkan SPP tahun berjalan ke riwayat sebelum reset (tunggakan tahun lalu)
-    snapshotSppTahunBerjalan(s, ta);
+      // Arsipkan SPP tahun berjalan ke riwayat sebelum reset (tunggakan tahun lalu)
+      snapshotSppTahunBerjalan(s, ta);
 
-    // Reset bulan SPP untuk tahun ajaran baru
-    s.spp_paid_months = [];
+      // Reset bulan SPP untuk tahun ajaran baru
+      s.spp_paid_months = [];
 
-    if (action === 'naik') {
-      if      (s.kelas === '7') s.kelas = '8';
-      else if (s.kelas === '8') s.kelas = '9';
-      else if (s.kelas === '9') s.status_kelulusan = 'lulus';
+      if (action === 'naik') {
+        if      (s.kelas === '7') s.kelas = '8';
+        else if (s.kelas === '8') s.kelas = '9';
+        else if (s.kelas === '9') s.status_kelulusan = 'lulus';
+      }
+      // tinggal kelas: kelas tetap, data sudah direset
+
+      touched.push(s);
+      count++;
     }
-    // tinggal kelas: kelas tetap, data sudah direset
 
-    count++;
-  }
+    // Simpan HANYA santri yang diproses (bukan seluruh tabel) supaya perubahan
+    // santri lain yang dibuat dari device lain tidak ikut tertimpa.
+    showSyncIndicator('💾 Menyimpan...');
+    try {
+      for (let i = 0; i < touched.length; i += 50) await saveStudentsBatch(touched.slice(i, i + 50));
+      showSyncIndicator('✅ Tersimpan', 2000);
+    } catch (e) {
+      console.error('confirmPromosiKelas save:', e);
+      showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
+      toast('⚠️ Promosi kelas gagal tersimpan — cek koneksi lalu ulangi');
+      return;
+    }
 
-  document.getElementById('promosiKelasModal').classList.remove('open');
-  promosiMap.clear();
-  renderSiswaTable();
-  renderDashboard();
-  toast(`✅ Promosi kelas selesai — ${count} santri diproses`);
-  await saveState();
+    document.getElementById('promosiKelasModal').classList.remove('open');
+    promosiMap.clear();
+    renderSiswaTable();
+    renderDashboard();
+    toast(`✅ Promosi kelas selesai — ${count} santri diproses`);
+  } finally { resumeAutoSync(); }
 }
 
 // KELAS CHIP FILTER
@@ -221,26 +240,44 @@ async function confirmBulkStatus() {
   const names = [...selectedRows];
   const statusVal = _selectedBulkStatus === 'aktif' ? '' : _selectedBulkStatus;
   const ta = getProfil().ta || '';
-  names.forEach(nama => {
-    const idx = appState.students.findIndex(s => s.nama === nama);
-    if (idx < 0) return;
-    const s = appState.students[idx];
-    // Santri LULUS: arsipkan SPP tahun berjalan ke riwayat lalu reset — sama
-    // seperti promosi kelas — sehingga tunggakannya jadi "tunggakan tahun lalu"
-    // dan tidak lagi tampil sebagai SPP tahun berjalan.
-    if (statusVal === 'lulus' && s.status_kelulusan !== 'lulus') {
-      snapshotSppTahunBerjalan(s, ta);
-      s.spp_paid_months = [];
+  const touched = [];
+
+  pauseAutoSync();   // jangan tarik ulang data selagi perubahan belum tersimpan
+  try {
+    names.forEach(nama => {
+      const idx = appState.students.findIndex(s => s.nama === nama);
+      if (idx < 0) return;
+      const s = appState.students[idx];
+      // Santri LULUS: arsipkan SPP tahun berjalan ke riwayat lalu reset — sama
+      // seperti promosi kelas — sehingga tunggakannya jadi "tunggakan tahun lalu"
+      // dan tidak lagi tampil sebagai SPP tahun berjalan.
+      if (statusVal === 'lulus' && s.status_kelulusan !== 'lulus') {
+        snapshotSppTahunBerjalan(s, ta);
+        s.spp_paid_months = [];
+      }
+      s.status_kelulusan = statusVal;
+      touched.push(s);
+    });
+
+    // Kirim hanya santri terpilih, bukan seluruh tabel.
+    showSyncIndicator('💾 Menyimpan...');
+    try {
+      for (let i = 0; i < touched.length; i += 50) await saveStudentsBatch(touched.slice(i, i + 50));
+      showSyncIndicator('✅ Tersimpan', 2000);
+    } catch (e) {
+      console.error('confirmBulkStatus save:', e);
+      showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
+      toast('⚠️ Perubahan status gagal tersimpan — cek koneksi lalu ulangi');
+      return;
     }
-    s.status_kelulusan = statusVal;
-  });
-  document.getElementById('bulkStatusModal').classList.remove('open');
-  clearSelection();
-  renderSiswaTable();
-  renderDashboard();
-  const label = { '': 'Aktif', 'lulus': 'Lulus', 'pindah': 'Pindah', 'keluar': 'Keluar' }[statusVal];
-  toast(`✅ ${names.length} santri diubah statusnya menjadi ${label}`);
-  await saveState();
+
+    document.getElementById('bulkStatusModal').classList.remove('open');
+    clearSelection();
+    renderSiswaTable();
+    renderDashboard();
+    const label = { '': 'Aktif', 'lulus': 'Lulus', 'pindah': 'Pindah', 'keluar': 'Keluar' }[statusVal];
+    toast(`✅ ${names.length} santri diubah statusnya menjadi ${label}`);
+  } finally { resumeAutoSync(); }
 }
 
 function deleteSelected() {

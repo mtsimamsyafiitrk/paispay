@@ -672,3 +672,9 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 
 /* ══ SELECTION ══ */
 ::selection { background: rgba(45,122,79,.2); }
+
+/* ══ TOMBOL SINKRON MANUAL ══ */
+#syncNowBtn { transition: transform .2s; }
+#syncNowBtn:hover { transform: rotate(45deg); }
+#syncNowBtn.spinning { animation: sipay-spin .9s linear infinite; }
+@keyframes sipay-spin { to { transform: rotate(360deg); } }
