@@ -151,6 +151,28 @@ ALTER TABLE kuitansi_template ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon_all" ON kuitansi_template FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- ══════════════════════════════════════════
+-- 9. REALTIME — daftarkan tabel ke publication `supabase_realtime`
+--    Supaya perubahan dari satu device langsung tampil di device lain.
+--    (Sama isinya dengan supabase_migration_realtime.sql — disertakan di sini
+--     agar reset penuh langsung ikut mengaktifkan realtime.)
+-- ══════════════════════════════════════════
+DO $$
+DECLARE t text;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    CREATE PUBLICATION supabase_realtime;
+  END IF;
+  FOREACH t IN ARRAY ARRAY['students','tagihan','transactions','kuitansi','settings'] LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = t
+    ) THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I;', t);
+    END IF;
+  END LOOP;
+END $$;
+
+-- ══════════════════════════════════════════
 -- SELESAI
 -- Setelah menjalankan SQL ini:
 -- 1. Refresh aplikasi

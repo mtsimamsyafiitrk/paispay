@@ -75,6 +75,9 @@ function _storeSession(data) {
     expires_at:    Date.now() + (Number(data.expires_in || 3600) * 1000),
     user:          data.user || (sbSession && sbSession.user) || null,
   });
+  // Koneksi Realtime memakai token yang sama — beri tahu agar tidak putus
+  // saat token lama kadaluarsa (RLS tabel adalah admin-only).
+  if (typeof realtimeSetAuth === 'function') realtimeSetAuth();
 }
 
 // Login via password grant → simpan token.

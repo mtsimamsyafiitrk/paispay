@@ -26,6 +26,7 @@ sipay/
 │   ├── kuitansi.js         # Modal kuitansi, hapus, cetak, riwayat
 │   ├── koreksi.js          # Alur koreksi pembayaran (multi-step)
 │   ├── template-kuitansi.js# Builder & preview template kuitansi
+│   ├── realtime.js         # Langganan Supabase Realtime (WebSocket)
 │   ├── sync.js             # Auto-sync lintas device (polling + on-focus)
 │   └── init.js             # DOMContentLoaded & inisialisasi app
 └── README.md
@@ -229,34 +230,65 @@ Seluruh data santri tertutup dari publik.
 
 ## Sinkronisasi Multi-Device
 
-SiPay memakai **Supabase REST API** sebagai satu-satunya sumber data — jadi
-semua device (HP bendahara, laptop TU, komputer kantor) memang membaca dan
-menulis ke database yang sama. Yang dulu bermasalah adalah **kapan** data itu
-ditarik ulang: sebelumnya data hanya dimuat **satu kali saat halaman dibuka**,
-sehingga tab yang dibiarkan terbuka di device B tetap menampilkan kondisi lama
-walau device A sudah menginput — dan penyimpanan berikutnya dari device B bisa
-**menimpa** hasil input device A.
+SiPay memakai Supabase sebagai satu-satunya sumber data — semua device (HP
+bendahara, laptop TU, komputer kantor) membaca dan menulis ke database yang
+sama. Yang dulu bermasalah adalah **kapan** data itu ditarik ulang: data hanya
+dimuat **satu kali saat halaman dibuka**, sehingga tab yang dibiarkan terbuka
+di device B tetap menampilkan kondisi lama walau device A sudah menginput — dan
+penyimpanan berikutnya dari device B bisa **menimpa** hasil input device A.
 
-Sekarang aplikasi menjaga semua device berada pada kondisi data terakhir lewat
-dua lapis pengaman:
+Sekarang ada dua lapis pengaman.
 
-### 1. Tarik ulang otomatis (`js/sync.js`)
+### 1. Realtime (WebSocket) + polling sebagai jaring pengaman
 
-| Pemicu | Kapan |
-|--------|-------|
-| Polling berkala | tiap **20 detik** selama tab terlihat |
-| Tab kembali aktif | `visibilitychange` — buka lagi aplikasi dari background |
-| Jendela di-fokus | pindah kembali ke jendela browser SiPay |
-| Koneksi pulih | event `online` setelah sempat putus |
-| Tombol 🔄 di topbar | sinkron manual kapan saja |
-| Santri dipilih di Input Pembayaran | data santri itu ditarik ulang dari server |
+**Jalur utama — `js/realtime.js`.** Satu channel Supabase Realtime mendengarkan
+perubahan pada tabel `students`, `tagihan`, `transactions`, `kuitansi`, dan
+`settings`. Begitu ada perubahan dari device mana pun, device lain menarik
+ulang data — dalam pengujian **±0,4 detik**, tanpa refresh halaman.
 
-Sinkron latar belakang **dilewati** saat ada modal terbuka, saat proses panjang
-berjalan (import, promosi kelas — lihat `pauseAutoSync()` / `resumeAutoSync()`),
-dan saat form Input Pembayaran sudah ada centangnya — supaya isian yang sedang
-dikerjakan tidak hilang tergambar ulang. Bila data santri yang sedang dikerjakan
-ternyata berubah di server, muncul peringatan `🔄 Data santri ini berubah di
-device lain` alih-alih menghapus isian.
+> ⚠️ **Wajib dijalankan sekali:** `supabase_migration_realtime.sql` di Supabase
+> Dashboard → SQL Editor. Tanpa itu tabel belum terdaftar di publication
+> `supabase_realtime` dan tidak ada event yang mengalir. Ulangi juga setiap
+> kali `supabase_migration.sql` (reset penuh) dijalankan.
+
+Cek berhasil atau tidak lewat indikator di kanan atas:
+
+| Tampilan | Artinya |
+|----------|---------|
+| 🟢 **Realtime** | WebSocket aktif — perubahan masuk seketika |
+| 🟢 **Terhubung** | Realtime tidak tersedia — memakai polling berkala |
+| 🔴 **Offline** | Server tidak terjangkau |
+
+**Jalur cadangan — `js/sync.js`.** Polling tetap berjalan sebagai jaring
+pengaman, hanya jedanya menyesuaikan:
+
+| Kondisi | Jeda polling |
+|---------|--------------|
+| Realtime aktif | 2 menit |
+| Realtime tidak aktif | 20 detik |
+| Ada perubahan tertunda | 1,2 detik |
+
+Ditambah pemicu langsung: tab kembali aktif (`visibilitychange`), jendela
+di-fokus, koneksi pulih (`online`), tombol 🔄 di topbar, dan saat santri
+dipilih di Input Pembayaran (`refreshStudent`).
+
+Aplikasi **tidak rusak** bila Realtime gagal: CDN diblokir, WebSocket ditutup
+jaringan sekolah, atau migrasi publication belum dijalankan — semuanya otomatis
+jatuh kembali ke polling 20 detik.
+
+**Yang dilewati tidak hilang.** Sinkron sengaja ditahan saat ada modal terbuka
+atau saat proses panjang berjalan (import, promosi kelas —
+`pauseAutoSync()` / `resumeAutoSync()`), dan form Input Pembayaran tidak
+digambar ulang bila sudah ada centangnya. Setiap sinkron yang dilewati ditandai
+"tertunda" dan otomatis dicoba lagi 1,2 detik kemudian. Bila data santri yang
+sedang dikerjakan berubah di server, muncul peringatan
+`🔄 Data santri ini berubah di device lain` alih-alih menghapus isian.
+
+**Keamanan.** Realtime tunduk pada RLS yang sama (admin-only, `TO
+authenticated`), jadi koneksi WebSocket memakai **access token admin**, bukan
+anon key — hanya sesi admin yang login yang menerima event. Pustaka Supabase
+dimuat dengan `persistSession: false` agar tidak mengganggu sesi yang dikelola
+`config.js`; token diperbarui otomatis tiap kali sesi di-refresh.
 
 ### 2. Tulis-gabung (merge), bukan tulis-timpa
 
@@ -281,14 +313,14 @@ satu menghapus yang lain.
 
 ### Yang masih perlu diketahui
 
-- Bukan WebSocket realtime; perubahan tampil paling lambat ~20 detik (atau
-  langsung, begitu tab dibuka/di-fokus). Untuk realtime seketika, Supabase
-  Realtime (WebSocket) bisa ditambahkan menyusul.
 - Bila dua orang membayar **item yang sama** untuk santri yang sama dalam
   hitungan detik yang bersamaan, keduanya tetap tercatat sebagai dua kuitansi.
   Yang dicegah adalah **data hilang**, bukan input ganda yang disengaja.
-- Indikator 🟢 Terhubung / 🔴 Offline dan jam "Tersinkron HH:MM" di topbar
-  ikut diperbarui tiap kali sinkron berhasil.
+- Indikator status dan jam "Tersinkron HH:MM" di topbar ikut diperbarui tiap
+  kali sinkron berhasil.
+- Realtime butuh WebSocket keluar ke `*.supabase.co`. Bila jaringan sekolah
+  memblokirnya, indikator tetap "Terhubung" dan aplikasi memakai polling —
+  datanya tetap benar, hanya tidak seketika.
 
 ## Urutan Load JS
 
@@ -300,5 +332,6 @@ File JS di-load secara berurutan (bukan ES modules). Urutan penting karena modul
 4. `helpers.js` — utility & nav
 5. Halaman-halaman (`dashboard`, `input`, `siswa`, dst.)
 6. `auth.js`, `guest.js` — auth layer
-7. `sync.js` — auto-sync lintas device (butuh `loadDataForTA` & `isLoggedIn`)
-8. `init.js` — harus terakhir (DOMContentLoaded)
+7. `realtime.js` — langganan WebSocket (butuh `SB_URL`, `SB_KEY`, `sbSession`)
+8. `sync.js` — auto-sync lintas device (butuh `loadDataForTA`, `isLoggedIn`, `isRealtimeActive`)
+9. `init.js` — harus terakhir (DOMContentLoaded)

@@ -576,7 +576,9 @@ async function loadDataForTA(opts = {}) {
     } catch { /* quota exceeded */ }
     if (!silent) showSyncIndicator('✅ Data dimuat', 2000);
     const gi = document.getElementById('gasIcon'); if(gi) gi.textContent='🟢';
-    const gl = document.getElementById('gasLabel'); if(gl) gl.textContent='Terhubung';
+    const gl = document.getElementById('gasLabel');
+    // "Realtime" bila WebSocket aktif, "Terhubung" bila hanya polling.
+    if (gl) gl.textContent = (typeof connStatusLabel === 'function') ? connStatusLabel() : 'Terhubung';
     const syncEl = document.getElementById('lastSyncTime');
     if (syncEl) syncEl.textContent = 'Tersinkron ' + new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
   } catch(e) {
