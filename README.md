@@ -26,6 +26,7 @@ sipay/
 │   ├── kuitansi.js         # Modal kuitansi, hapus, cetak, riwayat
 │   ├── koreksi.js          # Alur koreksi pembayaran (multi-step)
 │   ├── template-kuitansi.js# Builder & preview template kuitansi
+│   ├── audit.js            # Periksa & pulihkan data dari buku besar kuitansi
 │   ├── realtime.js         # Langganan Supabase Realtime (WebSocket)
 │   ├── sync.js             # Auto-sync lintas device (polling + on-focus)
 │   └── init.js             # DOMContentLoaded & inisialisasi app
@@ -322,6 +323,68 @@ satu menghapus yang lain.
   memblokirnya, indikator tetap "Terhubung" dan aplikasi memakai polling —
   datanya tetap benar, hanya tidak seketika.
 
+## Periksa & Pulihkan Data (Pengaturan → 🩺)
+
+Alat rekonsiliasi untuk **memulihkan pembayaran yang hilang** karena input dari
+dua device saling menimpa (sebelum perbaikan sinkronisasi di atas).
+
+**Kenapa masih bisa dipulihkan.** Tabel `kuitansi` bersifat *tambah-saja* —
+tiap pembayaran menulis satu baris kuitansi dan baris itu tidak pernah ditimpa
+oleh device lain. Yang dulu tertimpa hanyalah data **turunannya**:
+`students.spp_paid_months`, `students.spp_history`, dan `tagihan.paid_amount`.
+Jadi kuitansi berfungsi sebagai buku besar yang bisa dibaca ulang untuk mencari
+pembayaran yang kuitansinya ada tapi tidak tercatat lunas.
+
+**Cara pakai:** Pengaturan → 🩺 Periksa & Pulihkan Data → *Mulai Periksa*.
+Pemeriksaan **hanya membaca**. Hasilnya ditampilkan per santri, lalu Anda pilih
+mana yang mau diterapkan.
+
+**Prinsip keamanan — hanya menambah, tidak pernah mengurangi.** Bug-nya
+menyebabkan data hilang, bukan data palsu. Jadi pemulihan hanya menandai yang
+belum tertandai: tidak ada bulan yang dibatalkan, tidak ada nominal yang
+diturunkan. Alat ini tidak bisa merusak data yang sudah benar, dan aman
+dijalankan berulang kali (idempoten).
+
+Yang sudah ditangani dengan benar saat membaca buku besar:
+
+| Kasus | Perlakuan |
+|-------|-----------|
+| Kuitansi Buku Induk (`BI-…`) | dilewati — murni arsip, bukan pembayaran TA berjalan |
+| Kuitansi koreksi "batalkan" | efeknya dinetralkan, bulan tidak ikut ditandai lunas |
+| Kuitansi koreksi "ubah nilai" | selisihnya dihitung dari kuitansi asal (`ref_no_kuitansi`) |
+| `SPP Tunggakan TA 2024/2025` | TA-nya dibaca dari nama item → masuk `spp_history`, bukan TA berjalan |
+
+**Yang tidak bisa dipulihkan** (tidak ada jejaknya di buku besar) — dilaporkan
+sebagai peringatan, tidak diperbaiki otomatis:
+
+- Perubahan identitas santri (nama/kelas/NISN/nominal SPP) yang tertimpa.
+- Nominal tagihan (`tagihan.nominal`) yang tertimpa.
+- Profil madrasah yang sempat terkosongkan.
+- Pembayaran tunggakan TA lama untuk santri yang belum punya entri riwayat SPP
+  tahun tersebut — memulihkannya berarti menebak nominal SPP tahun itu.
+- Isian yang belum sempat disimpan sama sekali (browser ditutup di tengah form).
+
+> ⚠️ Bagian **tagihan item** perlu diperiksa manual dulu dan tidak dicentang
+> secara default. Bila Anda pernah memakai *Import Tunggakan*, nominal terbayar
+> sebagian santri disetel langsung dari file (bukan dari kuitansi), sehingga
+> selisih yang muncul bisa saja bukan data hilang.
+
+## Batas 1000 Baris Supabase (paginasi)
+
+Supabase membatasi jumlah baris per respons API — bawaannya **1000**
+(Dashboard → Settings → API → *Max rows*). Batas ini **tidak memunculkan error
+apa pun**, datanya hanya terpotong diam-diam.
+
+Sebelumnya `loadStudents()`, `loadTagihan()`, dan `loadTransactions()` mengambil
+data tanpa paginasi. Untuk madrasah dengan >1000 baris tagihan (mis. 300 santri
+× 4 item = 1.200 baris) atau >1000 transaksi, sisanya **tidak ikut termuat** —
+tagihan sebagian santri terlihat kosong dan tunggakannya salah hitung. Ini bisa
+jadi penyebab lain dari gejala "data seperti tidak masuk".
+
+Sekarang ketiganya memakai `sbAll()` yang mengambil per 1.000 baris sampai
+habis, dengan urutan stabil (`created_at.asc,id.asc`) supaya tidak ada baris
+yang terlewat atau terhitung dua kali.
+
 ## Urutan Load JS
 
 File JS di-load secara berurutan (bukan ES modules). Urutan penting karena modul belakang bergantung pada variabel/fungsi dari modul sebelumnya:
@@ -332,6 +395,7 @@ File JS di-load secara berurutan (bukan ES modules). Urutan penting karena modul
 4. `helpers.js` — utility & nav
 5. Halaman-halaman (`dashboard`, `input`, `siswa`, dst.)
 6. `auth.js`, `guest.js` — auth layer
-7. `realtime.js` — langganan WebSocket (butuh `SB_URL`, `SB_KEY`, `sbSession`)
-8. `sync.js` — auto-sync lintas device (butuh `loadDataForTA`, `isLoggedIn`, `isRealtimeActive`)
-9. `init.js` — harus terakhir (DOMContentLoaded)
+7. `audit.js` — periksa & pulihkan data dari buku besar kuitansi
+8. `realtime.js` — langganan WebSocket (butuh `SB_URL`, `SB_KEY`, `sbSession`)
+9. `sync.js` — auto-sync lintas device (butuh `loadDataForTA`, `isLoggedIn`, `isRealtimeActive`)
+10. `init.js` — harus terakhir (DOMContentLoaded)

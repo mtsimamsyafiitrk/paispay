@@ -1,5 +1,26 @@
 // ── SiPay · Database Layer (Supabase) ──
 
+// ── Ambil SEMUA baris dengan paginasi ──
+// Supabase membatasi jumlah baris per respons API (bawaan: 1000 — lihat
+// Dashboard → Settings → API → "Max rows"). Tanpa paginasi, sekolah dengan
+// lebih dari 1000 baris tagihan/transaksi akan diam-diam kehilangan sisanya:
+// tagihan sebagian santri terlihat KOSONG padahal datanya ada di database.
+// Batas ini tidak memunculkan error apa pun — datanya hanya terpotong.
+//
+// path WAJIB memakai order yang stabil (sertakan kolom unik sebagai pemecah
+// seri), kalau tidak ada baris yang bisa terlewat/terhitung dua kali.
+async function sbAll(path, pageSize = 1000) {
+  const sep = path.includes('?') ? '&' : '?';
+  const out = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await sb(`${path}${sep}limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page) || !page.length) break;
+    out.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return out;
+}
+
 // ══ STUDENTS ══
 // Kompatibilitas mundur: kolom spp_history mungkin belum ada bila migrasi
 // (supabase_migration_spp_history.sql) belum dijalankan. Bila server menolak
@@ -53,7 +74,7 @@ async function insertKuitansi(kwtData) {
 }
 
 async function loadStudents() {
-  const rows = await sb('students?select=*&order=nama');
+  const rows = await sbAll('students?select=*&order=nama.asc,id.asc');
   return rows.map(r => ({
     nama: r.nama,
     kelas: r.kelas,
@@ -141,7 +162,7 @@ async function deleteTransactionsByNama(nama) {
 
 // ══ TAGIHAN ══
 async function loadTagihan() {
-  const rows = await sb('tagihan?select=*&order=created_at');
+  const rows = await sbAll('tagihan?select=*&order=created_at.asc,id.asc');
   return rows.map(r => ({
     id: r.id,
     nama: r.nama,
@@ -340,7 +361,7 @@ function findTagihan(nama, itemId) {
 
 // ══ TRANSACTIONS ══
 async function loadTransactions() {
-  const rows = await sb('transactions?select=*&order=created_at');
+  const rows = await sbAll('transactions?select=*&order=created_at.asc,id.asc');
   return rows.map(r => ({
     nama: r.nama, kelas: r.kelas, jenis: r.jenis,
     nominal: Number(r.nominal) || 0, time: r.time, catatan: r.catatan || '',
