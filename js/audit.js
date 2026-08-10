@@ -29,15 +29,26 @@ const AUDIT_BI_PREFIX = 'BI-';   // kuitansi Buku Induk = arsip, jangan diputar 
 
 let auditResult = null;   // hasil pemeriksaan terakhir
 
-// TA tujuan bulan SPP pada satu baris kuitansi.
-// Pembayaran tunggakan TA lama dicatat di kuitansi TA berjalan, dan TA aslinya
-// hanya tertulis di NAMA item ("SPP Tunggakan TA 2024/2025").
+// TA tujuan bulan SPP pada satu baris kuitansi — beserta seberapa yakin.
+//
+// Ada dua sumber informasi, dan keandalannya JAUH berbeda:
+//
+//   'nama'  — nama item bertuliskan "SPP Tunggakan TA 2024/2025". Ini ditulis
+//             oleh alur pembayaran tunggakan, jadi TA-nya PASTI.
+//
+//   'label' — kolom `ta_label` kuitansi. Ini hanya merekam isi Profil Madrasah
+//             → Tahun Ajaran PADA SAAT pembayaran disimpan, BUKAN tahun ajaran
+//             yang dibayar. Contoh nyata: calon santri kelas 7 TA 2026/2027
+//             membayar SPP Juli–Oktober lebih awal, saat profil masih tertulis
+//             2025/2026 → kuitansinya ber-ta_label 2025/2026 padahal bulan yang
+//             dibayar milik 2026/2027. Jadi label hanya boleh dipakai sebagai
+//             DUGAAN, tidak pernah sebagai dasar menyimpulkan data hilang.
 function _auditTargetTA(kwt, item, currentTA) {
   const m = String(item.name || '').match(/Tunggakan\s+TA\s+([0-9]{4}\s*\/\s*[0-9]{4})/i);
-  if (m) return m[1].replace(/\s+/g, '');
+  if (m) return { ta: m[1].replace(/\s+/g, ''), sumber: 'nama' };
   const label = String(kwt.ta_label || '').trim();
-  if (label && label !== currentTA) return label;
-  return null;   // null = SPP tahun ajaran berjalan
+  if (label && label !== currentTA) return { ta: label, sumber: 'label' };
+  return { ta: null, sumber: 'berjalan' };
 }
 
 // Baca buku besar kuitansi & hitung kondisi yang SEHARUSNYA tercatat.
@@ -50,18 +61,24 @@ async function auditLedger() {
   const byNo = {};
   kwts.forEach(k => { if (k.no_kuitansi) byNo[k.no_kuitansi] = k; });
 
-  // nama → { spp:Set, hist:{ ta:Set }, tagihan:{ item_id: nominal } }
+  // nama → { spp:Set, histPasti:{ta:Set}, histDuga:{ta:Set}, tagihan:{id:nominal} }
+  //   spp       : bulan SPP tahun ajaran berjalan
+  //   histPasti : TA dari nama item ("SPP Tunggakan TA …") — dasarnya kuat
+  //   histDuga  : TA dari ta_label saja — hanya dugaan, lihat _auditTargetTA()
   const exp = {};
-  const slot = nama => (exp[nama] || (exp[nama] = { spp: new Set(), hist: {}, tagihan: {} }));
-  const histSet = (nama, ta) => {
-    const s = slot(nama);
-    return s.hist[ta] || (s.hist[ta] = new Set());
+  const slot = nama => (exp[nama] || (exp[nama] = {
+    spp: new Set(), histPasti: {}, histDuga: {}, tagihan: {},
+  }));
+  const taSet = (nama, bucket, ta) => {
+    const b = slot(nama)[bucket];
+    return b[ta] || (b[ta] = new Set());
   };
 
   const addBulan = (kwt, item, sign) => {
     if (!item.bulan) return;
-    const ta = _auditTargetTA(kwt, item, currentTA);
-    const set = ta ? histSet(kwt.nama, ta) : slot(kwt.nama).spp;
+    const { ta, sumber } = _auditTargetTA(kwt, item, currentTA);
+    const set = !ta ? slot(kwt.nama).spp
+              : taSet(kwt.nama, sumber === 'nama' ? 'histPasti' : 'histDuga', ta);
     if (sign > 0) set.add(item.bulan); else set.delete(item.bulan);
   };
   const addTagihan = (nama, itemId, amount) => {
@@ -118,22 +135,47 @@ async function auditLedger() {
     const s = byNama[nama];
     if (!s) { tanpaSantri.push(nama); return; }
 
-    const sudah = new Set(s.spp_paid_months || []);
-    const kurang = [...e.spp].filter(b => !sudah.has(b));
+    const hist = (s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
+    const bulanBerjalan = new Set(s.spp_paid_months || []);
+    const bulanHist = ta => new Set(((hist[ta] || {}).spp_paid_months) || []);
+
+    // ── SPP tahun ajaran berjalan ──
+    // Sudah tercatat di riwayat TA mana pun juga dianggap beres: bisa jadi
+    // bulan itu memang milik tahun lalu dan sudah diarsipkan promosi kelas.
+    const adaDiRiwayatManapun = b => Object.values(hist)
+      .some(rec => (rec && rec.spp_paid_months || []).includes(b));
+    const kurang = [...e.spp].filter(b => !bulanBerjalan.has(b) && !adaDiRiwayatManapun(b));
     if (kurang.length) temuanSpp.push({ nama, ta: null, bulan: kurang });
 
-    const hist = (s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
-    Object.entries(e.hist).forEach(([ta, set]) => {
-      const rec = hist[ta];
-      if (!rec) {
-        // Tidak ada entri TA itu — memulihkannya berarti menebak nominal SPP
+    // ── Tunggakan TA lama, TA-nya PASTI (dari nama item) ──
+    Object.entries(e.histPasti).forEach(([ta, set]) => {
+      const sudahH = bulanHist(ta);
+      const kurangH = [...set].filter(b => !sudahH.has(b));
+      if (!kurangH.length) return;
+      if (!hist[ta]) {
+        // Belum ada entri TA itu — memulihkannya berarti menebak nominal SPP
         // tahun tersebut. Dilaporkan saja, tidak diperbaiki otomatis.
-        histTanpaRecord.push({ nama, ta, bulan: [...set] });
+        histTanpaRecord.push({ nama, ta, bulan: kurangH, sebab: 'tanpa-entri' });
         return;
       }
-      const sudahH = new Set(rec.spp_paid_months || []);
-      const kurangH = [...set].filter(b => !sudahH.has(b));
-      if (kurangH.length) temuanSpp.push({ nama, ta, bulan: kurangH });
+      temuanSpp.push({ nama, ta, bulan: kurangH });
+    });
+
+    // ── TA dari ta_label saja: hanya DUGAAN ──
+    // ta_label merekam isi profil saat pembayaran disimpan, bukan tahun ajaran
+    // yang dibayar. Karena itu bulan yang sudah tercatat lunas DI MANA PUN
+    // (tahun berjalan maupun riwayat TA mana saja) dianggap beres — jangan
+    // sampai santri baru yang membayar di muka dilaporkan sebagai data hilang.
+    Object.entries(e.histDuga).forEach(([ta, set]) => {
+      const sudahH = bulanHist(ta);
+      const kurangH = [...set].filter(b =>
+        !sudahH.has(b) && !bulanBerjalan.has(b) && !adaDiRiwayatManapun(b));
+      if (!kurangH.length) return;
+      if (!hist[ta]) {
+        histTanpaRecord.push({ nama, ta, bulan: kurangH, sebab: 'tanpa-entri' });
+        return;
+      }
+      temuanSpp.push({ nama, ta, bulan: kurangH });
     });
 
     Object.entries(e.tagihan).forEach(([itemId, seharusnya]) => {
@@ -263,12 +305,21 @@ function renderAuditResult(r) {
   }
 
   if (r.histTanpaRecord.length) {
-    html += `<div style="font-weight:700;font-size:14px;margin:16px 0 8px;">📌 Perlu ditangani manual</div>
-    <div class="warn-box">Ada ${r.histTanpaRecord.length} pembayaran tunggakan TA lama yang santrinya belum punya
-    entri riwayat SPP untuk tahun tersebut. Memulihkannya berarti menebak nominal SPP tahun itu, jadi
-    <strong>tidak diperbaiki otomatis</strong>:<br>
-    ${r.histTanpaRecord.slice(0, 10).map(h => `• ${esc(h.nama)} — TA ${esc(h.ta)} (${esc(h.bulan.join(', '))})`).join('<br>')}
-    ${r.histTanpaRecord.length > 10 ? `<br>• …dan ${r.histTanpaRecord.length - 10} lainnya` : ''}</div>`;
+    html += `<div style="font-weight:700;font-size:14px;margin:16px 0 8px;">📌 Perlu diperiksa sendiri</div>
+    <div class="warn-box">
+    Ada ${r.histTanpaRecord.length} bulan SPP berkuitansi yang <strong>tidak bisa dipastikan</strong>
+    milik tahun ajaran mana, dan santrinya belum punya entri riwayat SPP untuk tahun tersebut.
+    <strong>Tidak diperbaiki otomatis</strong> — silakan dicocokkan sendiri:<br><br>
+    ${r.histTanpaRecord.slice(0, 12).map(h => `• ${esc(h.nama)} — TA ${esc(h.ta)} (${esc(h.bulan.map(b => MONTH_FULL[b] || b).join(', '))})`).join('<br>')}
+    ${r.histTanpaRecord.length > 12 ? `<br>• …dan ${r.histTanpaRecord.length - 12} lainnya` : ''}
+    <br><br>
+    <strong>Sering kali ini bukan masalah.</strong> Tahun ajaran di sini ditebak dari kolom
+    <code>ta_label</code> kuitansi, yang hanya merekam isi <em>Profil Madrasah → Tahun Ajaran</em>
+    pada saat pembayaran disimpan — bukan tahun ajaran yang dibayar. Jadi kalau santri baru
+    membayar SPP di muka sebelum profil diganti ke tahun ajaran berikutnya, namanya akan muncul
+    di sini padahal pembayarannya sudah tercatat benar. Cek saja santrinya di
+    <em>Input Pembayaran</em>: bila bulan-bulan itu sudah tercentang lunas, abaikan baris ini.
+    </div>`;
   }
 
   if (r.tanpaSantri.length) {
