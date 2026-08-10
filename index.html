@@ -120,6 +120,8 @@
         <span id="gasIcon">🟡</span><span id="gasLabel">Connecting...</span>
         <span id="lastSyncTime" style="font-size:10px;color:rgba(255,255,255,.5);margin-left:4px;"></span>
       </div>
+      <button id="syncNowBtn" onclick="manualSync()" title="Ambil data terbaru dari server (semua device dibuat sama)"
+        style="background:none;border:none;color:var(--primary-light);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">🔄</button>
       <span style="font-size:12px;color:var(--text-muted);font-weight:600;" id="adminLabel">Admin</span>
       <button class="mobile-menu-btn" onclick="openSidebar()">☰</button>
     </div>
@@ -1881,6 +1883,7 @@
 <script src="js/koreksi.js"></script>
 <script src="js/template-kuitansi.js"></script>
 <script src="js/spmb.js"></script>
+<script src="js/sync.js"></script>
 <script src="js/init.js"></script>
 </body>
 </html>

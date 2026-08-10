@@ -10,6 +10,7 @@ function closeLogoutConfirm() {
 }
 async function doLogout() {
   closeLogoutConfirm();
+  stopAutoSync();                  // hentikan polling data setelah keluar
   await sbSignOut();               // revoke & hapus token admin (bila ada)
   localStorage.removeItem('sipay_auth');
   localStorage.removeItem('sipay_guest');

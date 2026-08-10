@@ -281,6 +281,54 @@ function onStudentSelect() {
     </div>
   `;
   renderPaymentItems(s);
+
+  // Ambil kondisi TERBARU santri ini dari server: bulan SPP / sisa tagihannya
+  // bisa saja baru dilunasi lewat device lain. Tanpa ini, admin bisa menagih
+  // (dan menerima) pembayaran yang sebenarnya sudah lunas.
+  refreshSelectedStudent(s.nama);
+}
+
+// Apakah admin sudah mencentang sesuatu di form input?
+// Bila ya, form JANGAN digambar ulang oleh sinkronisasi latar belakang.
+function inputFormHasSelection() {
+  const cont = document.getElementById('paymentItems');
+  if (cont && cont.querySelector('input[type="checkbox"]:checked')) return true;
+  return getSppMonthsSelected().length > 0 || getSppPrevSelected().length > 0;
+}
+
+let _refreshSelSeq = 0;
+const _refreshSelAt = {};   // nama → timestamp terakhir diperiksa
+async function refreshSelectedStudent(nama) {
+  if (typeof refreshStudent !== 'function' || !nama) return;
+  // Jangan menembak server berkali-kali untuk santri yang sama dalam sekejap
+  // (onStudentSelect dipanggil ulang setiap kali data berubah).
+  if (Date.now() - (_refreshSelAt[nama] || 0) < 5000) return;
+  _refreshSelAt[nama] = Date.now();
+
+  const seq = ++_refreshSelSeq;
+  let changed = false;
+  try { changed = await refreshStudent(nama); } catch { return; }
+  if (!changed || seq !== _refreshSelSeq) return;
+  if (document.getElementById('inputNama')?.value !== nama) return;
+
+  if (inputFormHasSelection()) {
+    // Ada centang yang sedang dikerjakan — jangan hapus isian admin, cukup beri
+    // tahu bahwa datanya berubah di server.
+    showSyncIndicator('🔄 Data santri ini berubah di device lain', 4000);
+    return;
+  }
+  onStudentSelect();
+}
+
+// Dipanggil sinkronisasi latar belakang (js/sync.js) setelah data ditarik ulang.
+// Hanya menggambar ulang bila form input sedang kosong, supaya centang yang
+// sedang dikerjakan tidak hilang di tengah jalan.
+function refreshInputPageIfIdle() {
+  const el = document.getElementById('inputNama');
+  const nama = el ? el.value : '';
+  if (!nama || !getStudent(nama)) return;
+  if (inputFormHasSelection()) return;
+  onStudentSelect();
 }
 
 // Daftar item pembayaran yang berlaku untuk siswa terpilih. Dipakai bersama
@@ -745,26 +793,23 @@ async function submitPayment() {
       amount: y.amount, ta: y.ta, rate: y.rate, bulanList: y.months, bulanAmounts: y.bulanAmounts });
   });
 
-  // Update student SPP months & tagihan paid_amount
-  const si = appState.students.findIndex(s=>s.nama===nama);
-  const tagihanUpdates = []; // { id, newPaidAmount }
+  // Kumpulkan perubahan sebagai SELISIH (bulan baru & nominal tambahan), lalu
+  // digabungkan ke kondisi terbaru di server. Jangan menghitung nilai akhir
+  // dari salinan lokal: bila device lain sudah menginput lebih dulu, salinan
+  // lokal sudah usang dan pembayaran mereka akan tertimpa.
+  const sppMonthsBaru = [];              // bulan SPP tahun berjalan
+  const sppHistBaru   = {};              // { ta: { rate, months: [] } }
+  const tagihanUpdates = [];             // { id, delta }
   items.forEach(it => {
     if (it.type === 'spp_prev') {
-      // Catat bulan yang dibayar ke riwayat tahun ajaran terkait (bukan tahun berjalan)
-      markSppHistPaid(appState.students[si], it.ta, it.rate, it.bulanList || []);
+      const rec = sppHistBaru[it.ta] || (sppHistBaru[it.ta] = { rate: it.rate, months: [] });
+      (it.bulanList || []).forEach(b => { if (!rec.months.includes(b)) rec.months.push(b); });
     } else if (it.bulanList?.length) {
-      it.bulanList.forEach(b => {
-        if (!appState.students[si].spp_paid_months.includes(b))
-          appState.students[si].spp_paid_months.push(b);
-      });
+      it.bulanList.forEach(b => { if (!sppMonthsBaru.includes(b)) sppMonthsBaru.push(b); });
     }
     if (it.type === 'tetap') {
       const t = findTagihan(nama, it.id);
-      if (t) {
-        const newPaid = (t.paid_amount || 0) + it.amount;
-        tagihanUpdates.push({ id: t.id, newPaidAmount: newPaid });
-        t.paid_amount = newPaid; // update appState langsung
-      }
+      if (t) tagihanUpdates.push({ id: t.id, delta: it.amount });
     }
   });
 
@@ -779,10 +824,12 @@ async function submitPayment() {
     metode: meta.metode, dibayar_oleh: meta.dibayar_oleh,
   };
   appState.transactions.push(txn);
-  saveSiswa(appState.students[si]);
+  // Tulis-gabung ke server (baca kondisi terbaru → tambahkan perubahan ini).
+  // Ditunggu (await) agar ringkasan santri & tabel sesi menampilkan angka yang
+  // benar-benar tersimpan, bukan tebakan lokal.
+  await commitSppPayment(nama, sppMonthsBaru, sppHistBaru);
+  await Promise.all(tagihanUpdates.map(u => addTagihanPaid(u.id, u.delta).catch(console.error)));
   saveTransaction(txn);
-  // Sinkron paid_amount tagihan ke Supabase
-  tagihanUpdates.forEach(u => updateTagihanPaid(u.id, u.newPaidAmount).catch(console.error));
 
   // Render session table
   const tbody = document.querySelector('#sessionTable tbody');

@@ -522,7 +522,18 @@ async function confirmSpmbImport() {
   appState.students.sort((a, b) => a.nama.localeCompare(b.nama));
   document.getElementById('importCalonModal').classList.remove('open');
   spmbImportBuffer = [];
-  await saveState();
+  // Simpan hanya calon yang baru ditambahkan — mengirim seluruh tabel berisiko
+  // menimpa perubahan santri lain yang dibuat dari device lain.
+  pauseAutoSync();
+  try {
+    for (let i = 0; i < added.length; i += 50) await saveStudentsBatch(added.slice(i, i + 50));
+  } catch (e) {
+    console.error('importCalon save:', e);
+    toast('⚠️ Import calon gagal tersimpan — cek koneksi lalu ulangi');
+    resumeAutoSync();
+    return;
+  }
+  resumeAutoSync();
   // Buat tagihan pangkal untuk calon yang punya nominal (persisten & terbawa)
   await Promise.all(added.filter(c => (c.pangkal || 0) > 0).map(c => upsertPangkalTagihan(c, c.pangkal).catch(() => {})));
   await Promise.all(added.filter(c => (c.uang_pendaftaran || 0) > 0).map(c => upsertPendaftaranTagihan(c, c.uang_pendaftaran).catch(() => {})));

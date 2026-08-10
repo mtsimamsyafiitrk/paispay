@@ -546,6 +546,9 @@ async function confirmImportTunggakan() {
   const btn = document.getElementById('tgConfirmBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Menyimpan...'; }
   showSyncIndicator('⏳ Menerapkan data tunggakan...');
+  // Tahan sinkronisasi latar belakang selama proses panjang ini: menarik ulang
+  // data di tengah jalan bisa membuang perubahan yang belum tersimpan.
+  pauseAutoSync();
 
   let baru = 0, diperbarui = 0;
   const touched = [];
@@ -642,6 +645,7 @@ async function confirmImportTunggakan() {
     showSyncIndicator('⚠️ Gagal menyimpan: ' + e.message, 4000);
     toast('⚠️ Gagal menyimpan data tunggakan — cek koneksi lalu ulangi');
   } finally {
+    resumeAutoSync();
     if (btn) { btn.disabled = false; btn.textContent = '💾 Terapkan ke Aplikasi'; }
   }
 }

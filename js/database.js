@@ -107,6 +107,9 @@ async function renameStudentInDB(origNama, s) {
   }
 }
 
+// PERINGATAN: saveState() mengirim SELURUH appState.students. Bila salinan di
+// memori sudah usang (device lain menyimpan lebih dulu), datanya ikut tertimpa.
+// Untuk operasi massal pakai saveStudentsBatch(daftarYangDisentuh) saja.
 async function saveState() {
   showSyncIndicator('💾 Menyimpan...');
   try {
@@ -366,6 +369,12 @@ async function saveTransaction(t) {
 }
 
 // ══ SETTINGS ══
+// Penanda apakah settings sempat dibaca dari server pada sesi ini. Bila belum
+// (mis. device baru yang gagal memuat), saveSettings TIDAK boleh mengirim
+// profil/akun/logo dari localStorage yang masih kosong — kalau dikirim, profil
+// madrasah yang sudah diisi di device lain ikut terhapus.
+let _settingsLoaded = false;
+
 async function loadSettings() {
   try {
     const rows = await sb('settings?select=*');
@@ -382,6 +391,7 @@ async function loadSettings() {
       localStorage.setItem('sipay_akun', JSON.stringify(cleanAkun));
       localStorage.setItem('sipay_admin', JSON.stringify({ user: cleanAkun.user }));
     }
+    _settingsLoaded = true;
   } catch(e) { console.error('loadSettings error:', e); }
 }
 
@@ -392,20 +402,162 @@ async function saveSettings() {
   const akun    = { user: akunRaw.user || 'Admin', email: akunRaw.email || '', hp: akunRaw.hp || '' };
   const logo    = localStorage.getItem('sipay_logo') || '';
   try {
-    const records = [
-      { key: 'payItems', value: appState.payItems },
-      { key: 'profil',   value: profil },
-      { key: 'akun',     value: akun },
-    ];
-    if (logo) records.push({ key: 'logo', value: logo });
+    const records = [{ key: 'payItems', value: appState.payItems }];
+    // Hanya kirim profil/akun/logo bila memang ada isinya DAN settings server
+    // sudah pernah terbaca — supaya device yang datanya belum tersinkron tidak
+    // menimpa isian device lain dengan nilai kosong.
+    if (_settingsLoaded && Object.keys(profil).length) records.push({ key: 'profil', value: profil });
+    if (_settingsLoaded && akunRaw.user)              records.push({ key: 'akun',   value: akun });
+    if (_settingsLoaded && logo)                      records.push({ key: 'logo',   value: logo });
     await sb('settings?on_conflict=key', 'POST', records,
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
   } catch(e) { console.error('saveSettings error:', e); }
 }
 
+// ══ SINKRONISASI LINTAS DEVICE ══
+// Semua penulisan di bawah ini membaca kondisi TERBARU di server lebih dulu,
+// lalu menggabungkannya dengan perubahan yang baru dibuat. Tanpa ini,
+// salinan di memori device B (yang bisa saja sudah usang karena device A
+// menyimpan lebih dulu) akan menimpa hasil input device A.
+
+// Tandai bulan SPP yang baru lunas — hasil gabungan server + input baru.
+//   months   : ['Jul','Agt']  → SPP tahun ajaran berjalan
+//   histPaid : { '2024/2025': { rate: 100000, months: ['Jul'] } } → tunggakan TA lalu
+async function commitSppPayment(nama, months = [], histPaid = {}) {
+  const local = appState.students.find(s => s.nama === nama) || null;
+
+  let server = null, serverOk = false;
+  try {
+    const sel = _sppHistorySupported ? 'spp_paid_months,spp_history' : 'spp_paid_months';
+    const rows = await sb('students?select=' + sel + '&nama=eq.' + encodeURIComponent(nama));
+    server = (rows && rows[0]) || null;
+    serverOk = true;
+  } catch(e) {
+    if (_sppHistorySupported && _isMissingSppHistory(e)) {
+      _sppHistorySupported = false;
+      return commitSppPayment(nama, months, histPaid);
+    }
+    console.error('commitSppPayment read:', e);
+  }
+
+  // Baris belum ada di server (santri baru yang gagal tersimpan) atau server
+  // tak terbaca → pakai jalur simpan biasa agar pembayaran tidak hilang.
+  if (!serverOk || !server) {
+    if (local) {
+      months.forEach(m => { if (!local.spp_paid_months.includes(m)) local.spp_paid_months.push(m); });
+      Object.entries(histPaid).forEach(([ta, info]) => markSppHistPaid(local, ta, info.rate, info.months || []));
+    }
+    return saveSiswa(local);
+  }
+
+  const basePaid = Array.isArray(server.spp_paid_months)
+    ? server.spp_paid_months
+    : ((local && local.spp_paid_months) || []);
+  const paid = [...new Set([...basePaid, ...months])];
+
+  const srvHist = (server.spp_history && typeof server.spp_history === 'object' && !Array.isArray(server.spp_history))
+    ? server.spp_history : {};
+  const hist = JSON.parse(JSON.stringify(_sppHistorySupported ? srvHist : ((local && local.spp_history) || {})));
+  // markSppHistPaid() bekerja pada objek bergaya siswa; bungkus riwayat server.
+  const carrier = { spp_history: hist };
+  Object.entries(histPaid).forEach(([ta, info]) => markSppHistPaid(carrier, ta, info.rate, info.months || []));
+
+  const patch = { spp_paid_months: paid };
+  if (_sppHistorySupported) patch.spp_history = carrier.spp_history;
+
+  showSyncIndicator('💾 Menyimpan...');
+  try {
+    await sb('students?nama=eq.' + encodeURIComponent(nama), 'PATCH', patch, { 'Prefer': 'return=minimal' });
+    if (local) {
+      local.spp_paid_months = paid;
+      if (_sppHistorySupported) local.spp_history = carrier.spp_history;
+    }
+    showSyncIndicator('✅ Tersimpan', 1500);
+  } catch(e) {
+    if (_sppHistorySupported && _isMissingSppHistory(e)) {
+      _sppHistorySupported = false;
+      return commitSppPayment(nama, months, histPaid);
+    }
+    console.error('commitSppPayment error:', e);
+    showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
+  }
+}
+
+// Tambah pembayaran tagihan sebagai SELISIH (delta) di atas nilai terbaru di
+// server, bukan menimpa dengan angka hasil hitungan lokal.
+async function addTagihanPaid(tagihanId, delta) {
+  const local = appState.tagihan.find(t => t.id === tagihanId) || null;
+  let base = null;
+  try {
+    const rows = await sb('tagihan?select=paid_amount&id=eq.' + tagihanId);
+    if (rows && rows[0]) base = Number(rows[0].paid_amount) || 0;
+  } catch(e) { console.error('addTagihanPaid read:', e); }
+  if (base == null) base = local ? (Number(local.paid_amount) || 0) : 0;
+  return updateTagihanPaid(tagihanId, Math.max(0, base + (Number(delta) || 0)));
+}
+
+// Tambah/hapus bulan SPP terbayar di atas kondisi TERBARU server (dipakai alur
+// hapus kuitansi & koreksi). Mengembalikan daftar bulan hasil akhir.
+async function adjustSppPaidMonths(nama, add = [], remove = []) {
+  const local = appState.students.find(s => s.nama === nama) || null;
+  let base = null;
+  try {
+    const rows = await sb('students?select=spp_paid_months&nama=eq.' + encodeURIComponent(nama));
+    if (rows && rows[0] && Array.isArray(rows[0].spp_paid_months)) base = rows[0].spp_paid_months;
+  } catch(e) { console.error('adjustSppPaidMonths read:', e); }
+  if (base == null) base = (local && local.spp_paid_months) || [];
+
+  const months = [...new Set([...base, ...add])].filter(m => !remove.includes(m));
+  await sb('students?nama=eq.' + encodeURIComponent(nama), 'PATCH',
+    { spp_paid_months: months }, { 'Prefer': 'return=minimal' });
+  if (local) local.spp_paid_months = months;
+  return months;
+}
+
+// Ambil ulang satu santri + tagihannya dari server (dipakai saat santri dipilih
+// di form Input Pembayaran, supaya bulan/tagihan yang baru dilunasi di device
+// lain langsung terlihat). Return true bila ada perubahan.
+async function refreshStudent(nama) {
+  if (!nama) return false;
+  let rows, tRows;
+  try {
+    [rows, tRows] = await Promise.all([
+      sb('students?select=*&nama=eq.' + encodeURIComponent(nama)),
+      sb('tagihan?select=*&nama=eq.' + encodeURIComponent(nama)),
+    ]);
+  } catch(e) { console.error('refreshStudent error:', e); return false; }
+  if (!rows || !rows[0]) return false;
+
+  const r = rows[0];
+  const fresh = {
+    nama: r.nama,
+    kelas: r.kelas,
+    nisn: r.nisn || '',
+    spp: Number(r.spp) || 0,
+    spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
+    spp_history: (r.spp_history && typeof r.spp_history === 'object' && !Array.isArray(r.spp_history)) ? r.spp_history : {},
+    status_kelulusan: r.status_kelulusan || '',
+  };
+  const freshTagihan = (tRows || []).map(t => ({
+    id: t.id, nama: t.nama, kelas: t.kelas,
+    item_id: t.item_id, item_name: t.item_name,
+    nominal: Number(t.nominal) || 0, paid_amount: Number(t.paid_amount) || 0,
+  }));
+
+  const idx = appState.students.findIndex(s => s.nama === nama);
+  const before = JSON.stringify([idx >= 0 ? appState.students[idx] : null,
+                                appState.tagihan.filter(t => t.nama === nama)]);
+  if (idx >= 0) appState.students[idx] = fresh; else appState.students.push(fresh);
+  appState.tagihan = appState.tagihan.filter(t => t.nama !== nama).concat(freshTagihan);
+  return before !== JSON.stringify([fresh, freshTagihan]);
+}
+
 // ── Load semua data ──
-async function loadDataForTA() {
-  showSyncIndicator('⏳ Memuat data...');
+// opts.silent = sinkronisasi latar belakang (tanpa spanduk "Memuat data...",
+// dan pilihan pada dropdown Cetak dipertahankan).
+async function loadDataForTA(opts = {}) {
+  const silent = !!opts.silent;
+  if (!silent) showSyncIndicator('⏳ Memuat data...');
   try {
     const [students, transactions, tagihan] = await Promise.all([
       loadStudents(), loadTransactions(), loadTagihan()
@@ -422,13 +574,13 @@ async function loadDataForTA() {
         savedAt: new Date().toISOString(),
       }));
     } catch { /* quota exceeded */ }
-    showSyncIndicator('✅ Data dimuat', 2000);
+    if (!silent) showSyncIndicator('✅ Data dimuat', 2000);
     const gi = document.getElementById('gasIcon'); if(gi) gi.textContent='🟢';
     const gl = document.getElementById('gasLabel'); if(gl) gl.textContent='Terhubung';
     const syncEl = document.getElementById('lastSyncTime');
     if (syncEl) syncEl.textContent = 'Tersinkron ' + new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
   } catch(e) {
-    showSyncIndicator('⚠️ Gagal memuat', 3000);
+    if (!silent) showSyncIndicator('⚠️ Gagal memuat', 3000);
     const gi2 = document.getElementById('gasIcon'); if(gi2) gi2.textContent='🔴';
     const gl2 = document.getElementById('gasLabel'); if(gl2) gl2.textContent='Offline';
     throw e;
@@ -436,9 +588,18 @@ async function loadDataForTA() {
   renderDashboard();
   renderSiswaTable();
   renderTunggakan();
+  renderCetakNamaOptions();
+  if (silent && typeof refreshInputPageIfIdle === 'function') refreshInputPageIfIdle();
+}
+
+// Isi ulang dropdown nama di halaman Cetak tanpa menghilangkan pilihan aktif.
+function renderCetakNamaOptions() {
   const sel = document.getElementById('cetakNama');
-  if (sel) sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
     appState.students.map(s => `<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
+  if (prev && appState.students.some(s => s.nama === prev)) sel.value = prev;
 }
 
 async function initApp() {
@@ -463,9 +624,7 @@ async function initApp() {
   renderSiswaTable();
   renderTunggakan();
   loadTemplateKuitansi().catch(()=>{});
-  const sel = document.getElementById('cetakNama');
-  if (sel) sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
-    appState.students.map(s => `<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
+  renderCetakNamaOptions();
   const t1 = document.getElementById('cetakTanggal');
   const t2 = document.getElementById('cetakTanggalTotal');
   if (t1) t1.value = new Date().toISOString().split('T')[0];

@@ -26,6 +26,7 @@ sipay/
 │   ├── kuitansi.js         # Modal kuitansi, hapus, cetak, riwayat
 │   ├── koreksi.js          # Alur koreksi pembayaran (multi-step)
 │   ├── template-kuitansi.js# Builder & preview template kuitansi
+│   ├── sync.js             # Auto-sync lintas device (polling + on-focus)
 │   └── init.js             # DOMContentLoaded & inisialisasi app
 └── README.md
 ```
@@ -226,17 +227,68 @@ Seluruh data santri tertutup dari publik.
 > Supabase SQL Editor, lalu buat 1 akun admin di *Authentication → Users* dan
 > **matikan pendaftaran publik**. Langkah lengkap ada di komentar file SQL tersebut.
 
-## Status Koneksi Supabase
+## Sinkronisasi Multi-Device
 
-SiPay menggunakan **Supabase REST API** (bukan Realtime WebSocket). Artinya:
+SiPay memakai **Supabase REST API** sebagai satu-satunya sumber data — jadi
+semua device (HP bendahara, laptop TU, komputer kantor) memang membaca dan
+menulis ke database yang sama. Yang dulu bermasalah adalah **kapan** data itu
+ditarik ulang: sebelumnya data hanya dimuat **satu kali saat halaman dibuka**,
+sehingga tab yang dibiarkan terbuka di device B tetap menampilkan kondisi lama
+walau device A sudah menginput — dan penyimpanan berikutnya dari device B bisa
+**menimpa** hasil input device A.
 
-| Fitur | Status |
-|-------|--------|
-| Simpan/muat data (CRUD) | ✅ Berfungsi |
-| Auto-refresh jika ada perubahan dari perangkat lain | ❌ Tidak otomatis |
-| Indikator 🟢 Terhubung / 🔴 Offline | ✅ Berfungsi (dicek saat load) |
+Sekarang aplikasi menjaga semua device berada pada kondisi data terakhir lewat
+dua lapis pengaman:
 
-Data **tidak diperbarui otomatis secara realtime** — jika dua perangkat membuka SiPay bersamaan, perubahan dari satu perangkat tidak langsung terlihat di perangkat lain tanpa refresh manual. Untuk mengaktifkan realtime sejati, perlu mengintegrasikan Supabase Realtime (WebSocket) di masa mendatang.
+### 1. Tarik ulang otomatis (`js/sync.js`)
+
+| Pemicu | Kapan |
+|--------|-------|
+| Polling berkala | tiap **20 detik** selama tab terlihat |
+| Tab kembali aktif | `visibilitychange` — buka lagi aplikasi dari background |
+| Jendela di-fokus | pindah kembali ke jendela browser SiPay |
+| Koneksi pulih | event `online` setelah sempat putus |
+| Tombol 🔄 di topbar | sinkron manual kapan saja |
+| Santri dipilih di Input Pembayaran | data santri itu ditarik ulang dari server |
+
+Sinkron latar belakang **dilewati** saat ada modal terbuka, saat proses panjang
+berjalan (import, promosi kelas — lihat `pauseAutoSync()` / `resumeAutoSync()`),
+dan saat form Input Pembayaran sudah ada centangnya — supaya isian yang sedang
+dikerjakan tidak hilang tergambar ulang. Bila data santri yang sedang dikerjakan
+ternyata berubah di server, muncul peringatan `🔄 Data santri ini berubah di
+device lain` alih-alih menghapus isian.
+
+### 2. Tulis-gabung (merge), bukan tulis-timpa
+
+Penulisan tidak lagi mengirim hasil hitungan dari salinan lokal (yang bisa
+usang), melainkan **membaca kondisi terbaru di server lalu menambahkan selisih**:
+
+| Operasi | Fungsi | Cara kerja |
+|---------|--------|------------|
+| Bayar SPP | `commitSppPayment()` | gabungkan (union) bulan yang sudah lunas di server dengan bulan baru |
+| Bayar item tetap | `addTagihanPaid(id, delta)` | `paid_amount` server **+ selisih**, bukan angka lokal |
+| Hapus kuitansi / koreksi | `adjustSppPaidMonths()` | tambah/hapus bulan tertentu di atas kondisi server |
+| Import, promosi kelas, ubah status massal | `saveStudentsBatch(touched)` | kirim **hanya santri yang disentuh**, bukan seluruh tabel |
+| Profil / akun / logo | `saveSettings()` | tidak dikirim bila settings server belum sempat terbaca (cegah menimpa dengan nilai kosong) |
+
+> `saveState()` (kirim seluruh `appState.students`) sengaja **tidak dipakai lagi**
+> oleh alur mana pun karena berpotensi menimpa perubahan device lain.
+
+**Efek nyata:** dua orang bisa menginput bersamaan di device berbeda. Bila
+device A melunasi SPP September dan device B (yang datanya masih lama)
+melunasi Oktober, hasil akhirnya **Sep + Okt keduanya tersimpan** — bukan yang
+satu menghapus yang lain.
+
+### Yang masih perlu diketahui
+
+- Bukan WebSocket realtime; perubahan tampil paling lambat ~20 detik (atau
+  langsung, begitu tab dibuka/di-fokus). Untuk realtime seketika, Supabase
+  Realtime (WebSocket) bisa ditambahkan menyusul.
+- Bila dua orang membayar **item yang sama** untuk santri yang sama dalam
+  hitungan detik yang bersamaan, keduanya tetap tercatat sebagai dua kuitansi.
+  Yang dicegah adalah **data hilang**, bukan input ganda yang disengaja.
+- Indikator 🟢 Terhubung / 🔴 Offline dan jam "Tersinkron HH:MM" di topbar
+  ikut diperbarui tiap kali sinkron berhasil.
 
 ## Urutan Load JS
 
@@ -248,4 +300,5 @@ File JS di-load secara berurutan (bukan ES modules). Urutan penting karena modul
 4. `helpers.js` — utility & nav
 5. Halaman-halaman (`dashboard`, `input`, `siswa`, dst.)
 6. `auth.js`, `guest.js` — auth layer
-7. `init.js` — harus terakhir (DOMContentLoaded)
+7. `sync.js` — auto-sync lintas device (butuh `loadDataForTA` & `isLoggedIn`)
+8. `init.js` — harus terakhir (DOMContentLoaded)
