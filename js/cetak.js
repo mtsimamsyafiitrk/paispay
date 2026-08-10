@@ -397,7 +397,9 @@ function printHTML(bodyHTML, filename) {
 function buildRekapTotalHTML(kelasFil, tgl) {
   const P2 = getProfil();
   const tglFmt = new Date(tgl).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-  let list = appState.students.filter(s => !kelasFil || s.kelas === kelasFil);
+  // Hanya santri aktif: alumni, santri pindah/keluar, dan calon santri SPMB
+  // tetap tersimpan di tabel yang sama dan akan ikut tercetak bila tidak disaring.
+  let list = appState.students.filter(s => isSantriAktif(s) && (!kelasFil || s.kelas === kelasFil));
   const totalBayar = list.reduce((a,s) => a + (s.spp||0)*(s.spp_paid_months||[]).length, 0);
   const totalTk = list.reduce((a,s)=>a+totalTunggakan(s),0);
   return `
@@ -411,7 +413,7 @@ function buildRekapTotalHTML(kelasFil, tgl) {
     </div>
     <div class="surat-body">
       <h3>REKAP PEMBAYARAN SANTRI ${kelasFil?'KELAS '+esc(kelasFil):'SELURUH KELAS'}</h3>
-      <p style="margin-bottom:10px;">Tahun Ajaran 2025/2026 &nbsp;|&nbsp; Per Tanggal: ${tglFmt}<br>
+      <p style="margin-bottom:10px;">Tahun Ajaran ${esc(P2.ta || '—')} &nbsp;|&nbsp; Per Tanggal: ${tglFmt}<br>
       Total Santri: <strong>${list.length}</strong> orang${sppDueMonthLabel() ? ' &nbsp;|&nbsp; Tunggakan SPP dihitung s/d bulan ' + esc(sppDueMonthLabel()) : ''}${list.some(s => sppTunggakanPrev(s) > 0) ? ' &nbsp;|&nbsp; Kolom Tunggakan sudah termasuk sisa SPP Tahun Ajaran sebelumnya' : ''}</p>
       <table class="data-table-pdf">
         <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>SPP Dibayar</th><th>Item Terbayar</th><th>Tunggakan</th></tr></thead>

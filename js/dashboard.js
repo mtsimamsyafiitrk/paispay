@@ -1,15 +1,38 @@
 // ── SiPay · Dashboard Page ──
 function renderDashboard() {
-  const ss = appState.students;
-  const totalSiswa = ss.length;
-  const totalBayarSPP = ss.reduce((a,s) => a + (s.spp||0)*(s.spp_paid_months||[]).length, 0);
+  const all = appState.students;
+  // ss = santri AKTIF. Tabel students juga menyimpan alumni, santri pindah/
+  // keluar, dan calon santri SPMB — semuanya TIDAK boleh ikut dihitung sebagai
+  // "Santri Aktif" atau tunggakan berjalan.
+  const ss = all.filter(isSantriAktif);
+  const nonAktif = all.length - ss.length;
+  const rincianNonAktif = Object.entries(STATUS_NON_AKTIF)
+    .map(([k, label]) => ({ label, n: all.filter(s => (s.status_kelulusan || '') === k).length }))
+    .filter(x => x.n);
+
+  // Uang yang benar-benar masuk — dihitung dari SEMUA santri, termasuk yang
+  // sudah tidak aktif, karena pembayaran mereka tetap pemasukan yang nyata.
+  const totalBayarSPP = all.reduce((a,s) => a + (s.spp||0)*(s.spp_paid_months||[]).length, 0);
   const totalBayarTagihan = appState.tagihan.reduce((a,t) => a + (t.paid_amount||0), 0);
+
+  // Tunggakan berjalan = santri aktif saja. Tunggakan santri non-aktif tetap
+  // ditampilkan terpisah supaya tidak hilang dari pandangan.
   const totalTunggak = ss.reduce((a,s) => a + totalTunggakan(s), 0);
+  const belumLunas   = ss.filter(s => totalTunggakan(s) > 0).length;
+  const tunggakNonAktif = all.filter(s => !isSantriAktif(s)).reduce((a,s) => a + totalTunggakan(s), 0);
+
+  const subSantri = nonAktif
+    ? `Santri Aktif &nbsp;·&nbsp; +${nonAktif} non-aktif`
+    : 'Santri Aktif';
+  const judulSantri = nonAktif
+    ? `${all.length} baris di database: ${ss.length} aktif, ` +
+      rincianNonAktif.map(x => `${x.n} ${x.label}`).join(', ')
+    : `${all.length} santri aktif`;
 
   document.getElementById('statGrid').innerHTML = `
-    <div class="stat-card green"><div class="stat-label">Total Santri</div><div class="stat-value">${totalSiswa}</div><div class="stat-sub">Santri Aktif</div><div class="stat-icon">🎓</div></div>
+    <div class="stat-card green" title="${esc(judulSantri)}"><div class="stat-label">Total Santri</div><div class="stat-value">${ss.length}</div><div class="stat-sub">${subSantri}</div><div class="stat-icon">🎓</div></div>
     <div class="stat-card gold"><div class="stat-label">Total Terkumpul</div><div class="stat-value" style="font-size:18px;">${rp(totalBayarSPP+totalBayarTagihan)}</div><div class="stat-sub">SPP + Semua Pembayaran</div><div class="stat-icon">💰</div></div>
-    <div class="stat-card red"><div class="stat-label">Total Tunggakan</div><div class="stat-value" style="font-size:18px;">${rp(totalTunggak)}</div><div class="stat-sub">${ss.filter(s=>totalTunggakan(s)>0).length} santri belum lunas</div><div class="stat-icon">⚠️</div></div>
+    <div class="stat-card red"><div class="stat-label">Total Tunggakan</div><div class="stat-value" style="font-size:18px;">${rp(totalTunggak)}</div><div class="stat-sub">${belumLunas} dari ${ss.length} santri aktif belum lunas${tunggakNonAktif > 0 ? ` &nbsp;·&nbsp; ${rp(tunggakNonAktif)} non-aktif` : ''}</div><div class="stat-icon">⚠️</div></div>
     <div class="stat-card blue"><div class="stat-label">Tagihan Aktif</div><div class="stat-value">${appState.tagihan.filter(t=>t.paid_amount>=t.nominal).length}</div><div class="stat-sub">dari ${appState.tagihan.length} total tagihan</div><div class="stat-icon">✅</div></div>
   `;
 
