@@ -11,6 +11,15 @@ function kelasLabel(s) {
   return s.kelas;
 }
 
+// Santri AKTIF = yang sedang belajar sekarang: status_kelulusan kosong.
+// Baris santri tidak pernah dihapus saat lulus/pindah/keluar — statusnya saja
+// yang berubah — dan calon santri SPMB juga tinggal di tabel yang sama. Jadi
+// jumlah baris ≠ jumlah santri aktif, dan tiap statistik "santri" harus
+// menyaring lewat helper ini.
+const STATUS_NON_AKTIF = { calon: 'calon santri', lulus: 'alumni', pindah: 'pindah', keluar: 'keluar' };
+function isSantriAktif(s) { return !!s && !s.status_kelulusan; }
+function santriAktif(list) { return (list || appState.students).filter(isSantriAktif); }
+
 function terbilang(n) {
   n = Math.floor(n);
   if (n === 0) return '';

@@ -10,13 +10,23 @@ const DEFAULT_PROFIL = {
   email: 'admin@madrasah.sch.id',
   web: 'www.madrasah.sch.id',
   nsm: '',
-  ta: '2025/2026',
+  // Diisi saat modul dimuat (lihat di bawah) — jangan dipatok ke satu tahun,
+  // karena nilai ini terlihat di layar login sebelum profil dari server termuat.
+  ta: '',
   akreditasi: 'A',
   kepsek: 'HARMIN, S.Pd',
   kepsek_nip: '',
   bendahara: 'RUDDY HERMANTO',
   bendahara_nip: '',
 };
+
+// Tahun ajaran bawaan diturunkan dari tanggal hari ini (tahun ajaran mulai
+// Juli), bukan dipatok. Ini hanya dipakai sampai profil dari server termuat.
+(function initDefaultTA() {
+  const d = new Date();
+  const y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
+  DEFAULT_PROFIL.ta = `${y}/${y + 1}`;
+})();
 
 function getProfil() {
   try { return JSON.parse(localStorage.getItem('sipay_profil') || 'null') || DEFAULT_PROFIL; }
@@ -116,6 +126,8 @@ function applyProfil(p) {
   ].filter(Boolean).join(' &nbsp;|&nbsp; ');
   const sn = document.querySelector('.sidebar-logo .school-name');
   if (sn) sn.innerHTML = esc(p.nama).replace(/\s+/, '<br>');
+  // Layar login: ikut tahun ajaran di profil, jangan dipatok di HTML.
+  if (el('loginTaLabel')) el('loginTaLabel').textContent = (p.ta ? 'TA ' + p.ta + ' • ' : '') + 'SiPay v1.0';
   // Apply logo
   applyLogoEverywhere(getLogo());
 }

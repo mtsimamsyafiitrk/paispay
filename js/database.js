@@ -628,6 +628,10 @@ function renderCetakNamaOptions() {
 async function initApp() {
   showSyncIndicator('⏳ Memuat data...');
   try { await loadSettings(); } catch(e) { console.error('loadSettings error:', e); }
+  // Gambar ulang profil: init.js sempat memanggilnya SEBELUM settings server
+  // termuat, jadi device baru masih menampilkan nilai bawaan (nama madrasah,
+  // logo, tahun ajaran) sampai halaman di-reload.
+  if (typeof applyProfil === 'function') applyProfil();
   // Pastikan item baku (SPP/Pangkal/Pendaftaran) ada; persist bila admin login.
   if (ensureBakuItems() && hasAdminSession()) saveSettings().catch(() => {});
   try {

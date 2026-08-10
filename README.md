@@ -323,6 +323,36 @@ satu menghapus yang lain.
   memblokirnya, indikator tetap "Terhubung" dan aplikasi memakai polling —
   datanya tetap benar, hanya tidak seketika.
 
+## Santri Aktif vs Baris Database
+
+Tabel `students` **tidak pernah menghapus baris**: santri yang lulus/pindah/
+keluar hanya berubah `status_kelulusan`-nya, dan calon santri SPMB tinggal di
+tabel yang sama dengan status `calon`. Jadi **jumlah baris ≠ jumlah santri
+aktif**.
+
+Konvensi di seluruh aplikasi: **`status_kelulusan` kosong = aktif**. Helper
+bersamanya ada di `js/helpers.js`:
+
+```js
+isSantriAktif(s)   // true bila santri sedang belajar sekarang
+santriAktif(list)  // saring daftar jadi santri aktif saja
+```
+
+Dashboard dulu memakai `appState.students.length` mentah dan melabelinya
+"Santri Aktif" — jadi 108 santri aktif + 60 alumni + 20 calon + 14 pindah/keluar
+tampil sebagai **202**. Sekarang yang disaring:
+
+| Bagian | Perlakuan |
+|--------|-----------|
+| Kartu **Total Santri** | santri aktif saja; jumlah non-aktif ditulis di sub-label, rinciannya muncul saat kursor diarahkan ke kartu |
+| Kartu **Total Tunggakan** | tunggakan santri aktif; tunggakan santri non-aktif ditampilkan terpisah agar tidak hilang dari pandangan |
+| **Rekap Per Kelas** | santri aktif saja — alumni tidak lagi menumpuk di baris kelas 9 |
+| **Bulan Aktif SPP** | pembandingnya santri aktif |
+| **Rekap cetak / PDF** | santri aktif saja |
+| Kartu **Total Terkumpul** | **tidak** disaring — pembayaran santri yang sudah tidak aktif tetap pemasukan yang nyata |
+
+Untuk melihat baris non-aktifnya: **Data Siswa** → filter status.
+
 ## Periksa & Pulihkan Data (Pengaturan → 🩺)
 
 Alat rekonsiliasi untuk **memulihkan pembayaran yang hilang** karena input dari
