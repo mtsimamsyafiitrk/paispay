@@ -353,6 +353,19 @@ Yang sudah ditangani dengan benar saat membaca buku besar:
 | Kuitansi koreksi "batalkan" | efeknya dinetralkan, bulan tidak ikut ditandai lunas |
 | Kuitansi koreksi "ubah nilai" | selisihnya dihitung dari kuitansi asal (`ref_no_kuitansi`) |
 | `SPP Tunggakan TA 2024/2025` | TA-nya dibaca dari nama item → masuk `spp_history`, bukan TA berjalan |
+| Santri baru bayar SPP di muka | tidak dilaporkan hilang — lihat catatan `ta_label` di bawah |
+
+**Catatan penting soal `ta_label`.** Kolom `ta_label` pada kuitansi hanya
+merekam isi *Profil Madrasah → Tahun Ajaran* **pada saat pembayaran disimpan** —
+bukan tahun ajaran yang dibayar. Contoh nyata: calon santri kelas 7 TA 2026/2027
+membayar SPP Juli–Oktober lebih awal, saat profil masih tertulis 2025/2026.
+Kuitansinya ber-`ta_label` 2025/2026 padahal bulan yang dibayar milik 2026/2027.
+
+Karena itu `ta_label` hanya dipakai sebagai **dugaan**, tidak pernah sebagai
+dasar menyimpulkan data hilang. Hanya nama item (`SPP Tunggakan TA 2024/2025`)
+yang dianggap sumber pasti. Bulan yang sudah tercatat lunas **di mana pun**
+(tahun berjalan maupun riwayat TA mana saja) tidak akan dilaporkan sebagai
+temuan.
 
 **Yang tidak bisa dipulihkan** (tidak ada jejaknya di buku besar) — dilaporkan
 sebagai peringatan, tidak diperbaiki otomatis:
