@@ -343,6 +343,7 @@ function renderTunggakanDetail(s) {
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" onclick="quickInput('${nameSafe}')">💳 Bayar Sekarang</button>
         <button class="btn btn-outline btn-sm" onclick="openEditPembayaran('${nameSafe}')">✏️ Edit Pembayaran</button>
+        <button class="btn btn-outline btn-sm" onclick="openTunggakanLamaModal('${nameSafe}')">🗓️ Tunggakan TA Lama</button>
         <button class="btn btn-outline btn-sm" onclick="showDetail('${nameSafe}')">📋 Detail Lengkap</button>
       </div>
     </div>`;
