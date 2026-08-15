@@ -108,7 +108,18 @@ async function sbRefresh() {
     if (!r.ok || !data.access_token) { saveSession(null); return false; }
     _storeSession(data);
     return true;
-  } catch { return false; }
+  } catch {
+    // Gagal karena jaringan (bukan karena ditolak server). Sesi yang MASIH
+    // berlaku sengaja dipertahankan supaya aplikasi tetap bisa dipakai saat
+    // internet putus.
+    //
+    // Tapi bila tokennya sudah kadaluarsa, kita tidak punya bukti apa pun
+    // bahwa sesi ini sah — buang saja. Tanpa ini, token basi yang tertinggal
+    // di perangkat cukup dipakai dalam keadaan offline (mis. mode pesawat)
+    // untuk membuka seluruh data santri dari cache tanpa password.
+    if (!sbSession.expires_at || Date.now() >= sbSession.expires_at) saveSession(null);
+    return false;
+  }
 }
 
 async function sbSignOut() {

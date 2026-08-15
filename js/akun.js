@@ -1,10 +1,6 @@
-// ── SiPay · Akun Admin, EmailJS & Notifikasi ──
+// ── SiPay · Akun Admin ──
 // AKUN ADMIN
 // ══════════════════════════════════════════
-const EMAILJS_SVC  = 'service_44479eq';
-const EMAILJS_TPL  = 'template_wo9w96i';
-const EMAILJS_KEY  = 'OKFiGZTDpsAbkIFCZ';
-
 // Data akun untuk tampilan (nama, email kontak, hp). Password TIDAK lagi
 // disimpan di sini — kredensial dikelola Supabase Auth.
 function getAkunData() {
@@ -46,68 +42,23 @@ async function saveEditAkun() {
   toast('✅ Profil akun berhasil disimpan!');
 }
 
-let otpCode = '', otpExpiry = 0, otpTimerInterval = null;
-
 // Ganti password: admin sudah terautentikasi (punya sesi), jadi tak perlu OTP
 // email lagi — langsung ke input password baru, lalu update via Supabase Auth.
+//
+// Alur OTP lama sudah DIBUANG. Selain tak terpakai (openGantiPassword langsung
+// ke langkah 3), kodenya dibuat DAN dicocokkan di dalam browser
+// (`input !== otpCode`) — pola yang bisa dilewati siapa pun lewat konsol, jadi
+// tidak layak dihidupkan lagi. Ikut terbuang: pustaka EmailJS dari CDN beserta
+// kunci publiknya.
 function openGantiPassword() {
   if (!hasAdminSession()) { toast('⚠️ Sesi berakhir — login ulang dulu'); return; }
-  document.getElementById('gp_step1').style.display = 'none';
-  document.getElementById('gp_step2').style.display = 'none';
-  document.getElementById('gp_step3').style.display = 'block';
   document.getElementById('gp_newpass').value = '';
   document.getElementById('gp_newpass2').value = '';
   document.getElementById('gp_step3_error').style.display = 'none';
   document.getElementById('gantiPassModal').classList.add('open');
 }
 function closeGantiPass() {
-  clearInterval(otpTimerInterval);
   document.getElementById('gantiPassModal').classList.remove('open');
-}
-async function sendOTP(resend) {
-  const a = getAkunData();
-  if (!a.email) { toast('⚠️ Email belum diisi'); return; }
-  otpCode   = String(Math.floor(100000 + Math.random() * 900000));
-  otpExpiry = Date.now() + 5 * 60 * 1000;
-  const btn = document.getElementById('gp_sendBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Mengirim...'; }
-  try {
-    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, { to_email: a.email, otp_code: otpCode }, EMAILJS_KEY);
-    document.getElementById('gp_step1').style.display = 'none';
-    document.getElementById('gp_step2').style.display = 'block';
-    document.getElementById('gp_otp').value = '';
-    document.getElementById('gp_step2_error').style.display = 'none';
-    startOTPTimer();
-    toast('📧 Kode OTP dikirim ke email!');
-  } catch(e) {
-    const err = document.getElementById('gp_step1_error');
-    err.textContent = '❌ Gagal kirim email: ' + (e.text || e.message || 'Cek koneksi internet');
-    err.style.display = 'block';
-    if (btn) { btn.disabled = false; btn.textContent = '📧 Kirim Kode Verifikasi'; }
-  }
-}
-function startOTPTimer() {
-  clearInterval(otpTimerInterval);
-  const el = document.getElementById('gp_timer');
-  otpTimerInterval = setInterval(() => {
-    const sisa = Math.max(0, Math.ceil((otpExpiry - Date.now()) / 1000));
-    const m = Math.floor(sisa / 60), s = sisa % 60;
-    el.textContent = sisa > 0 ? `⏱️ Kode berlaku ${m}:${String(s).padStart(2,'0')}` : '⌛ Kode kadaluarsa. Kirim ulang.';
-    if (sisa === 0) clearInterval(otpTimerInterval);
-  }, 1000);
-}
-function verifyOTP() {
-  const input = document.getElementById('gp_otp').value.trim();
-  const errEl = document.getElementById('gp_step2_error');
-  if (!input) { errEl.textContent = '⚠️ Masukkan kode OTP dulu'; errEl.style.display='block'; return; }
-  if (Date.now() > otpExpiry) { errEl.textContent = '⌛ Kode kadaluarsa. Kirim ulang.'; errEl.style.display='block'; return; }
-  if (input !== otpCode) { errEl.textContent = '❌ Kode OTP salah. Coba lagi.'; errEl.style.display='block'; return; }
-  clearInterval(otpTimerInterval);
-  document.getElementById('gp_step2').style.display = 'none';
-  document.getElementById('gp_step3').style.display = 'block';
-  document.getElementById('gp_newpass').value = '';
-  document.getElementById('gp_newpass2').value = '';
-  document.getElementById('gp_step3_error').style.display = 'none';
 }
 async function saveNewPassword() {
   const p1 = document.getElementById('gp_newpass').value;
@@ -128,7 +79,6 @@ async function saveNewPassword() {
   setTimeout(doLogout, 1500);
 }
 document.addEventListener('DOMContentLoaded', () => {
-  if (typeof emailjs !== 'undefined') emailjs.init(EMAILJS_KEY);
   renderAkunPage();
   const em = document.getElementById('editAkunModal');
   if (em) em.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });

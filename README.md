@@ -261,6 +261,47 @@ Seluruh data santri tertutup dari publik.
 > Supabase SQL Editor, lalu buat 1 akun admin di *Authentication → Users* dan
 > **matikan pendaftaran publik**. Langkah lengkap ada di komentar file SQL tersebut.
 
+### Kenapa dua langkah setup itu tidak boleh dilewat
+
+Aplikasi ini berjalan penuh di browser, jadi URL Supabase dan *anon key* di
+`js/config.js` memang terbaca siapa pun — itu wajar dan bukan kebocoran (anon
+key dirancang untuk publik). Konsekuensinya: **satu-satunya kunci pintu adalah
+RLS di server**. Kalau `supabase_migration_auth.sql` belum dijalankan, atau
+pendaftaran publik masih menyala, seluruh data santri terbuka untuk internet.
+
+Verifikasi cepat — buka di jendela penyamaran, ganti `<ANON_KEY>` dengan nilai
+`SB_KEY`. Keduanya harus tertutup:
+
+```
+<SB_URL>/rest/v1/students?select=nama&limit=1&apikey=<ANON_KEY>
+  → harus "permission denied", BUKAN daftar nama santri
+<SB_URL>/auth/v1/settings?apikey=<ANON_KEY>
+  → harus memuat "disable_signup": true
+```
+
+`supabase_migration.sql` (reset penuh) kini **ikut memasang kebijakan
+admin-only sejak awal**. Sebelumnya file itu memasang `anon_all … USING (true)`,
+sehingga reset penuh diam-diam membuka kembali seluruh data ke publik walau
+migrasi auth sudah pernah dijalankan.
+
+### Data di perangkat & layar login
+
+Salinan data untuk mode offline (`sipay_state` di localStorage) kini:
+
+* hanya **ditulis** bila ada sesi admin,
+* hanya **dipulihkan** bila ada sesi admin,
+* dan **dihapus** saat logout maupun saat halaman dibuka tanpa sesi yang sah —
+  bersama `sipay_akun` (email & HP admin). Branding madrasah (`sipay_profil`,
+  `sipay_logo`) dipertahankan karena memang publik dan dipakai layar login.
+
+Ini menutup jalur masuk tanpa password: dulu halaman yang dibuka tanpa login
+tetap memulihkan cache dan menggambar seluruh dashboard di balik layar login —
+sementara layar login sendiri hanyalah lapisan CSS yang bisa dihapus lewat menu
+*Inspect*. Sesi yang tokennya sudah kadaluarsa juga tidak lagi dipertahankan
+saat Supabase tak terjangkau, supaya token basi tidak bisa dipakai membuka cache
+dalam keadaan offline. Sesi yang **masih berlaku** tetap boleh memakai cache,
+jadi pemakaian saat internet putus tidak terganggu.
+
 ## Sinkronisasi Multi-Device
 
 SiPay memakai Supabase sebagai satu-satunya sumber data — semua device (HP

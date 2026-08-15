@@ -626,6 +626,32 @@ async function refreshStudent(nama) {
   return before !== JSON.stringify([fresh, freshTagihan]);
 }
 
+// ── Bersihkan seluruh jejak data di perangkat ──
+// Dipakai saat logout DAN saat halaman dibuka tanpa sesi yang sah. Dua-duanya
+// perlu: 'sipay_state' berisi salinan lengkap data santri (nama, NISN, riwayat
+// pembayaran) dalam teks biasa, dan dulu tetap tertinggal setelah admin keluar
+// — di komputer yang dipakai bergantian, sisa itu terbaca pengguna berikutnya.
+//
+// 'sipay_profil' & 'sipay_logo' sengaja DIPERTAHANKAN: isinya branding madrasah
+// yang memang boleh dibaca publik (lihat policy "public_brand"), dan layar login
+// memakainya sebelum settings dari server termuat.
+function clearLocalData() {
+  localStorage.removeItem('sipay_state');   // data santri
+  localStorage.removeItem('sipay_akun');    // email & HP admin
+  localStorage.removeItem('sipay_admin');   // label nama admin
+  appState.students     = [];
+  appState.transactions = [];
+  appState.tagihan      = [];
+  // Gambar ulang supaya tabel yang sempat terisi tidak tertinggal di DOM —
+  // layar login hanyalah lapisan tampilan, isi di baliknya tetap bisa dibuka.
+  try {
+    renderDashboard();
+    renderSiswaTable();
+    renderTunggakan();
+    renderCetakNamaOptions();
+  } catch { /* halaman belum siap — tidak apa-apa */ }
+}
+
 // ── Load semua data ──
 // opts.silent = sinkronisasi latar belakang (tanpa spanduk "Memuat data...",
 // dan pilihan pada dropdown Cetak dipertahankan).
@@ -639,15 +665,19 @@ async function loadDataForTA(opts = {}) {
     appState.students     = students;
     appState.transactions = transactions;
     appState.tagihan      = tagihan;
-    try {
-      localStorage.setItem('sipay_state', JSON.stringify({
-        students: appState.students,
-        transactions: appState.transactions,
-        tagihan: appState.tagihan,
-        payItems: appState.payItems,
-        savedAt: new Date().toISOString(),
-      }));
-    } catch { /* quota exceeded */ }
+    // Salinan lokal HANYA untuk admin yang sedang login. Tanpa penjagaan ini,
+    // sesi apa pun bisa meninggalkan data santri di perangkat.
+    if (hasAdminSession()) {
+      try {
+        localStorage.setItem('sipay_state', JSON.stringify({
+          students: appState.students,
+          transactions: appState.transactions,
+          tagihan: appState.tagihan,
+          payItems: appState.payItems,
+          savedAt: new Date().toISOString(),
+        }));
+      } catch { /* quota exceeded */ }
+    }
     if (!silent) showSyncIndicator('✅ Data dimuat', 2000);
     const gi = document.getElementById('gasIcon'); if(gi) gi.textContent='🟢';
     const gl = document.getElementById('gasLabel');
@@ -691,14 +721,22 @@ async function initApp() {
     await loadDataForTA();
   } catch(e) {
     console.error('loadDataForTA error:', e);
-    showSyncIndicator('⚠️ Offline — pakai data lokal', 3000);
     const gi2 = document.getElementById('gasIcon'); if(gi2) gi2.textContent='🔴';
     const gl2 = document.getElementById('gasLabel'); if(gl2) gl2.textContent='Offline';
-    const saved = JSON.parse(localStorage.getItem('sipay_state') || 'null');
-    if (saved?.students)         appState.students     = saved.students;
-    if (saved?.transactions)     appState.transactions = saved.transactions;
-    if (saved?.tagihan)          appState.tagihan      = saved.tagihan;
-    if (saved?.payItems?.length) appState.payItems     = saved.payItems;
+    // Salinan lokal hanya boleh dipulihkan untuk admin yang memegang sesi.
+    // Dulu blok ini berjalan tanpa syarat: pengunjung tanpa login pun membuat
+    // server menolak (401) lalu data santri dari cache digambar penuh di balik
+    // layar login — bisa dilihat siapa saja tanpa password lewat menu Inspect.
+    if (hasAdminSession()) {
+      showSyncIndicator('⚠️ Offline — pakai data lokal', 3000);
+      const saved = JSON.parse(localStorage.getItem('sipay_state') || 'null');
+      if (saved?.students)         appState.students     = saved.students;
+      if (saved?.transactions)     appState.transactions = saved.transactions;
+      if (saved?.tagihan)          appState.tagihan      = saved.tagihan;
+      if (saved?.payItems?.length) appState.payItems     = saved.payItems;
+    } else {
+      clearLocalData();
+    }
   }
   renderDashboard();
   renderSiswaTable();
