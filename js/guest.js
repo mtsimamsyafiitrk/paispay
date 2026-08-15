@@ -14,7 +14,7 @@ async function doLogout() {
   await sbSignOut();               // revoke & hapus token admin (bila ada)
   localStorage.removeItem('sipay_auth');
   localStorage.removeItem('sipay_guest');
-  localStorage.removeItem('sipay_admin');
+  clearLocalData();                // hapus salinan data santri & kontak admin
   guestData = { siswa: null, txns: [] };
   showPage('dashboard');
   document.getElementById('loginUser').value = '';

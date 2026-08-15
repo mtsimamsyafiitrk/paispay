@@ -20,13 +20,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('biManualModal')?.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
   document.getElementById('biMassalModal')?.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('open'); });
   applyProfil();
-  await initApp();
 
-  // Restore sesi setelah data dimuat
-  // Refresh token bila hampir/kadung kadaluarsa sebelum memutuskan status login.
+  // Pastikan sesi masih sah SEBELUM data apa pun dimuat atau digambar.
+  // Dulu urutannya terbalik — initApp() berjalan lebih dulu, sempat memulihkan
+  // data santri dari cache dan menggambarnya, baru sesinya diperiksa.
   if (hasAdminSession() && sbSession.expires_at && Date.now() > sbSession.expires_at - 60000) {
     await sbRefresh();
   }
+
+  await initApp();
+
   if (isLoggedIn()) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('adminLabel').textContent = getAdminCreds().user;
@@ -38,6 +41,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Bersihkan sisa penanda sesi lama (termasuk mode wali yang telah dihapus)
     localStorage.removeItem('sipay_auth');
     localStorage.removeItem('sipay_guest');
+    // Tanpa sesi yang sah, jangan tinggalkan data apa pun di balik layar login.
+    // Penjagaan ini menutup kasus token kadaluarsa: initApp() sempat berjalan
+    // saat token masih ada, lalu sbRefresh() di atas gagal dan sesi dibuang —
+    // salinan lokal yang terlanjur dimuat harus ikut dibersihkan.
+    clearLocalData();
     setTimeout(() => document.getElementById('loginUser').focus(), 150);
   }
 });
