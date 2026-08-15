@@ -247,37 +247,17 @@ function onStudentSelect() {
   document.getElementById('inputKelas').textContent = kelasLabel(s);
   document.getElementById('inputNISN').textContent = s.nisn || '(belum diisi)';
 
-  const tunggakSPP   = sppTunggakan(s);
-  const tunggakPrev  = sppTunggakanPrev(s);
-  const tunggakItem  = itemsTunggakan(s);
-  const totalTungk   = tunggakSPP + tunggakPrev + tunggakItem;
-
-  // Baris tagihan item (tetap) yang masih ada sisa
-  const tagihanRows = appState.tagihan
-    .filter(t => t.nama === s.nama && t.nominal > 0)
-    .map(t => {
-      const sisa = Math.max(0, t.nominal - t.paid_amount);
-      return `<div style="font-size:12px;color:var(--text-muted);">${esc(t.item_name)}</div>
-        <div style="font-size:12px;font-weight:600;color:${sisa>0?'var(--danger)':'var(--primary-light)'};">
-          ${sisa > 0 ? rp(sisa) + ' <span style="font-weight:400;font-size:10px;">(sisa)</span>' : '✅ Lunas'}
-        </div>`;
-    }).join('');
-
+  // Fakta ringkas santri saja. Rincian tunggakan sengaja TIDAK diulang di sini:
+  // blok ini dulu menyalin persis isi panel "Total Seluruh Tunggakan" di kolom
+  // kanan, sehingga angka yang sama terbaca dua kali dalam satu layar. Panel
+  // kanan yang dipertahankan karena sekaligus punya tombol centang-semua.
+  const bulanTerbayar = (s.spp_paid_months || []).length;
   document.getElementById('studentSummary').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="font-size:12px;color:var(--text-muted);">SPP/bulan</div>
-      <div style="font-size:12px;font-weight:600;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);">Belum diisi</span>'}</div>
-      <div style="font-size:12px;color:var(--text-muted);">Bulan dibayar</div>
-      <div style="font-size:12px;font-weight:600;">${(s.spp_paid_months||[]).length} bulan</div>
-      <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP <span style="font-size:10px;">(s/d bulan berjalan)</span></div>
-      <div style="font-size:12px;font-weight:600;color:${tunggakSPP>0?'var(--danger)':'var(--primary-light)'};">${rp(tunggakSPP)}${tunggakSPP>0?` <span style="font-weight:400;font-size:10px;">(${sppUnpaidDueMonths(s).length} bln)</span>`:''}</div>
-      ${sppTunggakanPrevList(s).map(y => `
-      <div style="font-size:12px;color:var(--text-muted);padding-left:8px;">↳ SPP TA ${esc(y.ta)} <span style="font-size:10px;">(${y.unpaid.length} bln)</span></div>
-      <div style="font-size:12px;font-weight:600;color:var(--danger);">${rp(y.amount)}</div>`).join('')}
-      ${tagihanRows}
-      ${totalTungk > 0
-        ? `<div style="font-size:12px;font-weight:700;color:var(--danger);grid-column:1/-1;margin-top:4px;padding-top:6px;border-top:1px solid var(--border);">Total Tunggakan: ${rp(totalTungk)}</div>`
-        : `<div style="font-size:12px;font-weight:700;color:var(--primary-light);grid-column:1/-1;margin-top:4px;">✅ Semua pembayaran lunas</div>`}
+    <div style="margin-top:14px;padding:12px 14px;background:var(--primary-pale);border-radius:12px;display:grid;grid-template-columns:1fr auto;gap:7px 14px;align-items:baseline;">
+      <div style="font-size:12px;color:var(--text-muted);">SPP per bulan</div>
+      <div style="font-size:12.5px;font-weight:700;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);font-weight:400;">Belum diisi</span>'}</div>
+      <div style="font-size:12px;color:var(--text-muted);">Bulan SPP terbayar</div>
+      <div style="font-size:12.5px;font-weight:700;">${bulanTerbayar} <span style="font-weight:400;color:var(--text-muted);">dari ${MONTHS.length} bulan</span></div>
     </div>
   `;
   renderPaymentItems(s);
@@ -383,7 +363,10 @@ function renderPaymentItems(student) {
   let html = activeItems.map(item => {
     let amount = item.amount;
     let extra = '';
-    let disabled = false;
+    // Item yang tak perlu tindakan (sudah lunas / nominal belum diatur) tidak
+    // lagi digambar sebagai kartu penuh yang diredupkan — cukup satu baris
+    // tipis, supaya perhatian tertuju pada item yang masih harus dibayar.
+    let doneNote = null;
 
     if (item.type === 'bulanan' && student) {
       amount = student.spp || item.amount || 0;
@@ -399,8 +382,7 @@ function renderPaymentItems(student) {
           ${MONTH_FULL[m]}
         </label>`;
       if (tunggak.length === 0 && dimuka.length === 0) {
-        extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Semua bulan sudah lunas</div>`;
-        disabled = true;
+        doneNote = { kind: 'lunas', text: 'Semua bulan sudah lunas' };
       } else if (amount > 0) {
         extra = `<div style="margin-top:8px;">
           ${tunggak.length ? `
@@ -424,11 +406,9 @@ function renderPaymentItems(student) {
       const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : item.amount;
       amount = sisa;
       if (t && t.nominal <= 0) {
-        extra = `<div style="margin-top:6px;font-size:12px;color:var(--accent);font-weight:600;">⚠️ Nominal belum diatur — atur dulu di menu "Kelola Item Bayar"</div>`;
-        disabled = true;
+        doneNote = { kind: 'warn', text: 'Nominal belum diatur — atur di "Kelola Item Bayar"' };
       } else if (t && sisa <= 0) {
-        extra = `<div style="margin-top:6px;font-size:12px;color:var(--primary-light);font-weight:600;">✅ Lunas (${rp(t.nominal)})</div>`;
-        disabled = true;
+        doneNote = { kind: 'lunas', text: 'Lunas ' + rp(t.nominal) };
       } else if (t) {
         extra = `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
             Total: <strong>${rp(t.nominal)}</strong> &nbsp;|&nbsp;
@@ -450,18 +430,24 @@ function renderPaymentItems(student) {
       extra = `<div class="pay-item-custom" style="margin-top:6px;"><input type="number" id="custom_${item.id}" placeholder="Nominal..." value="${amount||''}" oninput="calcTotal()" style="font-size:12px;padding:4px 8px;width:150px;"></div>`;
     }
 
-    return `<div class="pay-item" ${disabled ? 'style="opacity:.5;pointer-events:none;"' : ''}>
-      <input type="checkbox" id="chk_${item.id}" onchange="calcTotal()" ${disabled ? 'disabled' : ''}>
+    // Baris tipis: tidak ada checkbox sama sekali. calcTotal(), submitPayment(),
+    // dan selectAllTunggakan() sudah melewati item yang checkbox-nya tak ada.
+    if (doneNote) {
+      return `<div class="pay-item-done ${doneNote.kind === 'warn' ? 'is-warn' : 'is-lunas'}">
+        <span class="pid-mark">${doneNote.kind === 'warn' ? '⚠️' : '✓'}</span>
+        <span class="pid-name">${esc(item.name)}</span>
+        <span class="pid-note">${esc(doneNote.text)}</span>
+      </div>`;
+    }
+
+    return `<div class="pay-item">
+      <input type="checkbox" id="chk_${item.id}" onchange="calcTotal()">
       <div class="pay-item-info">
         <div class="pay-item-name">${esc(item.name)}${item._fromTagihan ? ' <span style="font-size:10px;font-weight:700;color:var(--danger);background:var(--danger-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">tunggakan lama</span>' : ''}</div>
         <div class="pay-item-amount">${
           item.type === 'custom' ? 'Nominal custom'
           : item.type === 'tetap' && student
-            ? (() => {
-                const tt = findTagihan(student.nama, item.id);
-                if (tt && tt.nominal <= 0) return '<span style="font-size:11px;color:var(--accent);">Nominal belum diatur</span>';
-                return amount > 0 ? rp(amount) + ' <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(sisa)</span>' : '✅ Lunas';
-              })()
+            ? rp(amount) + ' <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(sisa)</span>'
             : rp(amount)
         }</div>
         ${extra}
