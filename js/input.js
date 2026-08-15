@@ -367,6 +367,9 @@ function renderPaymentItems(student) {
     // lagi digambar sebagai kartu penuh yang diredupkan — cukup satu baris
     // tipis, supaya perhatian tertuju pada item yang masih harus dibayar.
     let doneNote = null;
+    // Tagihan santri untuk item ini, dipakai bersama oleh semua cabang di bawah
+    // (termasuk cabang 'custom', yang dulu tidak memeriksanya sama sekali).
+    const tagih = student ? findTagihan(student.nama, item.id) : null;
 
     if (item.type === 'bulanan' && student) {
       amount = student.spp || item.amount || 0;
@@ -402,12 +405,16 @@ function renderPaymentItems(student) {
         </div>`;
       }
     } else if (item.type === 'tetap' && student) {
-      const t = findTagihan(student.nama, item.id);
-      const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : item.amount;
+      const t = tagih;
+      const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
       amount = sisa;
-      if (t && t.nominal <= 0) {
+      // Syarat "nominal belum diatur" & "lunas" TIDAK boleh bergantung pada
+      // adanya baris tagihan. Dulu keduanya diawali `t &&`, sehingga item aktif
+      // yang belum punya tagihan dan nominalnya Rp 0 lolos ke bawah tanpa
+      // cabang mana pun — tergambar sebagai kartu bercentang "Rp 0 (sisa)".
+      if (t ? t.nominal <= 0 : (item.amount || 0) <= 0) {
         doneNote = { kind: 'warn', text: 'Nominal belum diatur — atur di "Kelola Item Bayar"' };
-      } else if (t && sisa <= 0) {
+      } else if (sisa <= 0) {
         doneNote = { kind: 'lunas', text: 'Lunas ' + rp(t.nominal) };
       } else if (t) {
         extra = `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
@@ -427,7 +434,15 @@ function renderPaymentItems(student) {
           </div>`;
       }
     } else if (item.type === 'custom') {
-      extra = `<div class="pay-item-custom" style="margin-top:6px;"><input type="number" id="custom_${item.id}" placeholder="Nominal..." value="${amount||''}" oninput="calcTotal()" style="font-size:12px;padding:4px 8px;width:150px;"></div>`;
+      // Cabang ini dulu mengabaikan tagihan sepenuhnya: item custom yang sudah
+      // lunas tetap tampil bercentang dengan kolom nominal kosong. Karena
+      // submitPayment() mengecualikan tipe custom dari penjagaan `amount <= 0`,
+      // mencentangnya akan mencatat baris pembayaran Rp 0 di kuitansi.
+      if (tagih && tagih.nominal > 0 && (tagih.nominal - tagih.paid_amount) <= 0) {
+        doneNote = { kind: 'lunas', text: 'Lunas ' + rp(tagih.nominal) };
+      } else {
+        extra = `<div class="pay-item-custom" style="margin-top:6px;"><input type="number" id="custom_${item.id}" placeholder="Nominal..." value="${amount||''}" oninput="calcTotal()" style="font-size:12px;padding:4px 8px;width:150px;"></div>`;
+      }
     }
 
     // Baris tipis: tidak ada checkbox sama sekali. calcTotal(), submitPayment(),
@@ -447,7 +462,9 @@ function renderPaymentItems(student) {
         <div class="pay-item-amount">${
           item.type === 'custom' ? 'Nominal custom'
           : item.type === 'tetap' && student
-            ? rp(amount) + ' <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(sisa)</span>'
+            // "(sisa)" hanya benar bila santri ini memang punya tagihannya.
+            // Tanpa tagihan, angkanya adalah nominal baku item — belum ditagihkan.
+            ? rp(amount) + `<span style="font-size:10px;font-weight:400;color:var(--text-muted);"> ${tagih ? '(sisa)' : '(belum ditagihkan)'}</span>`
             : rp(amount)
         }</div>
         ${extra}
