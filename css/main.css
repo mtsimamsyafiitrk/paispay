@@ -262,10 +262,15 @@ textarea { resize: vertical; min-height: 80px; }
 .seg-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
 /* ══ PAYMENT ITEMS ══ */
+/* Kolom kiri halaman Input Pembayaran: kartu "Pilih Santri" + "Rincian
+   Pembayaran" ditumpuk. Sengaja di CSS, bukan inline, supaya media query di
+   bawah bisa mengubahnya jadi display:contents untuk penataan ulang di HP. */
+.input-col-left { display: flex; flex-direction: column; gap: 20px; }
+
 .payment-items { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
 
 .pay-item {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: flex-start; gap: 12px;
   background: var(--bg); border-radius: var(--radius-sm);
   padding: 11px 13px;
   border: 1.5px solid transparent;
@@ -277,11 +282,30 @@ textarea { resize: vertical; min-height: 80px; }
   background: var(--primary-pale);
 }
 
-.pay-item input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary-light); cursor: pointer; flex-shrink: 0; }
+/* margin-top menyejajarkan kotak centang dengan baris nama item, bukan dengan
+   tengah kartu — item bertunggakan bisa setinggi beberapa baris. */
+.pay-item input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary-light); cursor: pointer; flex-shrink: 0; margin-top: 1px; }
 .pay-item-info { flex: 1; min-width: 0; }
 .pay-item-name { font-weight: 600; font-size: 13px; }
 .pay-item-amount { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
 .pay-item-custom input { width: 130px; }
+
+/* Item yang tak perlu tindakan (lunas / nominal belum diatur): satu baris tipis
+   supaya tidak menyita perhatian sebesar item yang masih harus dibayar. */
+.pay-item-done {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 7px 13px; font-size: 12px; line-height: 1.45;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+.pay-item-done .pid-mark { flex-shrink: 0; font-weight: 700; }
+.pay-item-done .pid-name { font-weight: 600; color: var(--text-muted); }
+.pay-item-done .pid-note { color: var(--text-muted); margin-left: auto; text-align: right; }
+.pay-item-done.is-lunas .pid-mark { color: var(--primary-light); }
+.pay-item-done.is-warn  { border-color: var(--accent); }
+.pay-item-done.is-warn .pid-mark,
+.pay-item-done.is-warn .pid-note { color: var(--accent); }
 
 /* ══ MONTH GRID ══ */
 .month-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
@@ -437,6 +461,16 @@ textarea { resize: vertical; min-height: 80px; }
   #page-input > div > div { grid-template-columns: 1fr !important; }
   #page-pengaturan > div { grid-template-columns: 1fr !important; }
   #page-tahun-ajaran > div { grid-template-columns: 1fr !important; }
+
+  /* Di layar sempit kedua kolom menumpuk, jadi urutannya harus mengikuti alur
+     kerja: pilih santri → pilih item → isi rincian & simpan. Tanpa ini tombol
+     "Simpan Pembayaran" muncul sebelum daftar item yang mau dibayar.
+     display:contents melepas kedua kartu kiri menjadi anak langsung grid,
+     supaya bisa diselang dengan panel item di kolom kanan. */
+  .input-col-left { display: contents; }
+  .input-col-left > .card:first-child { order: 1; }   /* Pilih Santri     */
+  #itemBayarCard                      { order: 2; }   /* Item Pembayaran  */
+  .input-col-left > .card:last-child  { order: 3; }   /* Rincian + Simpan */
 }
 
 @media (max-width: 480px) {
