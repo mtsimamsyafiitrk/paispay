@@ -214,6 +214,7 @@ async function confirmImport() {
         kelas: latestData.kelas || base.kelas,
         spp: latestData.spp || base.spp,
         spp_paid_months: latestData.spp_paid_months || base.spp_paid_months,
+        spp_history: {},
         status_kelulusan: status || '',
       };
       appState.students.push(newSiswa);

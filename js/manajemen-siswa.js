@@ -378,6 +378,7 @@ async function saveNewSiswa() {
     nama, kelas,
     nisn: document.getElementById('ns_nisn').value.trim(),
     spp, spp_paid_months: paid_months,
+    spp_history: {}, status_kelulusan: '',
   };
 
   const existIdx = findExistingSiswaIdx(newSiswa);
@@ -510,7 +511,14 @@ async function saveEditSiswa() {
   if (idx < 0) { toast('⚠️ Data tidak ditemukan!'); return; }
 
   const oldData = appState.students[idx];
+  // WAJIB menyalin data lama (`...oldData`) lebih dulu: form ini hanya memuat
+  // nama/kelas/NISN/SPP. Tanpa penyalinan, field yang tidak ada di form akan
+  // ikut terhapus — terutama `spp_history` (tunggakan SPP tahun ajaran
+  // sebelumnya) dan `status_kelulusan`. Riwayat tunggakan itu tidak bisa
+  // dibentuk ulang dari kuitansi (bulan yang belum pernah dibayar tak
+  // meninggalkan jejak), jadi sekali terhapus datanya hilang permanen.
   appState.students[idx] = {
+    ...oldData,
     nama:            newNama,
     kelas,
     nisn:            document.getElementById('ed_nisn').value.trim(),
