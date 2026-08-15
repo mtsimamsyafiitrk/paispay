@@ -21,6 +21,7 @@ sipay/
 │   ├── manajemen-siswa.js  # Tambah/edit/hapus/bulk siswa
 │   ├── import.js           # Import siswa dari Excel/CSV
 │   ├── import-tunggakan.js # Import tunggakan lama lintas tahun ajaran
+│   ├── tunggakan-lama.js   # Editor tunggakan SPP TA sebelumnya per santri
 │   ├── auth.js             # Login admin via Supabase Auth
 │   ├── guest.js            # Modal logout (sisa mode wali telah dihapus)
 │   ├── kuitansi.js         # Modal kuitansi, hapus, cetak, riwayat
@@ -101,6 +102,37 @@ item yang belum ada ditambahkan otomatis ke *Kelola Item Bayar*.
   lunas/belum per bulan, jadi bulan yang baru terbayar sebagian dicatat *belum
   lunas* (nominal penuh) dan dilaporkan di pratinjau.
 - **Nilai tunggakan negatif** (kelebihan bayar) dianggap **0** dan dilaporkan.
+
+## Editor Tunggakan TA Sebelumnya (per santri, tanpa file)
+
+Untuk satu-dua santri, tunggakan tahun ajaran lama tidak perlu lewat file.
+Buka lewat salah satu dari:
+
+- **Tunggakan → cari santri → 🗓️ Tunggakan TA Lama**
+- **Data Siswa → ✏️ Edit Data → 🗓️ Atur Tunggakan TA Sebelumnya**
+
+Tiap tahun ajaran jadi satu kartu berisi label TA, kelas saat itu, SPP per bulan,
+dan 12 baris bulan. Centang bulan yang **ditagih** pada TA tersebut, isi
+nominalnya, lalu isi kolom **Sudah dibayar** (0 = belum bayar sama sekali,
+sebagian = angsuran, sama dengan nominal = lunas). Sisanya langsung muncul
+sebagai tunggakan di **Input Pembayaran**. Tombol cepat tersedia untuk menagih
+12 bulan sekaligus, menyamakan nominal, serta menandai semua lunas/belum bayar.
+
+Yang perlu diketahui:
+
+- Data ditulis dalam **bentuk rinci** (`spp_history[TA].months = { Jul: {n,d}, … }`)
+  sehingga nominal boleh berbeda antar bulan dan angsuran sebagian tercatat utuh.
+  `spp`, `kelas`, dan `spp_paid_months` tetap ikut ditulis agar pembacaan bentuk
+  ringkas (mis. *Periksa & Pulihkan Data*) tetap jalan.
+- Editor **selalu memuat dari server**, bukan dari salinan di browser. Bila
+  riwayat berubah dari perangkat lain sejak modal dibuka, penyimpanan dibatalkan
+  dan isian dimuat ulang untuk diperiksa — bukan diam-diam ditimpa.
+- Menyimpan hanya menyentuh kolom `students.spp_history`; kolom lain (nama,
+  kelas, SPP berjalan, `spp_paid_months`) tidak ikut ditulis.
+- Label TA wajib berformat `2024/2025` dengan tahun berurutan, tidak boleh
+  kembar, dan tiap kartu wajib punya minimal satu bulan yang ditagih —
+  menghapus satu tahun ajaran dilakukan lewat tombol 🗑️, bukan dengan
+  mengosongkan centangnya.
 
 ## Tunggakan SPP Tahun Berjalan (dihitung s/d bulan aktif)
 

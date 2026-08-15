@@ -1281,10 +1281,44 @@
       <span>ℹ️</span>
       <span>Edit pembayaran SPP & tagihan tersedia di menu <strong>Tunggakan → Detail Santri</strong></span>
     </div>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="openTunggakanLamaFromEdit()">🗓️ Atur Tunggakan TA Sebelumnya</button>
+      <span style="font-size:11px;color:var(--text-muted);">Mengubah SPP di sini tidak mengubah tagihan tahun ajaran yang lalu.</span>
+    </div>
     <input type="hidden" id="ed_original_nama">
     <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
       <button class="btn btn-outline" onclick="document.getElementById('editSiswaModal').classList.remove('open')">Batal</button>
       <button class="btn btn-primary" onclick="saveEditSiswa()">💾 Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDITOR TUNGGAKAN SPP TA SEBELUMNYA ═══ -->
+<div class="modal-overlay" id="tunggakanLamaModal">
+  <div class="modal" style="max-width:760px;max-height:92vh;overflow-y:auto;">
+    <div class="modal-header" style="position:sticky;top:0;background:#fff;z-index:2;">
+      <div>
+        <div class="modal-title">🗓️ Tunggakan SPP Tahun Ajaran Sebelumnya</div>
+        <div id="thNamaLabel" style="font-size:13px;color:var(--text-muted);margin-top:3px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeTunggakanLamaModal()">✕</button>
+    </div>
+
+    <div style="background:var(--primary-pale);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--primary);line-height:1.6;margin-bottom:14px;">
+      Centang bulan yang <strong>ditagih</strong> pada tahun ajaran tersebut, lalu isi nominalnya.
+      Kolom <strong>Sudah dibayar</strong> diisi bila bulan itu sudah lunas atau baru diangsur sebagian —
+      biarkan 0 untuk bulan yang belum dibayar sama sekali. Sisanya otomatis muncul sebagai tunggakan
+      di menu <strong>Input Pembayaran</strong>.
+    </div>
+
+    <div id="thBody"></div>
+
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:space-between;align-items:center;flex-wrap:wrap;position:sticky;bottom:0;background:#fff;padding-top:12px;">
+      <div id="thTotal" style="font-size:13px;color:var(--text-muted);"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline" onclick="closeTunggakanLamaModal()">Batal</button>
+        <button class="btn btn-primary" onclick="saveTunggakanLama()">💾 Simpan Riwayat</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1909,6 +1943,7 @@
 <script src="js/manajemen-siswa.js"></script>
 <script src="js/import.js"></script>
 <script src="js/import-tunggakan.js"></script>
+<script src="js/tunggakan-lama.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/guest.js"></script>
 <script src="js/akun.js"></script>

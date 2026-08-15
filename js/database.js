@@ -28,18 +28,27 @@ async function sbAll(path, pageSize = 1000) {
 // (tanpa riwayat SPP tahun lalu) sampai migrasi dijalankan.
 let _sppHistorySupported = true;
 
-function _buildStudentRow(s) {
+// PENGAMAN DATA HILANG: kolom "akumulatif" (spp_paid_months, spp_history,
+// status_kelulusan) menyimpan riwayat yang TIDAK bisa dibentuk ulang dari form
+// mana pun — mis. tunggakan SPP tahun ajaran sebelumnya. Bila objek siswa yang
+// dikirim tidak memuat field itu (mis. dibentuk ulang oleh form edit yang hanya
+// tahu nama/kelas/NISN/SPP), kolomnya TIDAK DIKIRIM sama sekali supaya nilai di
+// server dipertahankan. Mengirimnya sebagai nilai kosong akan menghapus riwayat
+// tunggakan secara permanen.
+//   full=true → dipakai simpan massal (POST banyak baris), di mana semua baris
+//   wajib berkunci seragam; pemanggilnya selalu memakai objek siswa hasil
+//   loadStudents() yang sudah lengkap.
+function _buildStudentRow(s, full = false) {
   const row = {
     nama: s.nama,
     kelas: s.kelas,
     nisn: s.nisn || '',
     spp: s.spp || 0,
-    spp_paid_months: s.spp_paid_months || [],
-    status_kelulusan: s.status_kelulusan || '',
   };
-  if (_sppHistorySupported) {
-    row.spp_history = (s.spp_history && typeof s.spp_history === 'object' && !Array.isArray(s.spp_history)) ? s.spp_history : {};
-  }
+  const histOk = s.spp_history && typeof s.spp_history === 'object' && !Array.isArray(s.spp_history);
+  if (full || Array.isArray(s.spp_paid_months))  row.spp_paid_months  = s.spp_paid_months || [];
+  if (full || s.status_kelulusan !== undefined)  row.status_kelulusan = s.status_kelulusan || '';
+  if (_sppHistorySupported && (full || histOk))  row.spp_history      = histOk ? s.spp_history : {};
   return row;
 }
 
@@ -134,7 +143,7 @@ async function renameStudentInDB(origNama, s) {
 async function saveState() {
   showSyncIndicator('💾 Menyimpan...');
   try {
-    const rows = appState.students.map(_buildStudentRow);
+    const rows = appState.students.map(s => _buildStudentRow(s, true));
     await sb('students?on_conflict=nama', 'POST', rows,
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
     showSyncIndicator('✅ Tersimpan', 2000);
@@ -329,7 +338,7 @@ async function upsertTagihanBatch(rows) {
 async function saveStudentsBatch(list) {
   if (!list || !list.length) return;
   try {
-    await sb('students?on_conflict=nama', 'POST', list.map(_buildStudentRow),
+    await sb('students?on_conflict=nama', 'POST', list.map(s => _buildStudentRow(s, true)),
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
   } catch(e) {
     if (_sppHistorySupported && _isMissingSppHistory(e)) {
@@ -533,6 +542,50 @@ async function adjustSppPaidMonths(nama, add = [], remove = []) {
     { spp_paid_months: months }, { 'Prefer': 'return=minimal' });
   if (local) local.spp_paid_months = months;
   return months;
+}
+
+// ── Riwayat/tunggakan SPP tahun ajaran sebelumnya (kolom students.spp_history) ──
+// Dipakai editor "Tunggakan TA Lama". Sengaja memakai PATCH kolom tunggal:
+// riwayat ini tidak bisa dibentuk ulang dari kuitansi (bulan yang belum pernah
+// dibayar tak meninggalkan jejak), jadi jangan pernah ikut mengirim kolom lain
+// dari salinan memori yang mungkin sudah usang.
+
+const SPP_HISTORY_BELUM_SIAP =
+  'Kolom spp_history belum ada di database. Jalankan supabase_migration_spp_history.sql ' +
+  'di Supabase → SQL Editor lebih dulu.';
+
+// Baca spp_history satu santri langsung dari server (bukan dari appState) agar
+// editor selalu mulai dari kondisi terakhir, termasuk hasil input device lain.
+// Return: objek riwayat, atau null bila barisnya belum ada di server.
+async function loadSppHistory(nama) {
+  if (!_sppHistorySupported) throw new Error(SPP_HISTORY_BELUM_SIAP);
+  let rows;
+  try {
+    rows = await sb('students?select=spp_history&nama=eq.' + encodeURIComponent(nama));
+  } catch(e) {
+    if (_isMissingSppHistory(e)) { _sppHistorySupported = false; throw new Error(SPP_HISTORY_BELUM_SIAP); }
+    throw e;
+  }
+  if (!rows || !rows[0]) return null;
+  const h = rows[0].spp_history;
+  return (h && typeof h === 'object' && !Array.isArray(h)) ? h : {};
+}
+
+// Tulis spp_history satu santri (menimpa, sesuai isi editor).
+async function saveSppHistory(nama, hist) {
+  if (!_sppHistorySupported) throw new Error(SPP_HISTORY_BELUM_SIAP);
+  showSyncIndicator('💾 Menyimpan...');
+  try {
+    await sb('students?nama=eq.' + encodeURIComponent(nama), 'PATCH',
+      { spp_history: hist }, { 'Prefer': 'return=minimal' });
+  } catch(e) {
+    if (_isMissingSppHistory(e)) { _sppHistorySupported = false; }
+    showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
+    throw e;
+  }
+  const local = appState.students.find(s => s.nama === nama);
+  if (local) local.spp_history = hist;
+  showSyncIndicator('✅ Tersimpan', 1500);
 }
 
 // Ambil ulang satu santri + tagihannya dari server (dipakai saat santri dipilih
