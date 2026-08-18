@@ -77,6 +77,29 @@ function thNormTA(v) {
   return `${m[1]}/${m[2]}`;
 }
 
+// Santri yang sedang disunting masih menagih SPP tahun berjalan? Bila ya, entri
+// riwayat berlabel TA berjalan (atau sesudahnya) membuat tahun yang sama
+// terhitung dua kali — di editor ditandai dan ditolak saat simpan.
+// Santri LULUS dikecualikan: SPP tahun berjalannya memang sudah diarsipkan.
+function thBentrokDicek() {
+  const s = appState.students.find(x => x.nama === thNama);
+  return !s || s.status_kelulusan !== 'lulus';
+}
+
+function thTaBentrok(ta) {
+  return thBentrokDicek() && typeof isTaBerjalanAtauSesudah === 'function' && isTaBerjalanAtauSesudah(ta);
+}
+
+function thWarnHTML(y) {
+  if (!thTaBentrok(y.ta)) return '';
+  const taBerjalan = (typeof getProfil === 'function') ? (getProfil().ta || '') : '';
+  return `<div style="background:var(--danger-pale);border:1.5px solid var(--danger);border-radius:9px;padding:8px 12px;font-size:12px;color:var(--danger);font-weight:600;margin-bottom:10px;">
+    ⚠️ TA ${esc(y.ta)} sama dengan tahun ajaran berjalan${taBerjalan ? ` (${esc(taBerjalan)})` : ''} atau sesudahnya.
+    <span style="font-weight:500;">Tahun berjalan sudah ditagih lewat SPP biasa, jadi baris ini tidak dihitung sebagai tunggakan TA lalu —
+    kalau dihitung, nominalnya jadi ganda. Perbaiki labelnya menjadi tahun ajaran yang sudah lewat, atau hapus baris ini.</span>
+  </div>`;
+}
+
 function thRowTotals(y) {
   let tagihan = 0, dibayar = 0, bulan = 0, menunggak = 0;
   MONTHS.forEach(m => {
@@ -190,6 +213,7 @@ function thCardHTML(y, i) {
   }).join('');
 
   return `<div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;background:var(--card);">
+    <div id="th_warn_${i}">${thWarnHTML(y)}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;">
       <div class="form-group" style="margin:0;">
         <label>Tahun Ajaran <span style="color:var(--danger)">*</span></label>
@@ -286,6 +310,12 @@ function thSetField(i, field, val) {
   if (!y) return;
   if (field === 'rate') y.rate = Math.max(0, Number(val) || 0);
   else y[field] = val;
+  // Peringatan "TA bentrok" ikut label yang sedang diketik — hanya blok
+  // peringatannya yang digambar ulang supaya kursor tidak lompat.
+  if (field === 'ta') {
+    const w = document.getElementById('th_warn_' + i);
+    if (w) w.innerHTML = thWarnHTML(y);
+  }
 }
 
 function thToggleMonth(i, m, on) {
@@ -343,6 +373,11 @@ async function saveTunggakanLama() {
     const [a, b] = ta.split('/').map(Number);
     if (b !== a + 1) { toast(`⚠️ TA ${ta} tidak berurutan — tahun kedua harus ${a + 1}.`); return; }
     if (terpakai.has(ta)) { toast(`⚠️ TA ${ta} ditulis dua kali — gabungkan jadi satu kartu.`); return; }
+    if (thTaBentrok(ta)) {
+      toast(`⚠️ TA ${ta} adalah tahun ajaran berjalan — tagihannya sudah masuk SPP tahun berjalan. `
+        + 'Ubah labelnya ke tahun ajaran yang sudah lewat, atau hapus kartunya.', 6000);
+      return;
+    }
     terpakai.add(ta);
     y.ta = ta;
     if (!thRowTotals(y).bulan) {

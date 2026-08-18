@@ -5,13 +5,48 @@
 // ══════════════════════════════════════════
 let promosiMap = new Map(); // nama -> 'naik' | 'tinggal'
 
+// Normalisasi label TA jadi "YYYY/YYYY"; '' bila tidak sah.
+function normTaLabel(v) {
+  const m = String(v || '').match(/^\s*(\d{4})\s*[\/\-]\s*(\d{4})\s*$/);
+  return (m && Number(m[2]) === Number(m[1]) + 1) ? `${m[1]}/${m[2]}` : '';
+}
+
 function openPromosiKelasModal() {
   promosiMap = new Map();
-  const ta = getProfil().ta || '—';
-  document.getElementById('promosiTaLabel').textContent = ta;
+  // Label arsip default = TA di Profil, yaitu tahun ajaran yang baru berakhir.
+  // Bisa diperbaiki admin bila TA di Profil terlanjur dimajukan lebih dulu.
+  const inp = document.getElementById('promosiTaInput');
+  if (inp) inp.value = getProfil().ta || '';
+  onPromosiTaChange();
   renderPromosiStudentList();
   updatePromosiSummary();
   document.getElementById('promosiKelasModal').classList.add('open');
+}
+
+// Perbarui label "TA berjalan berikutnya" + peringatan bila label arsip tidak
+// sah atau justru sama dengan tahun ajaran berjalan (penyebab tunggakan ganda).
+function onPromosiTaChange() {
+  const raw  = document.getElementById('promosiTaInput')?.value || '';
+  const ta   = normTaLabel(raw);
+  const awal = parseInt(ta) || 0;
+  const baru = awal ? `${awal + 1}/${awal + 2}` : '—';
+  const lblBaru = document.getElementById('promosiTaBaru');
+  if (lblBaru) lblBaru.textContent = baru;
+
+  const warn = document.getElementById('promosiTaWarn');
+  const btn  = document.getElementById('promosiConfirmBtn');
+  let pesan = '';
+  if (raw.trim() && !ta) {
+    pesan = '⚠️ Format tahun ajaran belum benar — tulis seperti 2025/2026 (tahun kedua = tahun pertama + 1).';
+  } else if (ta && !document.getElementById('promosiSetProfilTA')?.checked
+             && typeof isTaBerjalanAtauSesudah === 'function' && isTaBerjalanAtauSesudah(ta)) {
+    // TA arsip sama dengan TA berjalan sementara TA di Profil tidak ikut maju →
+    // tahun yang sama akan tampil dua kali (SPP berjalan + tunggakan TA lalu).
+    pesan = `⚠️ TA ${ta} masih menjadi TA berjalan di Profil. Centang "Setel TA berjalan di Profil" `
+          + 'atau perbaiki label di atas, agar tahun ini tidak terhitung dua kali.';
+  }
+  if (warn) { warn.textContent = pesan; warn.style.display = pesan ? 'block' : 'none'; }
+  if (btn) btn.disabled = !promosiMap.size || !ta;   // label TA wajib & harus sah
 }
 
 function renderPromosiStudentList() {
@@ -117,11 +152,21 @@ function updatePromosiSummary() {
     + (lulus ? ` <span style="color:var(--accent);">(${lulus} di antaranya lulus 🎓)</span>` : '')
     + (tinggal ? `, <span style="color:var(--danger);">${tinggal} tinggal kelas</span>` : '');
   btn.disabled = false;
+  onPromosiTaChange();   // label TA juga menentukan tombol boleh ditekan
 }
 
 async function confirmPromosiKelas() {
   if (!promosiMap.size) return;
-  const ta = getProfil().ta || '';
+  // TA arsip diambil dari isian modal (default: TA di Profil) — inilah tahun
+  // ajaran yang BARU BERAKHIR, bukan tahun ajaran baru.
+  const ta = normTaLabel(document.getElementById('promosiTaInput')?.value || '');
+  if (!ta) { toast('⚠️ Isi tahun ajaran yang diarsipkan dulu — format 2025/2026.'); return; }
+  const setProfilTA = !!document.getElementById('promosiSetProfilTA')?.checked;
+  const taBaru = `${parseInt(ta) + 1}/${parseInt(ta) + 2}`;
+  if (!setProfilTA && typeof isTaBerjalanAtauSesudah === 'function' && isTaBerjalanAtauSesudah(ta)
+      && !confirm(`TA ${ta} masih tercatat sebagai tahun ajaran berjalan di Profil.\n\n`
+        + 'Bila diarsipkan tanpa memajukan TA di Profil, tunggakan tahun ini bisa terbaca dua kali.\n\n'
+        + 'Lanjutkan?')) return;
   let count = 0;
   const touched = [];   // hanya santri yang benar-benar diproses yang dikirim
 
@@ -164,11 +209,29 @@ async function confirmPromosiKelas() {
       return;
     }
 
+    // Majukan TA berjalan di Profil supaya tahun yang baru diarsipkan tidak
+    // lagi terbaca sebagai tahun ajaran berjalan (sumber tunggakan ganda).
+    let taInfo = '';
+    if (setProfilTA) {
+      try {
+        const pr = getProfil();
+        pr.ta = taBaru;
+        localStorage.setItem('sipay_profil', JSON.stringify(pr));
+        applyProfil(pr);
+        await saveSettings();
+        taInfo = ` — TA berjalan kini ${taBaru}`;
+      } catch (e) {
+        console.error('confirmPromosiKelas set TA:', e);
+        toast(`⚠️ TA di Profil gagal dimajukan ke ${taBaru} — setel manual di menu Profil`, 5000);
+      }
+    }
+
     document.getElementById('promosiKelasModal').classList.remove('open');
     promosiMap.clear();
     renderSiswaTable();
     renderDashboard();
-    toast(`✅ Promosi kelas selesai — ${count} santri diproses`);
+    renderTunggakan();
+    toast(`✅ Promosi kelas selesai — ${count} santri diproses${taInfo}`);
   } finally { resumeAutoSync(); }
 }
 
