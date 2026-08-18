@@ -1588,7 +1588,22 @@
       <button class="modal-close" onclick="document.getElementById('promosiKelasModal').classList.remove('open')">✕</button>
     </div>
     <div style="padding:0 20px 10px;font-size:13px;color:var(--text-muted);flex-shrink:0;">
-      Tahun Ajaran: <strong id="promosiTaLabel">—</strong>. Data SPP tahun ini akan diarsipkan ke riwayat sebelum kelas dinaikkan.
+      <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+        <div class="form-group" style="margin:0;max-width:190px;">
+          <label>Arsipkan SPP sebagai TA</label>
+          <input type="text" id="promosiTaInput" placeholder="2025/2026" oninput="onPromosiTaChange()">
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;padding-bottom:9px;
+          text-transform:none;letter-spacing:normal;font-weight:500;color:var(--text);">
+          <input type="checkbox" id="promosiSetProfilTA" checked onchange="onPromosiTaChange()"
+            style="accent-color:var(--primary);width:15px;height:15px;">
+          Setel TA berjalan di Profil jadi <strong id="promosiTaBaru">—</strong>
+        </label>
+      </div>
+      <div style="margin-top:6px;">
+        SPP tahun berjalan yang belum lunas akan diarsipkan sebagai tunggakan TA di atas — pastikan itu tahun ajaran yang <strong>baru berakhir</strong>, bukan tahun ajaran baru.
+      </div>
+      <div id="promosiTaWarn" style="margin-top:6px;color:var(--danger);font-weight:600;display:none;"></div>
     </div>
     <!-- Bulk select by kelas -->
     <div style="padding:8px 20px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-shrink:0;">

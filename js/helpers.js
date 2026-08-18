@@ -208,6 +208,38 @@ function taStartYear(ref) {
   return d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
 }
 
+// Tahun awal dari sebuah label TA ("2025/2026" → 2025); 0 bila tidak terbaca.
+function taYearOf(label) {
+  const m = String(label || '').match(/(\d{4})/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+// true bila label TA menunjuk tahun ajaran BERJALAN atau sesudahnya.
+// Tahun-tahun itu ditangani jalur SPP tahun berjalan (kolom spp_paid_months),
+// jadi entri riwayat dengan label tersebut TIDAK boleh ikut dihitung sebagai
+// "tunggakan TA sebelumnya" — kalau ikut, tagihannya terhitung dua kali.
+function isTaBerjalanAtauSesudah(ta) {
+  const y = taYearOf(ta);
+  return y > 0 && y >= taStartYear();
+}
+
+// Santri LULUS tidak lagi menagih SPP tahun berjalan (sppTunggakan() = 0), jadi
+// arsip berlabel TA berjalan miliknya adalah satu-satunya catatan dan tetap
+// harus dihitung. Untuk santri aktif, label seperti itu selalu bentrok.
+function sppHistBisaBentrok(s) {
+  return !s || s.status_kelulusan !== 'lulus';
+}
+
+// Label TA yang bentrok di riwayat satu santri (label TA berjalan/sesudahnya).
+// Dipakai untuk memberi peringatan agar admin merapikannya lewat editor
+// "Tunggakan TA Sebelumnya".
+function sppHistTaBentrok(s) {
+  const hist = (s && s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
+  if (!sppHistBisaBentrok(s)) return [];
+  return Object.keys(hist).filter(ta =>
+    isTaBerjalanAtauSesudah(ta) && sppHistMonths(hist[ta]).some(x => x.sisa > 0));
+}
+
 // Posisi bulan hari ini di dalam TA aktif (Jul=0 … Jun=11).
 //   < 0  → TA belum mulai (belum ada bulan yang jatuh tempo)
 //   > 11 → TA sudah lewat (seluruh 12 bulan jatuh tempo)
@@ -337,8 +369,16 @@ function sppHistMonths(rec) {
 // `unpaid` tetap array kode bulan agar pemakaian lama (y.unpaid.length) tetap jalan.
 function sppTunggakanPrevList(s) {
   const hist = (s && s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
+  const bentrokMungkin = sppHistBisaBentrok(s);
   const out = [];
   Object.keys(hist).forEach(ta => {
+    // Lewati entri berlabel TA BERJALAN (atau sesudahnya). Entri seperti ini
+    // bisa muncul bila TA di Profil sudah terlanjur dimajukan sebelum promosi
+    // kelas dijalankan, sehingga arsip SPP tahun berjalan tersimpan dengan
+    // label tahun yang baru. Bila ikut dihitung, satu tahun ajaran yang sama
+    // tampil dua kali: sekali sebagai SPP tahun berjalan, sekali lagi sebagai
+    // "tunggakan TA sebelumnya" — totalnya jadi ganda.
+    if (bentrokMungkin && isTaBerjalanAtauSesudah(ta)) return;
     const rec = hist[ta] || {};
     const semua = sppHistMonths(rec);
     const belum = semua.filter(x => x.sisa > 0);

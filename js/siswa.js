@@ -370,8 +370,18 @@ function renderTunggakanDetail(s) {
       font-size:11px;font-weight:600;text-align:center;">${m}</div>`;
   }).join('');
 
+  // Riwayat berlabel TA berjalan tidak ikut dihitung (lihat sppTunggakanPrevList)
+  // — beri tahu admin supaya datanya dirapikan lewat editor "Tunggakan TA Lama",
+  // bukan dibiarkan menggantung tanpa penjelasan.
+  const taBentrok = (typeof sppHistTaBentrok === 'function') ? sppHistTaBentrok(s) : [];
+  const bentrokNote = taBentrok.length ? `
+    <div style="background:#fef3c7;border:1.5px solid var(--warning,#d97706);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#92400e;">
+      ⚠️ <strong>Riwayat TA ${taBentrok.map(esc).join(', ')}</strong> berlabel tahun ajaran berjalan, jadi <strong>tidak dihitung</strong> sebagai tunggakan TA sebelumnya —
+      tagihan tahun berjalan sudah dihitung lewat SPP di atas. Rapikan lewat tombol <strong>🗓️ Tunggakan TA Lama</strong>.
+    </div>` : '';
+
   // Rincian tunggakan SPP tiap tahun ajaran sebelumnya (bulan + nominal sisa)
-  const prevGrids = prevList.length ? `
+  const prevGrids = bentrokNote + (prevList.length ? `
     <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--danger);">🗓️ Tunggakan SPP Tahun Ajaran Sebelumnya</div>
     ${prevList.map(y => `
       <div style="background:var(--danger-pale);border-radius:12px;padding:12px 14px;margin-bottom:10px;">
@@ -383,7 +393,7 @@ function renderTunggakanDetail(s) {
           ${y.detail.map(d => `<span style="font-size:11px;font-weight:600;background:#fff;border:1.5px solid var(--danger);color:var(--danger);border-radius:7px;padding:3px 8px;">
             ${MONTH_FULL[d.m]} · ${rp(d.sisa)}${d.dibayar > 0 ? ' <span style="font-weight:400;">(angsuran ' + rp(d.dibayar) + ')</span>' : ''}</span>`).join('')}
         </div>
-      </div>`).join('')}` : '';
+      </div>`).join('')}` : '');
 
   // Tagihan item cards
   const tagihanSiswa = appState.tagihan.filter(t => t.nama === s.nama);
