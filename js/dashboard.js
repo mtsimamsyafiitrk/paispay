@@ -58,8 +58,11 @@ function renderDashboard() {
   // Month summary
   const ms = document.getElementById('monthSummary');
   ms.innerHTML = MONTHS.map(m => {
-    const paid = ss.filter(s=>s.spp>0&&s.spp_paid_months.includes(m)).length;
-    const total = ss.filter(s=>s.spp>0).length;
+    // Santri yang baru masuk di tengah TA belum ditagih bulan-bulan sebelumnya,
+    // jadi ia tidak ikut jadi penyebut di bulan-bulan itu.
+    const ditagih = ss.filter(s => s.spp > 0 && !isSppSebelumMasuk(s, m));
+    const paid = ditagih.filter(s => s.spp_paid_months.includes(m)).length;
+    const total = ditagih.length;
     const p = pct(paid,total);
     // Bulan yang belum jatuh tempo ditandai netral — capaian rendah di situ
     // wajar (belum ditagih), jadi jangan diberi warna "merah".

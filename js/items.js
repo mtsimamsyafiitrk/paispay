@@ -33,13 +33,17 @@ function showDetail(nama) {
     <div style="margin-bottom:16px;">
       <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--primary);">Status SPP TA Ini</div>
       <div class="month-grid">${MONTHS.map(m => {
-        const paid = (s.spp_paid_months||[]).includes(m);
-        const cls  = paid ? 'paid' : isSppDue(m) ? 'due' : 'upcoming';
-        const ttl  = paid ? 'Lunas' : isSppDue(m) ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo';
+        const paid    = (s.spp_paid_months||[]).includes(m);
+        const sebelum = !paid && isSppSebelumMasuk(s, m);
+        const due     = !sebelum && isSppDueFor(s, m);
+        const cls  = paid ? 'paid' : sebelum ? 'upcoming before' : due ? 'due' : 'upcoming';
+        const ttl  = paid ? 'Lunas'
+          : sebelum ? `Sebelum masuk — tidak ditagih (SPP mulai ${esc(sppMulaiLabel(s))})`
+          : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo';
         return `<div class="month-btn ${cls}" title="${ttl}">${m}</div>`;
       }).join('')}</div>
       <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">
-        Tunggakan SPP dihitung s/d bulan berjalan${sppDueMonthLabel() ? ' (' + esc(sppDueMonthLabel()) + ')' : ''}.
+        Tunggakan SPP dihitung ${sppMulaiLabel(s) ? 'mulai <strong>' + esc(sppMulaiLabel(s)) + '</strong> (bulan santri masuk) ' : ''}s/d bulan berjalan${sppDueMonthLabel() ? ' (' + esc(sppDueMonthLabel()) + ')' : ''}.
       </div>
     </div>
     <div style="background:${totalT>0?'var(--danger-pale)':'var(--primary-pale)'};border-radius:10px;padding:14px;">

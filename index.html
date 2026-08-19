@@ -1285,6 +1285,11 @@
         <label>Nominal Uang Pendaftaran (Rp)</label>
         <input type="number" id="ed_pendaftaran" placeholder="0">
       </div>
+      <div class="form-group full">
+        <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— untuk santri yang masuk di tengah tahun ajaran</span></label>
+        <select id="ed_spp_mulai"></select>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum pilihan ini tidak dihitung sebagai tunggakan SPP tahun berjalan.</div>
+      </div>
     </div>
     <div style="margin-top:14px;padding:10px 14px;background:var(--primary-pale);border-radius:10px;font-size:12px;color:var(--primary);display:flex;align-items:center;gap:8px;">
       <span>ℹ️</span>
@@ -1814,6 +1819,11 @@
       <input type="number" id="promosiCalonSppInput" placeholder="0" min="0">
       <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="promosiCalonSppHint"></div>
     </div>
+    <div class="form-group" style="margin-bottom:18px;">
+      <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— bulan santri ini mulai aktif</span></label>
+      <select id="promosiCalonMulaiInput"></select>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
+    </div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
       SPP ini akan langsung sinkron dengan item <strong>SPP Bulanan</strong> di menu Input Pembayaran. Data pembayaran Pangkal &amp; Uang Pendaftaran yang sudah tercatat tetap tersimpan.
     </div>
@@ -1838,6 +1848,11 @@
     <div class="form-group" style="margin-bottom:16px;">
       <label>Override SPP/bulan (Rp) <span style="font-size:11px;color:var(--text-muted);">— kosongkan untuk pakai nominal SPP masing-masing calon</span></label>
       <input type="number" id="promosiMassalSppInput" placeholder="Kosongkan = pakai SPP per-calon" min="0">
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— berlaku untuk semua calon terpilih</span></label>
+      <select id="promosiMassalMulaiInput"></select>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
     </div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
       Semua calon terpilih dipindahkan ke Data Siswa aktif sesuai kelas target. SPP langsung sinkron ke <strong>Input Pembayaran</strong>.

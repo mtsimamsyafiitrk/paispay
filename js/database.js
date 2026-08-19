@@ -49,6 +49,7 @@ function _buildStudentRow(s, full = false) {
   if (full || Array.isArray(s.spp_paid_months))  row.spp_paid_months  = s.spp_paid_months || [];
   if (full || s.status_kelulusan !== undefined)  row.status_kelulusan = s.status_kelulusan || '';
   if (_sppHistorySupported && (full || histOk))  row.spp_history      = histOk ? s.spp_history : {};
+  if (_sppMulaiSupported && (full || s.spp_mulai !== undefined)) row.spp_mulai = s.spp_mulai || '';
   return row;
 }
 
@@ -56,6 +57,23 @@ function _buildStudentRow(s, full = false) {
 function _isMissingSppHistory(e) {
   const msg = String((e && e.message) || e || '');
   return /spp_history/.test(msg);
+}
+
+// Idem untuk kolom spp_mulai (supabase_migration_spp_mulai.sql). Bila migrasi
+// belum dijalankan, penanda bulan masuk santri baru tidak ikut tersimpan —
+// selebihnya aplikasi tetap jalan seperti biasa.
+let _sppMulaiSupported = true;
+function _isMissingSppMulai(e) {
+  const msg = String((e && e.message) || e || '');
+  return /spp_mulai/.test(msg);
+}
+
+// Matikan flag kolom opsional yang ternyata belum ada di server, supaya simpan
+// bisa diulang tanpa kolom tersebut. true bila ada flag yang baru dimatikan.
+function _degradeMissingColumn(e) {
+  if (_sppHistorySupported && _isMissingSppHistory(e)) { _sppHistorySupported = false; return true; }
+  if (_sppMulaiSupported   && _isMissingSppMulai(e))   { _sppMulaiSupported   = false; return true; }
+  return false;
 }
 
 // Kompatibilitas mundur untuk metadata pembayaran (metode / dibayar_oleh /
@@ -92,6 +110,8 @@ async function loadStudents() {
     spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
     spp_history: (r.spp_history && typeof r.spp_history === 'object' && !Array.isArray(r.spp_history)) ? r.spp_history : {},
     status_kelulusan: r.status_kelulusan || '',
+    // Penanda bulan mulai tagih SPP untuk santri yang masuk di tengah TA.
+    spp_mulai: r.spp_mulai || '',
   }));
 }
 
@@ -103,10 +123,7 @@ async function saveSiswa(s) {
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
     showSyncIndicator('✅ Tersimpan', 1500);
   } catch(e) {
-    if (_sppHistorySupported && _isMissingSppHistory(e)) {
-      _sppHistorySupported = false;
-      return saveSiswa(s); // ulangi tanpa kolom spp_history
-    }
+    if (_degradeMissingColumn(e)) return saveSiswa(s); // ulangi tanpa kolom yang belum ada
     console.error('saveSiswa error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
   }
@@ -128,10 +145,7 @@ async function renameStudentInDB(origNama, s) {
     appState.tagihan.forEach(t => { if (t.nama === origNama) t.nama = s.nama; });
     showSyncIndicator('✅ Tersimpan', 1500);
   } catch(e) {
-    if (_sppHistorySupported && _isMissingSppHistory(e)) {
-      _sppHistorySupported = false;
-      return renameStudentInDB(origNama, s); // ulangi tanpa kolom spp_history
-    }
+    if (_degradeMissingColumn(e)) return renameStudentInDB(origNama, s); // ulangi tanpa kolom yang belum ada
     console.error('renameStudentInDB error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
   }
@@ -148,10 +162,7 @@ async function saveState() {
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
     showSyncIndicator('✅ Tersimpan', 2000);
   } catch(e) {
-    if (_sppHistorySupported && _isMissingSppHistory(e)) {
-      _sppHistorySupported = false;
-      return saveState(); // ulangi tanpa kolom spp_history
-    }
+    if (_degradeMissingColumn(e)) return saveState(); // ulangi tanpa kolom yang belum ada
     console.error('saveState error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
   }
@@ -341,10 +352,7 @@ async function saveStudentsBatch(list) {
     await sb('students?on_conflict=nama', 'POST', list.map(s => _buildStudentRow(s, true)),
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
   } catch(e) {
-    if (_sppHistorySupported && _isMissingSppHistory(e)) {
-      _sppHistorySupported = false;
-      return saveStudentsBatch(list); // ulangi tanpa kolom spp_history
-    }
+    if (_degradeMissingColumn(e)) return saveStudentsBatch(list); // ulangi tanpa kolom yang belum ada
     throw e;
   }
 }
@@ -611,6 +619,7 @@ async function refreshStudent(nama) {
     spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
     spp_history: (r.spp_history && typeof r.spp_history === 'object' && !Array.isArray(r.spp_history)) ? r.spp_history : {},
     status_kelulusan: r.status_kelulusan || '',
+    spp_mulai: r.spp_mulai || '',
   };
   const freshTagihan = (tRows || []).map(t => ({
     id: t.id, nama: t.nama, kelas: t.kelas,

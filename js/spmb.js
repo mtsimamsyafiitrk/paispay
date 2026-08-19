@@ -209,6 +209,9 @@ async function saveCalonSantri() {
     pangkal, pangkal_paid: 0,
     uang_pendaftaran, uang_pendaftaran_paid: 0,
     status_kelulusan: 'calon',
+    // SPP baru berlaku sejak bulan santri ini dimasukkan ke aplikasi — bulan
+    // sebelumnya tidak boleh ikut terhitung sebagai tunggakan.
+    spp_mulai: buildSppMulai(getProfil().ta || '', bulanBerjalanCode()),
   };
 
   appState.students.push(newCalon);
@@ -332,6 +335,10 @@ function confirmPromoteSingle(nama) {
   document.getElementById('promosiCalonSppInput').value = s.spp || '';
   const hint = document.getElementById('promosiCalonSppHint');
   if (hint) hint.textContent = s.spp > 0 ? `Nominal dari pendaftaran: ${rp(s.spp)}` : 'Belum diisi saat pendaftaran';
+  // Bulan mulai tagih SPP: bawaannya bulan berjalan (bulan santri ini
+  // diaktifkan), atau penanda yang sudah tersimpan sejak ia didaftarkan.
+  const mulaiSel = document.getElementById('promosiCalonMulaiInput');
+  if (mulaiSel) mulaiSel.innerHTML = sppMulaiOptionsHtml(sppMulaiBulan(s) || bulanBerjalanCode());
   document.getElementById('promosiCalonBtn').onclick = () => _doPromoteSingle(nama);
   document.getElementById('promosiCalonModal').classList.add('open');
 }
@@ -340,10 +347,12 @@ async function _doPromoteSingle(nama) {
   const idx = appState.students.findIndex(s => s.nama === nama);
   if (idx < 0) return;
   const spp = Number(document.getElementById('promosiCalonSppInput').value) || 0;
+  const mulai = document.getElementById('promosiCalonMulaiInput')?.value || '';
   appState.students[idx].status_kelulusan = '';
   appState.students[idx].spp = spp;
   appState.students[idx].spp_paid_months = [];
   appState.students[idx].spp_history = {};
+  appState.students[idx].spp_mulai = buildSppMulai(getProfil().ta || '', mulai);
   spmbSelectedRows.delete(nama);
   document.getElementById('promosiCalonModal').classList.remove('open');
   await saveSiswa(appState.students[idx]);
@@ -352,7 +361,9 @@ async function _doPromoteSingle(nama) {
   renderSpmbPage();
   renderSiswaTable();
   renderDashboard();
-  toast(`🎓 ${nama} berhasil dipromosikan ke Kelas ${appState.students[idx].kelas}!`);
+  const mulaiInfo = sppMulaiLabel(appState.students[idx]);
+  toast(`🎓 ${nama} berhasil dipromosikan ke Kelas ${appState.students[idx].kelas}!`
+    + (mulaiInfo ? ` SPP dihitung mulai ${mulaiInfo}.` : ''), 3500);
 }
 
 function promoteSelectedCalon() {
@@ -362,6 +373,8 @@ function promoteSelectedCalon() {
   document.getElementById('promosiMassalNames').textContent =
     names.slice(0, 5).join(', ') + (names.length > 5 ? ` dan ${names.length - 5} lainnya` : '');
   document.getElementById('promosiMassalSppInput').value = '';
+  const mulaiSel = document.getElementById('promosiMassalMulaiInput');
+  if (mulaiSel) mulaiSel.innerHTML = sppMulaiOptionsHtml(bulanBerjalanCode());
   document.getElementById('promosiMassalBtn').onclick = () => _doPromoteMassal(names);
   document.getElementById('promosiMassalModal').classList.add('open');
 }
@@ -369,6 +382,8 @@ function promoteSelectedCalon() {
 async function _doPromoteMassal(names) {
   const overrideSpp = document.getElementById('promosiMassalSppInput').value.trim();
   const globalSpp = overrideSpp !== '' ? Number(overrideSpp) : null;
+  const mulai = buildSppMulai(getProfil().ta || '',
+    document.getElementById('promosiMassalMulaiInput')?.value || '');
   const updated = [];
   names.forEach(nama => {
     const idx = appState.students.findIndex(s => s.nama === nama);
@@ -378,6 +393,7 @@ async function _doPromoteMassal(names) {
     if (globalSpp !== null) appState.students[idx].spp = globalSpp;
     appState.students[idx].spp_paid_months = [];
     appState.students[idx].spp_history = {};
+    appState.students[idx].spp_mulai = mulai;
     updated.push(appState.students[idx]);
     spmbSelectedRows.delete(nama);
   });
@@ -389,7 +405,9 @@ async function _doPromoteMassal(names) {
   renderSpmbPage();
   renderSiswaTable();
   renderDashboard();
-  toast(`🎓 ${updated.length} calon santri berhasil dipromosikan!`);
+  const mulaiInfo = updated.length ? sppMulaiLabel(updated[0]) : '';
+  toast(`🎓 ${updated.length} calon santri berhasil dipromosikan!`
+    + (mulaiInfo ? ` SPP dihitung mulai ${mulaiInfo}.` : ''), 3500);
 }
 
 // ══════════════════════════════════════════
@@ -514,6 +532,8 @@ async function confirmSpmbImport() {
       pangkal: row.pangkal, pangkal_paid: 0,
       uang_pendaftaran: row.uang_pendaftaran, uang_pendaftaran_paid: 0,
       status_kelulusan: 'calon',
+      // Sama seperti input manual: SPP berlaku sejak bulan import dilakukan.
+      spp_mulai: buildSppMulai(getProfil().ta || '', bulanBerjalanCode()),
     };
     appState.students.push(calon);
     added.push(calon);

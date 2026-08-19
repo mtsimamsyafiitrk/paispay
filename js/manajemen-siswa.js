@@ -182,8 +182,11 @@ async function confirmPromosiKelas() {
       // Arsipkan SPP tahun berjalan ke riwayat sebelum reset (tunggakan tahun lalu)
       snapshotSppTahunBerjalan(s, ta);
 
-      // Reset bulan SPP untuk tahun ajaran baru
+      // Reset bulan SPP untuk tahun ajaran baru. Penanda "SPP mulai bulan"
+      // hanya berlaku untuk TA yang baru diarsipkan — di tahun ajaran baru
+      // santri tersebut ditagih penuh dari Juli seperti santri lain.
       s.spp_paid_months = [];
+      s.spp_mulai = '';
 
       if (action === 'naik') {
         if      (s.kelas === '7') s.kelas = '8';
@@ -550,6 +553,8 @@ function openEditSiswa(nama) {
   if (edPangkal) { const p = getPangkalNominal(s.nama); edPangkal.value = p || ''; }
   const edPendaftaran = document.getElementById('ed_pendaftaran');
   if (edPendaftaran) { const p = getPendaftaranNominal(s.nama); edPendaftaran.value = p || ''; }
+  const edMulai = document.getElementById('ed_spp_mulai');
+  if (edMulai) edMulai.innerHTML = sppMulaiOptionsHtml(sppMulaiBulan(s));
   document.getElementById('editSiswaModal').classList.add('open');
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -587,6 +592,9 @@ async function saveEditSiswa() {
     nisn:            document.getElementById('ed_nisn').value.trim(),
     spp:             Number(document.getElementById('ed_spp').value) || 0,
     spp_paid_months: oldData.spp_paid_months || [],
+    // Bulan mulai tagih SPP (santri masuk di tengah TA) — '' = penuh dari Juli.
+    spp_mulai:       buildSppMulai(getProfil().ta || '',
+                       document.getElementById('ed_spp_mulai')?.value || ''),
   };
 
   // Update nama di transactions & tagihan (memori) jika berubah

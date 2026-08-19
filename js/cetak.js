@@ -214,9 +214,12 @@ function buildSuratHTML(s, tgl) {
   // Surat tagihan hanya memuat kewajiban yang SUDAH jatuh tempo (Juli s/d
   // bulan berjalan) supaya angkanya sama dengan tunggakan di aplikasi.
   const bulanBelum = sppAktif ? sppUnpaidDueMonths(s) : [];
-  const bulanDue   = sppAktif ? sppDueMonths() : [];
+  // Santri yang masuk di tengah TA hanya ditagih sejak bulan masuknya.
+  const bulanDue   = sppAktif ? sppDueMonthsFor(s) : [];
+  const mulaiLabel = sppAktif ? sppMulaiLabel(s) : '';
   const bulanLunasDue = bulanDue.filter(m => (s.spp_paid_months||[]).includes(m));
-  const bulanDimuka   = (s.spp_paid_months||[]).filter(m => !bulanDue.includes(m));
+  const bulanDimuka   = (s.spp_paid_months||[])
+    .filter(m => !bulanDue.includes(m) && !isSppSebelumMasuk(s, m));
   const sppTagihanDue = (s.spp || 0) * bulanDue.length;
   const sppTerbayarDue = (s.spp || 0) * bulanLunasDue.length;
   const P = getProfil();
@@ -257,7 +260,7 @@ function buildSuratHTML(s, tgl) {
           </tr>`).join('')}
           ${sppAktif ? `<tr>
             <td style="text-align:center">${++no}</td>
-            <td>SPP Bulanan <span style="font-size:9pt">(s/d ${esc(sppDueMonthLabel() || '—')})</span></td>
+            <td>SPP Bulanan <span style="font-size:9pt">(${mulaiLabel ? 'mulai ' + esc(mulaiLabel) + ' ' : ''}s/d ${esc(sppDueMonthLabel() || '—')})</span></td>
             <td style="font-size:10pt">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}</td>
             <td style="text-align:right">${sppTagihanDue.toLocaleString('id-ID')}</td>
             <td style="text-align:right">${sppTerbayarDue.toLocaleString('id-ID')}</td>

@@ -324,6 +324,8 @@ textarea { resize: vertical; min-height: 80px; }
 .month-btn.due { background: var(--danger-pale); color: var(--danger); border-color: var(--danger); }
 /* Belum jatuh tempo → bukan tunggakan, tetap boleh dibayar di muka. */
 .month-btn.upcoming { color: var(--text-muted); border-style: dashed; }
+/* Sebelum santri masuk (SPMB tengah tahun) → tidak pernah ditagih. */
+.month-btn.before { opacity: .45; }
 
 /* ══ SEARCH BAR ══ */
 .search-bar { position: relative; }

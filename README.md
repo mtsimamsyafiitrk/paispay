@@ -164,6 +164,45 @@ tidak menambah tunggakan.
 Fungsi terkait ada di `js/helpers.js`: `sppDueMonths()`, `isSppDue()`,
 `sppUnpaidDueMonths()`, `sppUpcomingMonths()`, `sppDueMonthLabel()`.
 
+## Santri Baru dari SPMB (SPP mulai bulan santri masuk)
+
+Santri yang **masuk di tengah tahun ajaran** — mis. calon SPMB yang dimasukkan
+ke aplikasi pada bulan November — tidak boleh ditagih SPP bulan-bulan sebelum ia
+masuk. Tanpa penanda ini, ia langsung tampil menunggak Juli s/d Oktober.
+
+> Contoh: TA 2025/2026, calon santri dipromosikan November 2025, hari ini
+> Januari 2026 → tunggakan = **3 bulan** (Nov, Des, Jan), bukan 7 bulan.
+
+- Bulan mulai disimpan di kolom `students.spp_mulai` dengan bentuk
+  `"<TA>|<kode bulan>"`, mis. `"2025/2026|Nov"`. Kosong = ditagih penuh dari Juli
+  (perilaku santri lama).
+- **Diisi otomatis** memakai bulan berjalan saat calon santri didaftarkan/diimport
+  di menu **SPMB**, dan dikonfirmasi lagi lewat pilihan **"SPP mulai bulan"** pada
+  modal **Promosi** (tunggal maupun massal) — bisa diubah bila santri sebenarnya
+  masuk di bulan lain.
+- Bisa dikoreksi kapan saja lewat **Data Santri → Edit** (pilihan *SPP mulai
+  bulan*); pilih *"Juli — awal tahun ajaran"* untuk mengembalikan tagihan penuh.
+- **Berlaku satu tahun ajaran saja.** Label TA ikut disimpan, dan penanda
+  dikosongkan saat **Promosi Kelas** — di TA berikutnya santri tersebut ditagih
+  penuh 12 bulan seperti santri lain.
+- **Arsip tunggakan ikut menyesuaikan**: saat promosi kelas, SPP tahun berjalan
+  santri ini diarsipkan ke `spp_history` dalam bentuk rinci (`months`) hanya untuk
+  bulan sejak ia masuk — jadi tunggakan tahun lalunya tidak ikut menghitung bulan
+  sebelum ia terdaftar.
+- Tampilan menyesuaikan: bulan sebelum santri masuk tampil **pudar** (bukan merah)
+  di tabel/detail santri, tidak muncul sebagai tunggakan maupun pilihan bayar di
+  muka pada Input Pembayaran, tidak ikut jadi penyebut ringkasan bulanan di
+  Dashboard, dan surat tagihan menulis *"SPP Bulanan (mulai November s/d …)"*.
+
+**Migrasi database:** jalankan `supabase_migration_spp_mulai.sql` (menambah kolom
+`spp_mulai text` — aman, tidak menghapus data). Bila belum dijalankan, aplikasi
+tetap berfungsi normal (penanda tidak tersimpan, tagihan penuh dari Juli seperti
+sebelumnya) sampai kolom tersedia.
+
+Fungsi terkait di `js/helpers.js`: `buildSppMulai()`, `parseSppMulai()`,
+`sppMulaiBulan()`, `sppBillableMonths()`, `sppDueMonthsFor()`, `isSppDueFor()`,
+`isSppSebelumMasuk()`, `sppMulaiLabel()`, `sppMulaiOptionsHtml()`.
+
 ## Tunggakan SPP Tahun Ajaran Sebelumnya
 
 Saat **Promosi Kelas** (pindah tahun ajaran), `spp_paid_months` tahun berjalan

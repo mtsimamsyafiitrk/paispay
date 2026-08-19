@@ -142,14 +142,17 @@ function renderSiswaTable(resetPage = true) {
       }).join('');
     } else {
       // Lunas = hijau, menunggak (sudah jatuh tempo) = merah,
-      // belum jatuh tempo = abu-abu (tidak dihitung tunggakan).
+      // belum jatuh tempo = abu-abu (tidak dihitung tunggakan), dan bulan
+      // sebelum santri masuk = pudar (tidak pernah ditagih).
+      const mulaiTtl = sppMulaiLabel(s) ? `Sebelum masuk (SPP mulai ${sppMulaiLabel(s)})` : '';
       monthBadges = MONTHS.map(m => {
-        const paid = (s.spp_paid_months||[]).includes(m);
-        const due  = isSppDue(m);
+        const paid   = (s.spp_paid_months||[]).includes(m);
+        const sebelum = !paid && isSppSebelumMasuk(s, m);
+        const due    = !sebelum && isSppDueFor(s, m);
         const bg   = paid ? 'var(--primary)' : due ? 'var(--danger-pale)' : '#e5e0d8';
         const fg   = paid ? '#fff' : due ? 'var(--danger)' : '#999';
-        const ttl  = paid ? 'Lunas' : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo';
-        return `<span title="${ttl}" style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${bg};color:${fg};">${m}</span>`;
+        const ttl  = paid ? 'Lunas' : sebelum ? mulaiTtl : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo';
+        return `<span title="${ttl}" style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${bg};color:${fg};${sebelum?'opacity:.45;':''}">${m}</span>`;
       }).join('');
     }
     const nama_safe = escJs(s.nama);
@@ -358,15 +361,20 @@ function renderTunggakanDetail(s) {
   // dan belum jatuh tempo (tidak dihitung sebagai tunggakan).
   const bulanLunas = MONTHS.filter(m => (s.spp_paid_months||[]).includes(m));
   const bulanBelum = sppUnpaidDueMonths(s);
+  const mulaiLabel = sppMulaiLabel(s);
   const monthGrid  = MONTHS.map(m => {
-    const paid = (s.spp_paid_months||[]).includes(m);
-    const due  = isSppDue(m);
+    const paid    = (s.spp_paid_months||[]).includes(m);
+    const sebelum = !paid && isSppSebelumMasuk(s, m);
+    const due     = !sebelum && isSppDueFor(s, m);
     const border = paid ? 'var(--primary)' : due ? 'var(--danger)' : 'var(--border)';
     const bg     = paid ? 'var(--primary)' : due ? 'var(--danger-pale)' : 'var(--card)';
     const fg     = paid ? '#fff' : due ? 'var(--danger)' : 'var(--text-muted)';
-    return `<div title="${paid ? 'Lunas' : due ? 'Belum bayar (sudah jatuh tempo)' : 'Belum jatuh tempo'}"
+    const ttl    = paid ? 'Lunas'
+      : sebelum ? `Sebelum masuk — tidak ditagih (SPP mulai ${mulaiLabel})`
+      : due ? 'Belum bayar (sudah jatuh tempo)' : 'Belum jatuh tempo';
+    return `<div title="${ttl}"
       style="padding:5px 2px;border-radius:8px;border:1.5px solid ${border};
-      background:${bg};color:${fg};${paid || due ? '' : 'border-style:dashed;'}
+      background:${bg};color:${fg};${paid || due ? '' : 'border-style:dashed;'}${sebelum ? 'opacity:.45;' : ''}
       font-size:11px;font-weight:600;text-align:center;">${m}</div>`;
   }).join('');
 
