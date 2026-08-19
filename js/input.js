@@ -252,12 +252,14 @@ function onStudentSelect() {
   // kanan, sehingga angka yang sama terbaca dua kali dalam satu layar. Panel
   // kanan yang dipertahankan karena sekaligus punya tombol centang-semua.
   const bulanTerbayar = (s.spp_paid_months || []).length;
+  // Santri yang masuk di tengah TA hanya ditagih sejak bulan masuknya.
+  const bulanDitagih  = sppBillableMonths(s).length;
   document.getElementById('studentSummary').innerHTML = `
     <div style="margin-top:14px;padding:12px 14px;background:var(--primary-pale);border-radius:12px;display:grid;grid-template-columns:1fr auto;gap:7px 14px;align-items:baseline;">
       <div style="font-size:12px;color:var(--text-muted);">SPP per bulan</div>
       <div style="font-size:12.5px;font-weight:700;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);font-weight:400;">Belum diisi</span>'}</div>
       <div style="font-size:12px;color:var(--text-muted);">Bulan SPP terbayar</div>
-      <div style="font-size:12.5px;font-weight:700;">${bulanTerbayar} <span style="font-weight:400;color:var(--text-muted);">dari ${MONTHS.length} bulan</span></div>
+      <div style="font-size:12.5px;font-weight:700;">${bulanTerbayar} <span style="font-weight:400;color:var(--text-muted);">dari ${bulanDitagih} bulan${sppMulaiLabel(s) ? ' (mulai ' + esc(sppMulaiLabel(s)) + ')' : ''}</span></div>
     </div>
   `;
   renderPaymentItems(s);
@@ -378,6 +380,10 @@ function renderPaymentItems(student) {
       // wali yang ingin membayar di muka tetap bisa memilihnya.
       const tunggak  = sppUnpaidDueMonths(student);
       const dimuka   = sppUpcomingMonths(student);
+      // Santri yang masuk di tengah TA (mis. promosi SPMB bulan November):
+      // bulan sebelum ia masuk tidak ditagih sama sekali, jadi tidak muncul
+      // sebagai tunggakan maupun sebagai pilihan bayar di muka.
+      const mulaiSpp = sppMulaiLabel(student);
       const chip = (m, jatuhTempo) => `
         <label style="display:flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px solid ${jatuhTempo?'var(--danger)':'var(--border)'};border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s;${jatuhTempo?'color:var(--danger);':'color:var(--text-muted);'}"
           id="sppMonthLabel_${m}" onclick="toggleSppMonth('${m}',this)">
@@ -388,6 +394,8 @@ function renderPaymentItems(student) {
         doneNote = { kind: 'lunas', text: 'Semua bulan sudah lunas' };
       } else if (amount > 0) {
         extra = `<div style="margin-top:8px;">
+          ${mulaiSpp ? `
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">📅 Santri masuk di tengah tahun ajaran — SPP dihitung mulai <strong>${esc(mulaiSpp)}</strong>.</div>` : ''}
           ${tunggak.length ? `
           <div style="font-size:11px;font-weight:600;color:var(--danger);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Tunggakan — ${tunggak.length} bulan (s/d bulan berjalan):</div>
           <div style="display:flex;flex-wrap:wrap;gap:5px;">

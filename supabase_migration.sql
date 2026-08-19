@@ -48,6 +48,9 @@ CREATE TABLE students (
   -- Riwayat SPP tahun ajaran sebelumnya: { "2024/2025": { spp, spp_paid_months }, ... }
   -- Diisi otomatis saat promosi kelas agar tunggakan SPP tahun lalu tetap tercatat.
   spp_history      jsonb       NOT NULL DEFAULT '{}',
+  -- Bulan mulai tagih SPP bagi santri yang masuk di tengah tahun ajaran:
+  -- "<TA>|<kode bulan>" mis. "2025/2026|Nov"; kosong = ditagih penuh dari Juli.
+  spp_mulai        text        NOT NULL DEFAULT '',
   status_kelulusan text        NOT NULL DEFAULT '',
   created_at       timestamptz DEFAULT now(),
   CONSTRAINT students_nama_unique UNIQUE (nama)

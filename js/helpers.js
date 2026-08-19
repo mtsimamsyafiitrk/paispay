@@ -268,6 +268,94 @@ function sppDueMonths(ref) {
 // true bila bulan `m` sudah jatuh tempo pada TA berjalan.
 function isSppDue(m, ref) { return sppDueMonths(ref).includes(m); }
 
+// ══════════════════════════════════════════
+// BULAN MULAI TAGIH SPP (SANTRI MASUK DI TENGAH TAHUN AJARAN)
+// ══════════════════════════════════════════
+// Santri baru — mis. calon SPMB yang dipromosikan pada bulan November — TIDAK
+// boleh ditagih SPP bulan-bulan sebelum ia masuk. Tanpa penanda ini, santri
+// yang baru dimasukkan langsung tampil menunggak Juli s/d Oktober.
+//
+// Penanda disimpan di kolom students.spp_mulai dengan format "2025/2026|Nov"
+// (label TA + kode bulan). Label TA ikut disimpan supaya penanda otomatis
+// berhenti berlaku begitu tahun ajaran berganti: mulai TA berikutnya santri
+// tersebut sudah ditagih penuh dari Juli seperti santri lain.
+const SPP_MULAI_SEP = '|';
+
+// Bentuk nilai kolom spp_mulai; '' bila bulannya tidak dikenal ATAU Juli —
+// Juli adalah awal tahun ajaran, jadi sama saja dengan tanpa penanda. Dengan
+// begitu isi kolom selalu ringkas: kosong, atau bulan masuk yang sebenarnya.
+function buildSppMulai(ta, m) {
+  const code = monthCode(m);
+  if (!code || code === MONTHS[0]) return '';
+  return String(ta || '').trim() + SPP_MULAI_SEP + code;
+}
+
+// "2025/2026|Nov" → { ta:'2025/2026', bulan:'Nov' }; null bila kosong/tak terbaca.
+// Nilai tanpa label TA ("Nov") tetap diterima dan dianggap milik TA berjalan.
+function parseSppMulai(v) {
+  const raw = String(v || '').trim();
+  if (!raw) return null;
+  const parts = raw.split(SPP_MULAI_SEP);
+  const bulan = monthCode(parts.length > 1 ? parts[1] : parts[0]);
+  if (!bulan) return null;
+  return { ta: parts.length > 1 ? parts[0].trim() : '', bulan };
+}
+
+// Kode bulan mulai tagih SPP santri pada TA `ta` (default: TA berjalan).
+// '' bila santri ditagih penuh dari Juli, atau bila penandanya milik tahun
+// ajaran lain.
+function sppMulaiBulanTa(s, ta) {
+  const info = parseSppMulai(s && s.spp_mulai);
+  if (!info) return '';
+  const yPenanda = taYearOf(info.ta);
+  const yTarget  = ta === undefined ? taStartYear() : taYearOf(ta);
+  // Penanda tanpa label TA dianggap milik TA yang sedang diperiksa.
+  if (yPenanda && yTarget && yPenanda !== yTarget) return '';
+  return info.bulan;
+}
+
+function sppMulaiBulan(s) { return sppMulaiBulanTa(s); }
+
+// Posisi bulan mulai di dalam MONTHS (0 = Juli / tanpa penanda).
+function sppMulaiIndexTa(s, ta) {
+  const i = MONTHS.indexOf(sppMulaiBulanTa(s, ta));
+  return i > 0 ? i : 0;
+}
+function sppMulaiIndex(s) { return sppMulaiIndexTa(s); }
+
+// Bulan yang memang ditagih ke santri ini pada TA berjalan — seluruh 12 bulan
+// untuk santri lama, atau sejak bulan masuk untuk santri baru.
+function sppBillableMonths(s) { return MONTHS.slice(sppMulaiIndex(s)); }
+
+// Bulan jatuh tempo milik satu santri: bulan jatuh tempo TA berjalan yang juga
+// sudah menjadi kewajibannya (bulan sebelum ia masuk dilewati).
+function sppDueMonthsFor(s, ref) { return sppDueMonths(ref).slice(sppMulaiIndex(s)); }
+
+// true bila bulan `m` sudah jatuh tempo DAN sudah menjadi kewajiban santri ini.
+function isSppDueFor(s, m, ref) { return sppDueMonthsFor(s, ref).includes(m); }
+
+// true bila bulan `m` jatuh sebelum santri masuk — tidak pernah ditagih.
+function isSppSebelumMasuk(s, m) { return MONTHS.indexOf(m) < sppMulaiIndex(s); }
+
+// Nama bulan mulai tagih ("November"); '' bila ditagih penuh dari Juli.
+function sppMulaiLabel(s) {
+  const i = sppMulaiIndex(s);
+  return i > 0 ? (MONTH_FULL[MONTHS[i]] || MONTHS[i]) : '';
+}
+
+// Kode bulan kalender hari ini dalam penanggalan TA ("Nov" bila kini November).
+function bulanBerjalanCode(ref) {
+  const d = ref || new Date();
+  return monthCode(String(d.getMonth() + 1));
+}
+
+// <option> daftar bulan untuk pemilih "SPP mulai bulan" (nilai '' = dari Juli).
+function sppMulaiOptionsHtml(selected) {
+  const sel = monthCode(selected);
+  return '<option value="">Juli — awal tahun ajaran (penuh 12 bulan)</option>' +
+    MONTHS.map(m => `<option value="${m}"${m === sel ? ' selected' : ''}>${MONTH_FULL[m]}</option>`).join('');
+}
+
 // Nama bulan terakhir yang jatuh tempo — untuk keterangan "dihitung s/d …".
 function sppDueMonthLabel(ref) {
   const due = sppDueMonths(ref);
@@ -280,7 +368,7 @@ function sppDueMonthLabel(ref) {
 function sppUnpaidDueMonths(s, ref) {
   if (!s || s.status_kelulusan === 'lulus') return [];
   const paid = s.spp_paid_months || [];
-  return sppDueMonths(ref).filter(m => !paid.includes(m));
+  return sppDueMonthsFor(s, ref).filter(m => !paid.includes(m));
 }
 
 // Bulan yang belum jatuh tempo & belum dibayar — bukan tunggakan, tapi tetap
@@ -289,7 +377,7 @@ function sppUpcomingMonths(s, ref) {
   if (!s || s.status_kelulusan === 'lulus') return [];
   const paid = s.spp_paid_months || [];
   const due = sppDueMonths(ref);
-  return MONTHS.filter(m => !due.includes(m) && !paid.includes(m));
+  return sppBillableMonths(s).filter(m => !due.includes(m) && !paid.includes(m));
 }
 
 function sppTunggakan(s) {
@@ -308,9 +396,19 @@ function sppTunggakan(s) {
 function snapshotSppTahunBerjalan(s, ta) {
   if (!ta || !((s.spp || 0) > 0)) return;
   s.spp_history = (s.spp_history && typeof s.spp_history === 'object') ? s.spp_history : {};
-  if (!s.spp_history[ta]) {
-    s.spp_history[ta] = { spp: s.spp || 0, spp_paid_months: [...(s.spp_paid_months || [])] };
+  if (s.spp_history[ta]) return;
+  const rate = s.spp || 0;
+  const paid = [...(s.spp_paid_months || [])];
+  const rec = { spp: rate, spp_paid_months: paid };
+  // Santri yang masuk di tengah TA ini hanya ditagih sejak bulan masuknya —
+  // arsipnya harus memakai bentuk rinci (`months`) supaya bulan sebelum ia
+  // masuk tidak ikut jadi tunggakan tahun lalu.
+  const mulai = sppMulaiIndexTa(s, ta);
+  if (mulai > 0) {
+    rec.months = {};
+    MONTHS.slice(mulai).forEach(m => { rec.months[m] = { n: rate, d: paid.includes(m) ? rate : 0 }; });
   }
+  s.spp_history[ta] = rec;
 }
 
 // Tunggakan dari tabel tagihan (semua item tetap)
