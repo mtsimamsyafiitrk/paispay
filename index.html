@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SiPay - Sistem Pembayaran Santri</title>
+<!-- Sambungan ke Supabase dibuka lebih awal (DNS + TLS) supaya permintaan data
+     pertama tidak menunggu jabat tangan koneksi — terasa di jaringan seluler. -->
+<link rel="preconnect" href="https://urlooswvcbmixzercsoc.supabase.co" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="stylesheet" href="css/main.css">
 </head>
 <body>

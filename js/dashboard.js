@@ -1,13 +1,19 @@
 // ── SiPay · Dashboard Page ──
 function renderDashboard() {
+  return withTagihanIndex(_renderDashboard);
+}
+function _renderDashboard() {
   const all = appState.students;
   // ss = santri AKTIF. Tabel students juga menyimpan alumni, santri pindah/
   // keluar, dan calon santri SPMB — semuanya TIDAK boleh ikut dihitung sebagai
   // "Santri Aktif" atau tunggakan berjalan.
   const ss = all.filter(isSantriAktif);
   const nonAktif = all.length - ss.length;
+  // Satu lintasan untuk seluruh rincian status (dulu satu filter penuh per status).
+  const jmlStatus = {};
+  all.forEach(s => { const k = s.status_kelulusan || ''; jmlStatus[k] = (jmlStatus[k] || 0) + 1; });
   const rincianNonAktif = Object.entries(STATUS_NON_AKTIF)
-    .map(([k, label]) => ({ label, n: all.filter(s => (s.status_kelulusan || '') === k).length }))
+    .map(([k, label]) => ({ label, n: jmlStatus[k] || 0 }))
     .filter(x => x.n);
 
   // Uang yang benar-benar masuk — dihitung dari SEMUA santri, termasuk yang
@@ -19,7 +25,7 @@ function renderDashboard() {
   // ditampilkan terpisah supaya tidak hilang dari pandangan.
   const totalTunggak = ss.reduce((a,s) => a + totalTunggakan(s), 0);
   const belumLunas   = ss.filter(s => totalTunggakan(s) > 0).length;
-  const tunggakNonAktif = all.filter(s => !isSantriAktif(s)).reduce((a,s) => a + totalTunggakan(s), 0);
+  const tunggakNonAktif = all.reduce((a,s) => isSantriAktif(s) ? a : a + totalTunggakan(s), 0);
 
   const subSantri = nonAktif
     ? `Santri Aktif &nbsp;·&nbsp; +${nonAktif} non-aktif`
@@ -37,10 +43,16 @@ function renderDashboard() {
   `;
 
   // Kelas table
-  const kelasList = [...new Set(ss.map(s=>s.kelas))].sort();
+  // Kelompokkan sekali (dulu: satu penyaringan penuh untuk tiap kelas).
+  const perKelas = new Map();
+  ss.forEach(s => {
+    const arr = perKelas.get(s.kelas);
+    if (arr) arr.push(s); else perKelas.set(s.kelas, [s]);
+  });
+  const kelasList = [...perKelas.keys()].sort();
   const tbody = document.querySelector('#dashKelasTable tbody');
   tbody.innerHTML = kelasList.map(k => {
-    const ks = ss.filter(s=>s.kelas===k);
+    const ks = perKelas.get(k);
     // "Lunas" = tidak ada tunggakan s/d bulan berjalan (bulan yang belum tiba
     // tidak membuat santri dianggap menunggak).
     const lunas = ks.filter(s => !s.spp || sppUnpaidDueMonths(s).length === 0).length;
@@ -57,12 +69,21 @@ function renderDashboard() {
 
   // Month summary
   const ms = document.getElementById('monthSummary');
-  ms.innerHTML = MONTHS.map(m => {
-    // Santri yang baru masuk di tengah TA belum ditagih bulan-bulan sebelumnya,
-    // jadi ia tidak ikut jadi penyebut di bulan-bulan itu.
-    const ditagih = ss.filter(s => s.spp > 0 && !isSppSebelumMasuk(s, m));
-    const paid = ditagih.filter(s => s.spp_paid_months.includes(m)).length;
-    const total = ditagih.length;
+  // Santri yang baru masuk di tengah TA belum ditagih bulan-bulan sebelumnya,
+  // jadi ia tidak ikut jadi penyebut di bulan-bulan itu. Dihitung dalam satu
+  // lintasan santri — dulu tiap bulan menyaring ulang seluruh daftar (2x12 kali).
+  const rekapBulan = MONTHS.map(() => ({ ditagih: 0, paid: 0 }));
+  ss.forEach(s => {
+    if (!(s.spp > 0)) return;
+    const paidMonths = s.spp_paid_months || [];
+    for (let i = sppMulaiIndex(s); i < MONTHS.length; i++) {
+      rekapBulan[i].ditagih++;
+      if (paidMonths.includes(MONTHS[i])) rekapBulan[i].paid++;
+    }
+  });
+  ms.innerHTML = MONTHS.map((m, mi) => {
+    const paid  = rekapBulan[mi].paid;
+    const total = rekapBulan[mi].ditagih;
     const p = pct(paid,total);
     // Bulan yang belum jatuh tempo ditandai netral — capaian rendah di situ
     // wajar (belum ditagih), jadi jangan diberi warna "merah".
@@ -77,7 +98,7 @@ function renderDashboard() {
 
   // Recent transactions
   const tbody2 = document.querySelector('#recentTable tbody');
-  const recent = [...appState.transactions].reverse().slice(0,10);
+  const recent = appState.transactions.slice(-10).reverse();
   if (!recent.length) {
     tbody2.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Belum ada transaksi tercatat</td></tr>';
   } else {

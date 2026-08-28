@@ -288,18 +288,23 @@ function handleIndukFile(input) {
     const reader = new FileReader();
     reader.onload = e => indukParseCSV(e.target.result);
     reader.readAsText(file);
-  } else if (typeof XLSX !== 'undefined') {
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const wb = XLSX.read(e.target.result, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        indukParseRows(XLSX.utils.sheet_to_json(ws, { defval: '' }));
-      } catch (err) { toast('⚠️ Gagal membaca file: ' + err.message); }
-    };
-    reader.readAsArrayBuffer(file);
   } else {
-    toast('⚠️ Library Excel belum siap. Coba refresh atau gunakan format CSV.');
+    // Pustaka Excel ditarik saat dibutuhkan saja (lihat xlsxReady di config.js).
+    xlsxReady(() => {
+      if (typeof XLSX === 'undefined') {
+        toast('⚠️ Library Excel gagal dimuat. Cek koneksi atau gunakan format CSV.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          indukParseRows(XLSX.utils.sheet_to_json(ws, { defval: '' }));
+        } catch (err) { toast('⚠️ Gagal membaca file: ' + err.message); }
+      };
+      reader.readAsArrayBuffer(file);
+    });
   }
 }
 function indukParseCSV(text) {
@@ -422,7 +427,8 @@ function indukTanggalToISO(v) {
   return isNaN(d) ? null : d.toISOString();
 }
 
-function downloadTemplateInduk() {
+function downloadTemplateInduk() { xlsxReady(_downloadTemplateInduk); }
+function _downloadTemplateInduk() {
   const headers = ['TAHUN_AJARAN', 'NAMA', 'KELAS', 'NISN', 'ITEM', 'NOMINAL', 'BULAN', 'TANGGAL', 'CATATAN'];
   const contoh = [
     ['2023/2024', 'AHMAD FAUZI',      '7', '1234567890', 'SPP Bulanan',  450000, 'Jul', '2023-07-10', ''],

@@ -34,14 +34,6 @@ function switchCetakTab(tab, btn) {
 // EXPORT / BACKUP KE EXCEL
 // ══════════════════════════════════════════
 
-function xlsxReady(cb) {
-  if (window.XLSX) { cb(); return; }
-  const s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-  s.onload = cb;
-  document.head.appendChild(s);
-}
-
 function downloadXlsx(wb, filename) {
   XLSX.writeFile(wb, filename);
 }

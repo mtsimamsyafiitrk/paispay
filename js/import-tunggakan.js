@@ -73,19 +73,22 @@ function handleTunggakanFile(input) {
     reader.onload = e => tgIngest(tgParseCSV(e.target.result));
     reader.readAsText(file);
   } else {
-    if (typeof XLSX === 'undefined') {
-      toast('⚠️ Library Excel belum tersedia — gunakan file .csv atau .json');
-      return;
-    }
-    reader.onload = e => {
-      try {
-        const wb = XLSX.read(e.target.result, { type: 'array' });
-        // Utamakan sheet rincian per bulan bila ada (file rekap punya banyak sheet).
-        const name = wb.SheetNames.find(n => /TAGIHAN\s*SPP\s*PER\s*BULAN/i.test(n)) || wb.SheetNames[0];
-        tgIngest(XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }));
-      } catch (err) { toast('⚠️ Gagal membaca file: ' + err.message); }
-    };
-    reader.readAsArrayBuffer(file);
+    // Pustaka Excel ditarik saat dibutuhkan saja (lihat xlsxReady di config.js).
+    xlsxReady(() => {
+      if (typeof XLSX === 'undefined') {
+        toast('⚠️ Library Excel gagal dimuat — gunakan file .csv atau .json');
+        return;
+      }
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          // Utamakan sheet rincian per bulan bila ada (file rekap punya banyak sheet).
+          const name = wb.SheetNames.find(n => /TAGIHAN\s*SPP\s*PER\s*BULAN/i.test(n)) || wb.SheetNames[0];
+          tgIngest(XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: '' }));
+        } catch (err) { toast('⚠️ Gagal membaca file: ' + err.message); }
+      };
+      reader.readAsArrayBuffer(file);
+    });
   }
 }
 

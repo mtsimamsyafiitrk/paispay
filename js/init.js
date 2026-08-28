@@ -1,10 +1,6 @@
 // ── SiPay · App Initialization ──
-// Load XLSX lib dynamically for import
-(function(){
-  const s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-  document.head.appendChild(s);
-})();
+// Pustaka Excel TIDAK lagi dimuat di sini. Lihat xlsxReady() di js/config.js:
+// pustakanya ditarik saat menu Import/Export benar-benar dipakai.
 
 function isGuest() {
   return localStorage.getItem('sipay_auth') === 'guest';

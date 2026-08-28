@@ -84,6 +84,25 @@ function showPage(id) {
   if(id==='riwayat-kuitansi') { if(typeof renderBukuIndukPage==='function') renderBukuIndukPage(); loadRiwayatKuitansi(); }
 }
 
+// ── Gambar ulang setelah data disinkronkan ──
+// Halaman yang TIDAK sedang dibuka tak perlu digambar: showPage() menggambarnya
+// lagi begitu dibuka, selalu dari appState terbaru. Dulu setiap sinkron latar
+// (tiap 20 detik, tiap tab difokus, dan tiap perubahan dari device lain)
+// membangun ulang keempat tampilan sekaligus — tiga di antaranya tak terlihat.
+// Di HP kelas menengah itu jeda yang terasa saat mengetik.
+function activePageId() {
+  const el = document.querySelector('.page.active');
+  return el ? el.id.replace(/^page-/, '') : '';
+}
+
+function renderHalamanAktif() {
+  const id = activePageId();
+  if (id === 'dashboard')   renderDashboard();
+  if (id === 'rekap-siswa') renderSiswaTable();
+  if (id === 'tunggakan')   renderTunggakan();
+  if (id === 'cetak')       renderCetakNamaOptions();
+}
+
 function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarBackdrop').classList.add('show'); }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarBackdrop').classList.remove('show'); }
 
@@ -411,10 +430,51 @@ function snapshotSppTahunBerjalan(s, ta) {
   s.spp_history[ta] = rec;
 }
 
+// ══════════════════════════════════════════
+// INDEKS TAGIHAN — mempercepat penggambaran tabel
+// ══════════════════════════════════════════
+// Tagihan disimpan sebagai satu array datar (appState.tagihan). Mencari tagihan
+// milik seorang santri berarti memindai SELURUH array. Di halaman Dashboard,
+// Data Santri, dan Tunggakan pencarian itu diulang untuk setiap santri — jadi
+// biayanya (jumlah santri x jumlah baris tagihan). Untuk 400 santri dengan 2500
+// baris tagihan itu sejuta perbandingan, dan totalTunggakan() dipanggil
+// beberapa kali per santri dalam satu penggambaran.
+//
+// withTagihanIndex(fn) menyalakan dua singgahan selama fn berjalan:
+//   • byNama — Map nama -> daftar tagihannya, dibangun sekali (satu lintasan).
+//   • total  — hasil totalTunggakan() per objek santri, supaya panggilan
+//              berulang untuk santri yang sama tidak dihitung ulang.
+//
+// Singgahan HANYA hidup selama fn dan fn selalu berupa fungsi penggambar yang
+// membaca saja — jadi tidak mungkin menyajikan data basi. Di luar fn, semua
+// pemanggilan kembali memindai array seperti semula.
+let _tkIndex = null;
+const _TK_KOSONG = [];
+
+function withTagihanIndex(fn) {
+  const luar = _tkIndex;                 // dukung pemanggilan bersarang
+  if (!luar) _tkIndex = { byNama: null, total: new WeakMap() };
+  try { return fn(); }
+  finally { if (!luar) _tkIndex = null; }
+}
+
+// Daftar tagihan milik satu santri.
+function tagihanOf(nama) {
+  if (!_tkIndex) return appState.tagihan.filter(t => t.nama === nama);
+  if (!_tkIndex.byNama) {
+    const m = new Map();
+    appState.tagihan.forEach(t => {
+      const arr = m.get(t.nama);
+      if (arr) arr.push(t); else m.set(t.nama, [t]);
+    });
+    _tkIndex.byNama = m;
+  }
+  return _tkIndex.byNama.get(nama) || _TK_KOSONG;
+}
+
 // Tunggakan dari tabel tagihan (semua item tetap)
 function itemsTunggakan(s) {
-  return appState.tagihan
-    .filter(t => t.nama === s.nama)
+  return tagihanOf(s.nama)
     .reduce((sum, t) => sum + Math.max(0, t.nominal - t.paid_amount), 0);
 }
 
@@ -520,6 +580,16 @@ function sppTunggakanPrev(s) {
 }
 
 function totalTunggakan(s) {
+  // Di dalam withTagihanIndex(), hasil per santri disinggahkan: satu
+  // penggambaran tabel memanggil fungsi ini berkali-kali untuk santri yang sama
+  // (menyaring, menjumlah, lalu mengisi kolom).
+  if (_tkIndex && s && typeof s === 'object') {
+    const memo = _tkIndex.total.get(s);
+    if (memo !== undefined) return memo;
+    const v = sppTunggakan(s) + sppTunggakanPrev(s) + itemsTunggakan(s);
+    _tkIndex.total.set(s, v);
+    return v;
+  }
   return sppTunggakan(s) + sppTunggakanPrev(s) + itemsTunggakan(s);
 }
 

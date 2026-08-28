@@ -86,7 +86,11 @@ async function syncNow(manual = false) {
   const skip = () => { _syncDirty = true; rescheduleAutoSync(); return false; };
   if (_syncRunning) return skip();
   if (!manual && !_canAutoSync()) return skip();
-  if (!manual && Date.now() - _lastSyncAt < SYNC_MIN_GAP_MS) return skip();
+  // Baru saja sinkron → datanya sudah yang terbaru; ini BUKAN perubahan yang
+  // tertunda. Dulu kasus ini ikut ditandai "dirty", sehingga tab yang kembali
+  // aktif (visibilitychange + focus menyala hampir bersamaan) memicu tarikan
+  // kedua atas seluruh data hanya 1,2 detik setelah tarikan pertama.
+  if (!manual && Date.now() - _lastSyncAt < SYNC_MIN_GAP_MS) { rescheduleAutoSync(); return false; }
 
   _syncRunning = true;
   const btn = document.getElementById('syncNowBtn');
@@ -156,6 +160,18 @@ function stopAutoSync() {
 // Pemicu tambahan: tab kembali terlihat, jendela di-fokus, koneksi pulih.
 // Ini yang membuat "buka lagi di device B" langsung menampilkan data terakhir
 // tanpa perlu reload halaman — juga saat realtime kebetulan sedang putus.
-document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    // Penulisan salinan lokal ditunda-tunda (lihat simpanSalinanLokal di
+    // js/database.js). Saat tab ditinggalkan, paksa sekali supaya cadangan
+    // offline-nya tetap mutakhir.
+    if (typeof simpanSalinanLokal === 'function') simpanSalinanLokal(true);
+  } else {
+    syncNow();
+  }
+});
+window.addEventListener('pagehide', () => {
+  if (typeof simpanSalinanLokal === 'function') simpanSalinanLokal(true);
+});
 window.addEventListener('focus',  () => { syncNow(); });
 window.addEventListener('online', () => { syncNow(); });
