@@ -9,12 +9,15 @@
 // jalur yang saling melengkapi:
 //
 //   1. REALTIME (js/realtime.js) — jalur utama. Perubahan dari device lain
-//      masuk seketika lewat WebSocket, lalu memanggil syncNow() di sini.
+//      masuk seketika lewat WebSocket, dan barisnya langsung dipasang ke
+//      appState tanpa menarik apa pun. syncNow() di sini hanya dipanggil bila
+//      perubahannya tidak bisa dipastikan.
 //   2. POLLING — jaring pengaman. Tetap berjalan walau realtime aktif, hanya
 //      dengan jeda yang jauh lebih longgar (2 menit vs 20 detik). Ini yang
 //      menyelamatkan keadaan ketika WebSocket diblokir jaringan sekolah,
 //      publication `supabase_realtime` belum diaktifkan, atau koneksi putus
-//      diam-diam tanpa event error.
+//      diam-diam tanpa event error — dan sekaligus mengoreksi penyimpangan
+//      bila ada event yang terlewat.
 //
 // Ditambah pemicu langsung: tab kembali aktif, jendela di-fokus, koneksi pulih,
 // dan tombol 🔄 di topbar.
@@ -54,6 +57,11 @@ async function withSyncPaused(fn) {
 
 // Tandai ada perubahan yang perlu ditarik — dipakai saat sinkron dilewati.
 function markSyncDirty() { _syncDirty = true; }
+
+// Sedang menahan sinkron otomatis? Dipakai js/realtime.js: selama proses panjang
+// (import, promosi kelas) berjalan, appState TIDAK boleh disisipi perubahan dari
+// device lain di tengah jalan.
+function isSyncPaused() { return _syncPaused > 0; }
 
 // Baru saja tersinkron? Dipakai realtime.js agar tidak menarik ulang data yang
 // sudah ditarik startAutoSync() beberapa ratus milidetik sebelumnya.

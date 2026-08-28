@@ -126,9 +126,17 @@ async function insertKuitansi(kwtData) {
   }
 }
 
-async function loadStudents() {
-  const rows = await sbAll('students?select=*&order=nama.asc,id.asc');
-  return rows.map(r => ({
+// ── Pemetaan baris server → objek appState ──
+// Dipakai bersama oleh loadStudents() dan js/realtime.js, yang menerapkan satu
+// baris hasil event WebSocket langsung ke appState. Bentuk objeknya WAJIB sama
+// persis lewat kedua jalur itu, jadi pemetaannya cuma boleh ada di satu tempat.
+//
+// `id` ikut dibawa (dulu dibuang) supaya satu baris bisa dikenali walau namanya
+// berubah, dan supaya event DELETE — yang hanya memuat kunci utama — tahu baris
+// mana yang harus dihapus.
+function mapStudentRow(r) {
+  return {
+    id: r.id,
     nama: r.nama,
     kelas: r.kelas,
     nisn: r.nisn || '',
@@ -138,7 +146,12 @@ async function loadStudents() {
     status_kelulusan: r.status_kelulusan || '',
     // Penanda bulan mulai tagih SPP untuk santri yang masuk di tengah TA.
     spp_mulai: r.spp_mulai || '',
-  }));
+  };
+}
+
+async function loadStudents() {
+  const rows = await sbAll('students?select=*&order=nama.asc,id.asc');
+  return rows.map(mapStudentRow);
 }
 
 async function saveSiswa(s) {
@@ -207,9 +220,8 @@ async function deleteTransactionsByNama(nama) {
 }
 
 // ══ TAGIHAN ══
-async function loadTagihan() {
-  const rows = await sbAll('tagihan?select=*&order=created_at.asc,id.asc');
-  return rows.map(r => ({
+function mapTagihanRow(r) {
+  return {
     id: r.id,
     nama: r.nama,
     kelas: r.kelas,
@@ -217,7 +229,12 @@ async function loadTagihan() {
     item_name: r.item_name,
     nominal: Number(r.nominal) || 0,
     paid_amount: Number(r.paid_amount) || 0,
-  }));
+  };
+}
+
+async function loadTagihan() {
+  const rows = await sbAll('tagihan?select=*&order=created_at.asc,id.asc');
+  return rows.map(mapTagihanRow);
 }
 
 // Buat tagihan untuk satu siswa baru (item tetap aktif yg sesuai kelas).
@@ -407,13 +424,18 @@ function findTagihan(nama, itemId) {
 }
 
 // ══ TRANSACTIONS ══
-async function loadTransactions() {
-  const rows = await sbAll('transactions?select=*&order=created_at.asc,id.asc');
-  return rows.map(r => ({
+function mapTransactionRow(r) {
+  return {
+    id: r.id,
     nama: r.nama, kelas: r.kelas, jenis: r.jenis,
     nominal: Number(r.nominal) || 0, time: r.time, catatan: r.catatan || '',
     metode: r.metode || '', dibayar_oleh: r.dibayar_oleh || '',
-  }));
+  };
+}
+
+async function loadTransactions() {
+  const rows = await sbAll('transactions?select=*&order=created_at.asc,id.asc');
+  return rows.map(mapTransactionRow);
 }
 
 async function saveTransaction(t) {
@@ -426,7 +448,12 @@ async function saveTransaction(t) {
     row.dibayar_oleh = t.dibayar_oleh || '';
   }
   try {
-    await sb('transactions', 'POST', row, { 'Prefer': 'return=minimal' });
+    // return=representation supaya id baris tersimpan ikut kembali. Objek txn
+    // yang sama sudah lebih dulu masuk ke appState.transactions (lihat
+    // submitPayment); dengan id terpasang, event realtime untuk baris itu
+    // dikenali sebagai baris yang sudah ada — bukan transaksi kedua.
+    const res = await sb('transactions', 'POST', row, { 'Prefer': 'return=representation' });
+    if (Array.isArray(res) && res[0] && res[0].id) t.id = res[0].id;
   } catch(e) {
     if (_paymentMetaSupported && _isMissingPaymentMeta(e)) {
       _paymentMetaSupported = false;
