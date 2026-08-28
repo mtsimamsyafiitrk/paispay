@@ -183,7 +183,14 @@ function _rtTransactions(evt, baru, lama) {
     i = list.findIndex(t => !t.id && t.nama === row.nama && t.time === row.time &&
                             t.nominal === row.nominal && t.jenis === row.jenis);
   }
-  if (i < 0) list.push(row); else list[i] = row;
+  if (i < 0) {
+    list.push(row);
+    // Jaga panjangnya sama dengan yang ditarik loadTransactions(): daftar ini
+    // memang hanya menyimpan transaksi terakhir, jangan menggelembung selama
+    // aplikasi dibiarkan terbuka berjam-jam.
+    const batas = (typeof TXN_TERAKHIR_LIMIT === 'number') ? TXN_TERAKHIR_LIMIT : 50;
+    if (list.length > batas) list.splice(0, list.length - batas);
+  } else list[i] = row;
   return true;
 }
 

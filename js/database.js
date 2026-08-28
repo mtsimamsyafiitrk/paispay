@@ -433,9 +433,25 @@ function mapTransactionRow(r) {
   };
 }
 
+// ── Hanya transaksi TERAKHIR yang ditarik ──
+// appState.transactions cuma dipakai satu tempat: daftar "10 transaksi
+// terakhir" di Dashboard. Setiap tampilan yang butuh riwayat penuh menarik
+// datanya sendiri dari server — halaman Log (js/siswa.js), Export & Backup
+// (js/cetak.js), dan riwayat per santri (getAllTransactionsByStudent di
+// js/helpers.js). Dulu tabel ini ditarik UTUH pada tiap sinkron, dengan
+// paginasi 1000 baris sekali jalan; setelah setahun dipakai itu bisa ribuan
+// baris yang diunduh hanya untuk menampilkan sepuluh di antaranya.
+//
+// Diambil menurun lalu dibalik, supaya isi array tetap MENAIK seperti dulu:
+// Dashboard memakai slice(-10) dan js/realtime.js menambahkan baris baru di
+// ujung belakang. Kolom created_at selalu terisi (DEFAULT now(); aplikasi tidak
+// pernah mengirimnya sendiri), jadi urutannya tidak perlu penanganan NULL.
+const TXN_TERAKHIR_LIMIT = 50;   // longgar di atas 10, untuk berjaga bila ada baris terhapus
+
 async function loadTransactions() {
-  const rows = await sbAll('transactions?select=*&order=created_at.asc,id.asc');
-  return rows.map(mapTransactionRow);
+  const rows = await sb('transactions?select=*&order=created_at.desc,id.desc' +
+                        '&limit=' + TXN_TERAKHIR_LIMIT);
+  return Array.isArray(rows) ? rows.map(mapTransactionRow).reverse() : [];
 }
 
 async function saveTransaction(t) {
