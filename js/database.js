@@ -9,14 +9,40 @@
 //
 // path WAJIB memakai order yang stabil (sertakan kolom unik sebagai pemecah
 // seri), kalau tidak ada baris yang bisa terlewat/terhitung dua kali.
+//
+// Halaman KEDUA dan seterusnya ditarik BERBARENGAN (SB_PAGE_BATCH sekaligus).
+// Dulu paginasinya berurutan: halaman ke-4 baru diminta setelah ke-3 tiba, jadi
+// waktu tunggunya = jumlah halaman x waktu pulang-pergi jaringan. Di koneksi
+// seluler sekolah (RTT 300-600 ms) empat halaman berarti 1,2-2,4 detik yang
+// dihabiskan hanya untuk menunggu. Sekarang halaman 2-5 berangkat bersamaan,
+// jadi biayanya tinggal satu kali waktu pulang-pergi per gelombang.
+//
+// Selama halaman terakhir tiap gelombang masih penuh, berarti kemungkinan masih
+// ada sisa — lanjut ke gelombang berikutnya. Paling banter ada beberapa
+// permintaan kosong di gelombang penutup; jauh lebih murah daripada menunggu
+// berurutan.
+const SB_PAGE_BATCH = 4;
+
 async function sbAll(path, pageSize = 1000) {
   const sep = path.includes('?') ? '&' : '?';
-  const out = [];
-  for (let offset = 0; ; offset += pageSize) {
-    const page = await sb(`${path}${sep}limit=${pageSize}&offset=${offset}`);
-    if (!Array.isArray(page) || !page.length) break;
-    out.push(...page);
-    if (page.length < pageSize) break;
+  const page = (offset) => sb(`${path}${sep}limit=${pageSize}&offset=${offset}`);
+
+  // Halaman pertama sendirian: mayoritas sekolah datanya di bawah 1000 baris,
+  // jadi kasus umum tetap satu permintaan saja seperti sebelumnya.
+  const first = await page(0);
+  if (!Array.isArray(first) || first.length < pageSize) return Array.isArray(first) ? first : [];
+
+  const out = first.slice();
+  for (let base = pageSize; ; base += pageSize * SB_PAGE_BATCH) {
+    const offsets = Array.from({ length: SB_PAGE_BATCH }, (_, i) => base + i * pageSize);
+    const pages = await Promise.all(offsets.map(page));
+    let habis = false;
+    for (const p of pages) {
+      if (!Array.isArray(p) || !p.length) { habis = true; break; }
+      out.push(...p);
+      if (p.length < pageSize) { habis = true; break; }
+    }
+    if (habis) break;
   }
   return out;
 }
@@ -100,9 +126,17 @@ async function insertKuitansi(kwtData) {
   }
 }
 
-async function loadStudents() {
-  const rows = await sbAll('students?select=*&order=nama.asc,id.asc');
-  return rows.map(r => ({
+// ── Pemetaan baris server → objek appState ──
+// Dipakai bersama oleh loadStudents() dan js/realtime.js, yang menerapkan satu
+// baris hasil event WebSocket langsung ke appState. Bentuk objeknya WAJIB sama
+// persis lewat kedua jalur itu, jadi pemetaannya cuma boleh ada di satu tempat.
+//
+// `id` ikut dibawa (dulu dibuang) supaya satu baris bisa dikenali walau namanya
+// berubah, dan supaya event DELETE — yang hanya memuat kunci utama — tahu baris
+// mana yang harus dihapus.
+function mapStudentRow(r) {
+  return {
+    id: r.id,
     nama: r.nama,
     kelas: r.kelas,
     nisn: r.nisn || '',
@@ -112,7 +146,12 @@ async function loadStudents() {
     status_kelulusan: r.status_kelulusan || '',
     // Penanda bulan mulai tagih SPP untuk santri yang masuk di tengah TA.
     spp_mulai: r.spp_mulai || '',
-  }));
+  };
+}
+
+async function loadStudents() {
+  const rows = await sbAll('students?select=*&order=nama.asc,id.asc');
+  return rows.map(mapStudentRow);
 }
 
 async function saveSiswa(s) {
@@ -181,9 +220,8 @@ async function deleteTransactionsByNama(nama) {
 }
 
 // ══ TAGIHAN ══
-async function loadTagihan() {
-  const rows = await sbAll('tagihan?select=*&order=created_at.asc,id.asc');
-  return rows.map(r => ({
+function mapTagihanRow(r) {
+  return {
     id: r.id,
     nama: r.nama,
     kelas: r.kelas,
@@ -191,7 +229,12 @@ async function loadTagihan() {
     item_name: r.item_name,
     nominal: Number(r.nominal) || 0,
     paid_amount: Number(r.paid_amount) || 0,
-  }));
+  };
+}
+
+async function loadTagihan() {
+  const rows = await sbAll('tagihan?select=*&order=created_at.asc,id.asc');
+  return rows.map(mapTagihanRow);
 }
 
 // Buat tagihan untuk satu siswa baru (item tetap aktif yg sesuai kelas).
@@ -373,17 +416,42 @@ async function deleteTagihanByNama(nama) {
 
 // Helper: cari tagihan siswa untuk satu item
 function findTagihan(nama, itemId) {
-  return appState.tagihan.find(t => t.nama === nama && t.item_id === itemId) || null;
+  // tagihanOf() memakai indeks per-nama saat penggambaran tabel sedang berjalan
+  // (lihat withTagihanIndex di js/helpers.js); di luar itu tetap memindai array.
+  const list = (typeof tagihanOf === 'function')
+    ? tagihanOf(nama) : appState.tagihan.filter(t => t.nama === nama);
+  return list.find(t => t.item_id === itemId) || null;
 }
 
 // ══ TRANSACTIONS ══
-async function loadTransactions() {
-  const rows = await sbAll('transactions?select=*&order=created_at.asc,id.asc');
-  return rows.map(r => ({
+function mapTransactionRow(r) {
+  return {
+    id: r.id,
     nama: r.nama, kelas: r.kelas, jenis: r.jenis,
     nominal: Number(r.nominal) || 0, time: r.time, catatan: r.catatan || '',
     metode: r.metode || '', dibayar_oleh: r.dibayar_oleh || '',
-  }));
+  };
+}
+
+// ── Hanya transaksi TERAKHIR yang ditarik ──
+// appState.transactions cuma dipakai satu tempat: daftar "10 transaksi
+// terakhir" di Dashboard. Setiap tampilan yang butuh riwayat penuh menarik
+// datanya sendiri dari server — halaman Log (js/siswa.js), Export & Backup
+// (js/cetak.js), dan riwayat per santri (getAllTransactionsByStudent di
+// js/helpers.js). Dulu tabel ini ditarik UTUH pada tiap sinkron, dengan
+// paginasi 1000 baris sekali jalan; setelah setahun dipakai itu bisa ribuan
+// baris yang diunduh hanya untuk menampilkan sepuluh di antaranya.
+//
+// Diambil menurun lalu dibalik, supaya isi array tetap MENAIK seperti dulu:
+// Dashboard memakai slice(-10) dan js/realtime.js menambahkan baris baru di
+// ujung belakang. Kolom created_at selalu terisi (DEFAULT now(); aplikasi tidak
+// pernah mengirimnya sendiri), jadi urutannya tidak perlu penanganan NULL.
+const TXN_TERAKHIR_LIMIT = 50;   // longgar di atas 10, untuk berjaga bila ada baris terhapus
+
+async function loadTransactions() {
+  const rows = await sb('transactions?select=*&order=created_at.desc,id.desc' +
+                        '&limit=' + TXN_TERAKHIR_LIMIT);
+  return Array.isArray(rows) ? rows.map(mapTransactionRow).reverse() : [];
 }
 
 async function saveTransaction(t) {
@@ -396,7 +464,12 @@ async function saveTransaction(t) {
     row.dibayar_oleh = t.dibayar_oleh || '';
   }
   try {
-    await sb('transactions', 'POST', row, { 'Prefer': 'return=minimal' });
+    // return=representation supaya id baris tersimpan ikut kembali. Objek txn
+    // yang sama sudah lebih dulu masuk ke appState.transactions (lihat
+    // submitPayment); dengan id terpasang, event realtime untuk baris itu
+    // dikenali sebagai baris yang sudah ada — bukan transaksi kedua.
+    const res = await sb('transactions', 'POST', row, { 'Prefer': 'return=representation' });
+    if (Array.isArray(res) && res[0] && res[0].id) t.id = res[0].id;
   } catch(e) {
     if (_paymentMetaSupported && _isMissingPaymentMeta(e)) {
       _paymentMetaSupported = false;
@@ -674,19 +747,7 @@ async function loadDataForTA(opts = {}) {
     appState.students     = students;
     appState.transactions = transactions;
     appState.tagihan      = tagihan;
-    // Salinan lokal HANYA untuk admin yang sedang login. Tanpa penjagaan ini,
-    // sesi apa pun bisa meninggalkan data santri di perangkat.
-    if (hasAdminSession()) {
-      try {
-        localStorage.setItem('sipay_state', JSON.stringify({
-          students: appState.students,
-          transactions: appState.transactions,
-          tagihan: appState.tagihan,
-          payItems: appState.payItems,
-          savedAt: new Date().toISOString(),
-        }));
-      } catch { /* quota exceeded */ }
-    }
+    simpanSalinanLokal(!silent);
     if (!silent) showSyncIndicator('✅ Data dimuat', 2000);
     const gi = document.getElementById('gasIcon'); if(gi) gi.textContent='🟢';
     const gl = document.getElementById('gasLabel');
@@ -700,11 +761,37 @@ async function loadDataForTA(opts = {}) {
     const gl2 = document.getElementById('gasLabel'); if(gl2) gl2.textContent='Offline';
     throw e;
   }
-  renderDashboard();
-  renderSiswaTable();
-  renderTunggakan();
-  renderCetakNamaOptions();
+  renderHalamanAktif();
   if (silent && typeof refreshInputPageIfIdle === 'function') refreshInputPageIfIdle();
+}
+
+// ── Salinan lokal (cadangan saat offline) ──
+// Menulisnya berarti men-serialisasi SELURUH data santri + transaksi + tagihan
+// menjadi teks — pekerjaan yang menahan thread utama. Dulu itu dilakukan pada
+// setiap sinkron, termasuk sinkron latar tiap 20 detik, padahal salinan ini
+// hanya dipakai ketika aplikasi dibuka tanpa koneksi.
+//
+// Sekarang: ditulis pada pemuatan/sinkron manual (force), selain itu paling
+// sering sekali per menit. js/sync.js juga memaksa penulisan saat tab
+// ditinggalkan, jadi salinannya tidak pernah tertinggal jauh.
+const SNAPSHOT_MIN_GAP_MS = 60000;
+let _snapshotAt = 0;
+
+function simpanSalinanLokal(force = false) {
+  // HANYA untuk admin yang sedang login. Tanpa penjagaan ini, sesi apa pun bisa
+  // meninggalkan data santri di perangkat.
+  if (!hasAdminSession()) return;
+  if (!force && Date.now() - _snapshotAt < SNAPSHOT_MIN_GAP_MS) return;
+  try {
+    localStorage.setItem('sipay_state', JSON.stringify({
+      students: appState.students,
+      transactions: appState.transactions,
+      tagihan: appState.tagihan,
+      payItems: appState.payItems,
+      savedAt: new Date().toISOString(),
+    }));
+    _snapshotAt = Date.now();
+  } catch { /* quota exceeded */ }
 }
 
 // Isi ulang dropdown nama di halaman Cetak tanpa menghilangkan pilihan aktif.
@@ -747,11 +834,8 @@ async function initApp() {
       clearLocalData();
     }
   }
-  renderDashboard();
-  renderSiswaTable();
-  renderTunggakan();
+  renderHalamanAktif();
   loadTemplateKuitansi().catch(()=>{});
-  renderCetakNamaOptions();
   const t1 = document.getElementById('cetakTanggal');
   const t2 = document.getElementById('cetakTanggalTotal');
   if (t1) t1.value = new Date().toISOString().split('T')[0];

@@ -5,8 +5,11 @@
 //
 // Cara kerja: satu channel WebSocket mendengarkan perubahan (INSERT/UPDATE/
 // DELETE) pada tabel students, tagihan, transactions, kuitansi, dan settings.
-// Begitu ada perubahan, aplikasi menarik ulang data (di-debounce 400 ms supaya
-// satu pembayaran yang menulis ke beberapa tabel hanya memicu satu tarikan).
+// Event-nya SUDAH memuat baris yang berubah, jadi baris itu langsung dipasang
+// ke appState tanpa menarik apa pun dari server (lihat _rtTerapkan di bawah).
+// Bila satu perubahan tidak bisa dipastikan, barulah seluruh data ditarik ulang
+// seperti dulu — di-debounce 400 ms supaya satu pembayaran yang menulis ke
+// beberapa tabel hanya memicu satu tarikan.
 //
 // PENTING — dua syarat di sisi server:
 //   1. Tabel harus masuk publication `supabase_realtime`.
@@ -67,13 +70,199 @@ function _setRealtimeStatus(active) {
   if (typeof rescheduleAutoSync === 'function') rescheduleAutoSync();
 }
 
-// Satu perubahan dari device lain → tarik ulang data (di-debounce).
-function _onRealtimeChange() {
+// ══════════════════════════════════════════
+// TERAPKAN PERUBAHAN LANGSUNG KE appState
+// ══════════════════════════════════════════
+// Event postgres_changes sudah MEMBAWA baris yang berubah (payload.new), jadi
+// menariknya lagi dari server itu mubazir. Dulu setiap event memanggil syncNow()
+// — satu pembayaran menulis ke tagihan + transactions + kuitansi, jadi tiga
+// event, dan hasilnya seluruh data santri + tagihan + transaksi diunduh ulang.
+// Di SEMUA device, termasuk device yang baru saja menginputnya sendiri.
+//
+// Sekarang baris dari payload langsung dipasang ke appState, lalu halaman yang
+// sedang dibuka digambar ulang. Tidak ada unduhan sama sekali.
+//
+// Jalur lama tetap ada sebagai jaring pengaman dan dipakai kapan pun perubahan
+// TIDAK bisa dipastikan (lihat daftar di _rtTerapkan). Polling berkala tiap 2
+// menit juga tetap jalan sebagai pengoreksi bila ada event yang terlewat —
+// itulah sebabnya penyimpangan tidak bisa menumpuk.
+
+const RT_RENDER_DEBOUNCE_MS = 150;   // gabungkan letupan event jadi satu gambar ulang
+const RT_RENDER_RETRY_MS    = 2000;  // coba lagi bila belum boleh menggambar
+
+let _rtRenderTimer = null;
+
+function _rtJadwalkanRender() {
+  clearTimeout(_rtRenderTimer);
+  _rtRenderTimer = setTimeout(_rtRender, RT_RENDER_DEBOUNCE_MS);
+}
+
+function _rtRender() {
+  _rtRenderTimer = null;
+  // Menggambar ulang di balik modal yang terbuka bisa membatalkan pekerjaan
+  // yang sedang berjalan (renderSiswaTable memanggil clearSelection, sehingga
+  // centang baris untuk hapus massal ikut hilang). Datanya SUDAH masuk ke
+  // appState; yang ditunda hanya tampilannya.
+  if (document.hidden || document.querySelector('.modal-overlay.open')) {
+    _rtRenderTimer = setTimeout(_rtRender, RT_RENDER_RETRY_MS);
+    return;
+  }
+  try {
+    if (typeof renderHalamanAktif === 'function') renderHalamanAktif();
+    if (typeof refreshInputPageIfIdle === 'function') refreshInputPageIfIdle();
+  } catch(e) { console.warn('realtime render:', e.message); }
+}
+
+// Sisipkan santri baru pada posisi terurut nama, tanpa mengurutkan ulang daftar
+// yang sudah ada (urutan dari server memakai kolasi Postgres — mengurutkan ulang
+// di sisi klien bisa mengacak baris yang sudah tampil).
+function _rtSisipkanSantri(row) {
+  const list = appState.students;
+  let i = list.findIndex(s => String(s.nama).localeCompare(String(row.nama), 'id') > 0);
+  if (i < 0) i = list.length;
+  list.splice(i, 0, row);
+}
+
+function _rtStudents(evt, baru, lama) {
+  const list = appState.students;
+  if (evt === 'DELETE') {
+    const id = lama && lama.id;
+    if (!id) return false;
+    const i = list.findIndex(s => s.id === id);
+    if (i < 0) return false;   // tak dikenal → tarik ulang, jangan menebak
+    list.splice(i, 1);
+    return true;
+  }
+  if (!baru || !baru.nama) return false;
+  const row = mapStudentRow(baru);
+  // Cocokkan lewat id lebih dulu supaya penggantian nama (rename) memperbarui
+  // baris yang sama, bukan menambah baris kedua. Santri yang baru dibuat di
+  // device ini belum punya id — server membalasnya dengan return=minimal —
+  // jadi nama dipakai sebagai cadangan; id-nya terisi dari event ini.
+  let i = row.id ? list.findIndex(s => s.id === row.id) : -1;
+  if (i < 0) i = list.findIndex(s => s.nama === row.nama);
+  if (i < 0) { _rtSisipkanSantri(row); return true; }
+  if (list[i].nama !== row.nama) { list.splice(i, 1); _rtSisipkanSantri(row); }
+  else list[i] = row;
+  return true;
+}
+
+function _rtTagihan(evt, baru, lama) {
+  const list = appState.tagihan;
+  if (evt === 'DELETE') {
+    const id = lama && lama.id;
+    if (!id) return false;
+    const i = list.findIndex(t => t.id === id);
+    if (i >= 0) list.splice(i, 1);
+    return true;   // sudah tidak ada = hasil akhirnya sama
+  }
+  if (!baru || !baru.id) return false;
+  const row = mapTagihanRow(baru);
+  const i = list.findIndex(t => t.id === row.id);
+  if (i < 0) list.push(row); else list[i] = row;
+  return true;
+}
+
+function _rtTransactions(evt, baru, lama) {
+  const list = appState.transactions;
+  if (evt === 'DELETE') {
+    const id = lama && lama.id;
+    if (!id) return false;
+    const i = list.findIndex(t => t.id === id);
+    if (i < 0) return false;
+    list.splice(i, 1);
+    return true;
+  }
+  if (!baru || !baru.id) return false;
+  const row = mapTransactionRow(baru);
+  let i = list.findIndex(t => t.id === row.id);
+  // Transaksi yang baru diinput di device ini sudah masuk appState sebelum
+  // id-nya kembali dari server (saveTransaction tidak ditunggu). Kenali lewat
+  // isinya supaya tidak tercatat dua kali, lalu pasangkan id-nya.
+  if (i < 0) {
+    i = list.findIndex(t => !t.id && t.nama === row.nama && t.time === row.time &&
+                            t.nominal === row.nominal && t.jenis === row.jenis);
+  }
+  if (i < 0) {
+    list.push(row);
+    // Jaga panjangnya sama dengan yang ditarik loadTransactions(): daftar ini
+    // memang hanya menyimpan transaksi terakhir, jangan menggelembung selama
+    // aplikasi dibiarkan terbuka berjam-jam.
+    const batas = (typeof TXN_TERAKHIR_LIMIT === 'number') ? TXN_TERAKHIR_LIMIT : 50;
+    if (list.length > batas) list.splice(0, list.length - batas);
+  } else list[i] = row;
+  return true;
+}
+
+function _rtKuitansi() {
+  // Kuitansi tidak disimpan di appState — hanya halaman Buku Induk yang
+  // membacanya, dan halaman itu menarik datanya sendiri. Dulu satu kuitansi
+  // baru memicu unduhan ulang santri + tagihan + transaksi yang tak dipakainya.
+  if (typeof activePageId === 'function' && activePageId() === 'riwayat-kuitansi' &&
+      typeof loadRiwayatKuitansi === 'function') {
+    loadRiwayatKuitansi();
+  }
+  return true;
+}
+
+function _rtSettings() {
+  // Item bayar sedang diedit di halaman Pengaturan — jangan ditimpa di tengah
+  // pengeditan; serahkan ke jalur lama.
+  if (typeof editingItemIdx !== 'undefined' && editingItemIdx >= 0) return false;
+  if (typeof loadSettings !== 'function') return false;
+  // Settings kecil (beberapa baris), jadi memuat ulang tabel itu saja sudah
+  // cukup — jauh lebih murah daripada menarik seluruh data santri. Ini juga
+  // menutup celah lama: syncNow() tidak pernah memuat ulang settings, sehingga
+  // perubahan item bayar / profil dari device lain baru terlihat setelah reload.
+  loadSettings().then(() => {
+    if (typeof applyProfil === 'function')    applyProfil();
+    if (typeof ensureBakuItems === 'function') ensureBakuItems();
+    if (typeof renderItemList === 'function' && typeof activePageId === 'function' &&
+        activePageId() === 'pengaturan') renderItemList();
+    _rtJadwalkanRender();
+  }).catch(() => {});
+  return true;
+}
+
+// Terapkan satu event ke appState.
+// true  → sudah diterapkan, tidak perlu menarik ulang apa pun.
+// false → tidak bisa dipastikan; pemanggil menarik ulang seluruh data.
+function _rtTerapkan(payload) {
+  if (!payload) return false;
+  // Payload yang terpotong (mis. "Error 413: Payload Too Large" untuk baris
+  // dengan spp_history besar) tidak boleh dipercaya isinya.
+  if (Array.isArray(payload.errors) && payload.errors.length) return false;
+  // Proses panjang (import, promosi kelas) sedang menyentuh appState — jangan
+  // diselipi perubahan dari device lain di tengah jalan.
+  if (typeof isSyncPaused === 'function' && isSyncPaused()) return false;
+  if (typeof isLoggedIn === 'function' && !isLoggedIn()) return false;
+
+  const evt  = payload.eventType || payload.event;
+  const baru = payload.new || null;
+  const lama = payload.old || null;
+  switch (payload.table) {
+    case 'students':     return _rtStudents(evt, baru, lama);
+    case 'tagihan':      return _rtTagihan(evt, baru, lama);
+    case 'transactions': return _rtTransactions(evt, baru, lama);
+    case 'kuitansi':     return _rtKuitansi();
+    case 'settings':     return _rtSettings();
+    default:             return false;   // tabel tak dikenal → aman: tarik ulang
+  }
+}
+
+// Satu perubahan dari device lain.
+function _onRealtimeChange(payload) {
+  let ok = false;
+  try { ok = _rtTerapkan(payload); }
+  catch(e) { console.warn('realtime apply:', e.message); ok = false; }
+  if (ok) { _rtJadwalkanRender(); return; }
+
+  // Jalur lama (di-debounce): tarik ulang seluruh data.
+  // syncNow() menghormati penjagaan (modal terbuka / proses panjang berjalan).
+  // Bila dilewati, penanda "dirty" membuatnya dicoba lagi sesaat kemudian —
+  // jadi tidak ada perubahan yang terlewat.
   clearTimeout(_rtDebounce);
   _rtDebounce = setTimeout(() => {
-    // syncNow() menghormati penjagaan (modal terbuka / proses panjang berjalan).
-    // Bila dilewati, penanda "dirty" membuatnya dicoba lagi sesaat kemudian —
-    // jadi tidak ada perubahan yang terlewat.
     if (typeof syncNow === 'function') syncNow();
   }, RT_DEBOUNCE_MS);
 }
@@ -160,6 +349,8 @@ function stopRealtime() {
   _rtWanted = false;
   clearTimeout(_rtRetry);
   clearTimeout(_rtDebounce);
+  clearTimeout(_rtRenderTimer);
+  _rtRenderTimer = null;
   _teardownChannel();
   _setRealtimeStatus(false);
 }

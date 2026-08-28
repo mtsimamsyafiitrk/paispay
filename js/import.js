@@ -33,6 +33,8 @@ function handleImportFile(input) {
     reader.onload = e => parseCSV(e.target.result);
     reader.readAsText(file);
   } else {
+    // Pustaka Excel ditarik saat dibutuhkan saja (lihat xlsxReady di config.js).
+    xlsxReady(() => {
     if (typeof XLSX !== 'undefined') {
       const reader = new FileReader();
       reader.onload = e => {
@@ -47,8 +49,9 @@ function handleImportFile(input) {
       };
       reader.readAsArrayBuffer(file);
     } else {
-      toast('⚠️ Library Excel belum siap. Coba refresh halaman atau gunakan format CSV.');
+      toast('⚠️ Library Excel gagal dimuat. Cek koneksi atau gunakan format CSV.');
     }
+    });
   }
 }
 
@@ -246,7 +249,8 @@ async function confirmImport() {
   toast(`✅ Import: ${ditambahkan} ditambahkan, ${diperbarui} diperbarui/digabung`);
 }
 
-function downloadTemplate() {
+function downloadTemplate() { xlsxReady(_downloadTemplate); }
+function _downloadTemplate() {
   if (typeof XLSX !== 'undefined') {
     const headers = ['NAMA','KELAS','TAHUN_AJARAN','NISN','STATUS','SPP',
       'SPP_Jul','SPP_Agt','SPP_Sep','SPP_Okt','SPP_Nov','SPP_Des',

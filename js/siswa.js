@@ -98,7 +98,12 @@ const STATUS_KELULUSAN_BADGE = {
   keluar: { label: 'Keluar', cls: 'badge-red',    icon: '🚪' },
 };
 
+// withTagihanIndex: selama menggambar, pencarian tagihan per santri memakai
+// indeks Map — bukan memindai ulang seluruh appState.tagihan tiap baris.
 function renderSiswaTable(resetPage = true) {
+  return withTagihanIndex(() => _renderSiswaTable(resetPage));
+}
+function _renderSiswaTable(resetPage) {
   if (resetPage) siswaPage = 1;
   const q = document.getElementById('searchSiswa').value.toLowerCase();
   const sFilter = document.getElementById('filterStatus').value;
@@ -125,7 +130,7 @@ function renderSiswaTable(resetPage = true) {
   tbody.innerHTML = pageList.map((s, i) => {
     const tunggak = totalTunggakan(s);
     // Agregat tagihan item (tetap) — pangkal/buku/seragam dll kini disimpan di tabel tagihan
-    const tagT       = appState.tagihan.filter(t => t.nama === s.nama);
+    const tagT       = tagihanOf(s.nama);
     const tagNominal = tagT.reduce((a, t) => a + (t.nominal || 0), 0);
     const tagPaid    = tagT.reduce((a, t) => a + (t.paid_amount || 0), 0);
     const history = s.spp_history || {};
@@ -206,6 +211,9 @@ function siswaGoPage(page) {
 let tunggakanSuggIdx = -1;
 
 function renderTunggakan() {
+  return withTagihanIndex(_renderTunggakan);
+}
+function _renderTunggakan() {
   const ss = appState.students;
   const withTk = ss.filter(s => totalTunggakan(s) > 0);
   const totalTk = withTk.reduce((a,s) => a + totalTunggakan(s), 0);

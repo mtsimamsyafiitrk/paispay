@@ -9,12 +9,15 @@
 // jalur yang saling melengkapi:
 //
 //   1. REALTIME (js/realtime.js) — jalur utama. Perubahan dari device lain
-//      masuk seketika lewat WebSocket, lalu memanggil syncNow() di sini.
+//      masuk seketika lewat WebSocket, dan barisnya langsung dipasang ke
+//      appState tanpa menarik apa pun. syncNow() di sini hanya dipanggil bila
+//      perubahannya tidak bisa dipastikan.
 //   2. POLLING — jaring pengaman. Tetap berjalan walau realtime aktif, hanya
 //      dengan jeda yang jauh lebih longgar (2 menit vs 20 detik). Ini yang
 //      menyelamatkan keadaan ketika WebSocket diblokir jaringan sekolah,
 //      publication `supabase_realtime` belum diaktifkan, atau koneksi putus
-//      diam-diam tanpa event error.
+//      diam-diam tanpa event error — dan sekaligus mengoreksi penyimpangan
+//      bila ada event yang terlewat.
 //
 // Ditambah pemicu langsung: tab kembali aktif, jendela di-fokus, koneksi pulih,
 // dan tombol 🔄 di topbar.
@@ -55,6 +58,11 @@ async function withSyncPaused(fn) {
 // Tandai ada perubahan yang perlu ditarik — dipakai saat sinkron dilewati.
 function markSyncDirty() { _syncDirty = true; }
 
+// Sedang menahan sinkron otomatis? Dipakai js/realtime.js: selama proses panjang
+// (import, promosi kelas) berjalan, appState TIDAK boleh disisipi perubahan dari
+// device lain di tengah jalan.
+function isSyncPaused() { return _syncPaused > 0; }
+
 // Baru saja tersinkron? Dipakai realtime.js agar tidak menarik ulang data yang
 // sudah ditarik startAutoSync() beberapa ratus milidetik sebelumnya.
 function syncedRecently(ms = 3000) { return Date.now() - _lastSyncAt < ms; }
@@ -86,7 +94,11 @@ async function syncNow(manual = false) {
   const skip = () => { _syncDirty = true; rescheduleAutoSync(); return false; };
   if (_syncRunning) return skip();
   if (!manual && !_canAutoSync()) return skip();
-  if (!manual && Date.now() - _lastSyncAt < SYNC_MIN_GAP_MS) return skip();
+  // Baru saja sinkron → datanya sudah yang terbaru; ini BUKAN perubahan yang
+  // tertunda. Dulu kasus ini ikut ditandai "dirty", sehingga tab yang kembali
+  // aktif (visibilitychange + focus menyala hampir bersamaan) memicu tarikan
+  // kedua atas seluruh data hanya 1,2 detik setelah tarikan pertama.
+  if (!manual && Date.now() - _lastSyncAt < SYNC_MIN_GAP_MS) { rescheduleAutoSync(); return false; }
 
   _syncRunning = true;
   const btn = document.getElementById('syncNowBtn');
@@ -156,6 +168,18 @@ function stopAutoSync() {
 // Pemicu tambahan: tab kembali terlihat, jendela di-fokus, koneksi pulih.
 // Ini yang membuat "buka lagi di device B" langsung menampilkan data terakhir
 // tanpa perlu reload halaman — juga saat realtime kebetulan sedang putus.
-document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    // Penulisan salinan lokal ditunda-tunda (lihat simpanSalinanLokal di
+    // js/database.js). Saat tab ditinggalkan, paksa sekali supaya cadangan
+    // offline-nya tetap mutakhir.
+    if (typeof simpanSalinanLokal === 'function') simpanSalinanLokal(true);
+  } else {
+    syncNow();
+  }
+});
+window.addEventListener('pagehide', () => {
+  if (typeof simpanSalinanLokal === 'function') simpanSalinanLokal(true);
+});
 window.addEventListener('focus',  () => { syncNow(); });
 window.addEventListener('online', () => { syncNow(); });

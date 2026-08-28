@@ -232,6 +232,31 @@ function safeUrl(u) {
   return '#';
 }
 
+// ── Pustaka Excel (SheetJS) — dimuat saat dibutuhkan ──
+// Dulu berkas besar ini ditarik pada SETIAP kali halaman dibuka, padahal yang
+// memakainya hanya menu Import & Export. Di jaringan sekolah/seluler itu satu
+// unduhan sia-sia yang berebut jalur dengan pemuatan data santri sendiri.
+//
+// xlsxReady(cb) memuat pustaka sekali lalu menjalankan cb. Bila CDN gagal
+// dihubungi, cb TETAP dijalankan dengan window.XLSX undefined — pemanggilnya
+// sudah punya jalur cadangan CSV lewat penjagaan `typeof XLSX !== 'undefined'`.
+const XLSX_CDN_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+let _xlsxLoading = null;
+function xlsxReady(cb) {
+  if (window.XLSX) { cb(); return; }
+  if (!_xlsxLoading) {
+    _xlsxLoading = new Promise(resolve => {
+      const s = document.createElement('script');
+      s.src = XLSX_CDN_URL;
+      s.async = true;
+      s.onload  = () => resolve();
+      s.onerror = () => { _xlsxLoading = null; resolve(); };  // biar bisa dicoba lagi
+      document.head.appendChild(s);
+    });
+  }
+  _xlsxLoading.then(cb);
+}
+
 // ── Indikator sync ──
 function showSyncIndicator(msg, hideAfter = 0) {
   const ind = document.getElementById('syncIndicator');

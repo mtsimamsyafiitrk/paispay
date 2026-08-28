@@ -434,7 +434,12 @@ function handleSpmbImportFile(input) {
     reader.onload = e => _parseSpmbCSV(e.target.result);
     reader.readAsText(file);
   } else {
-    if (typeof XLSX !== 'undefined') {
+    // Pustaka Excel ditarik saat dibutuhkan saja (lihat xlsxReady di config.js).
+    xlsxReady(() => {
+      if (typeof XLSX === 'undefined') {
+        toast('⚠️ Library Excel gagal dimuat. Cek koneksi atau gunakan format CSV.');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = e => {
         try {
@@ -444,9 +449,7 @@ function handleSpmbImportFile(input) {
         } catch(err) { toast('⚠️ Gagal membaca file: ' + err.message); }
       };
       reader.readAsArrayBuffer(file);
-    } else {
-      toast('⚠️ Library Excel belum siap. Gunakan format CSV.');
-    }
+    });
   }
 }
 
@@ -561,7 +564,8 @@ async function confirmSpmbImport() {
   toast(`✅ Import: ${ditambah} ditambahkan${dilewati ? ', ' + dilewati + ' dilewati (nama duplikat)' : ''}`);
 }
 
-function downloadTemplateCalonExcel() {
+function downloadTemplateCalonExcel() { xlsxReady(_downloadTemplateCalonExcel); }
+function _downloadTemplateCalonExcel() {
   if (typeof XLSX !== 'undefined') {
     const headers = ['NAMA', 'KELAS', 'NISN', 'SPP', 'UANG_PENDAFTARAN', 'PANGKAL'];
     const ex1 = ['AHMAD FAUZI', '7', '1234567890', 500000, 400000, 3000000];
