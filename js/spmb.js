@@ -339,6 +339,7 @@ function confirmPromoteSingle(nama) {
   // diaktifkan), atau penanda yang sudah tersimpan sejak ia didaftarkan.
   const mulaiSel = document.getElementById('promosiCalonMulaiInput');
   if (mulaiSel) mulaiSel.innerHTML = sppMulaiOptionsHtml(sppMulaiBulan(s) || bulanBerjalanCode());
+  renderSppMulaiWarn('promosiCalonMulaiWarn');
   document.getElementById('promosiCalonBtn').onclick = () => _doPromoteSingle(nama);
   document.getElementById('promosiCalonModal').classList.add('open');
 }
@@ -361,7 +362,9 @@ async function _doPromoteSingle(nama) {
   renderSpmbPage();
   renderSiswaTable();
   renderDashboard();
-  const mulaiInfo = sppMulaiLabel(appState.students[idx]);
+  // Hanya janjikan "SPP dihitung mulai X" bila penandanya memang tersimpan;
+  // kalau kolomnya belum ada, peringatan migrasi yang tampil (lihat saveSiswa).
+  const mulaiInfo = sppMulaiKolomAda() ? sppMulaiLabel(appState.students[idx]) : '';
   toast(`🎓 ${nama} berhasil dipromosikan ke Kelas ${appState.students[idx].kelas}!`
     + (mulaiInfo ? ` SPP dihitung mulai ${mulaiInfo}.` : ''), 3500);
 }
@@ -375,6 +378,7 @@ function promoteSelectedCalon() {
   document.getElementById('promosiMassalSppInput').value = '';
   const mulaiSel = document.getElementById('promosiMassalMulaiInput');
   if (mulaiSel) mulaiSel.innerHTML = sppMulaiOptionsHtml(bulanBerjalanCode());
+  renderSppMulaiWarn('promosiMassalMulaiWarn');
   document.getElementById('promosiMassalBtn').onclick = () => _doPromoteMassal(names);
   document.getElementById('promosiMassalModal').classList.add('open');
 }
@@ -405,7 +409,7 @@ async function _doPromoteMassal(names) {
   renderSpmbPage();
   renderSiswaTable();
   renderDashboard();
-  const mulaiInfo = updated.length ? sppMulaiLabel(updated[0]) : '';
+  const mulaiInfo = (updated.length && sppMulaiKolomAda()) ? sppMulaiLabel(updated[0]) : '';
   toast(`🎓 ${updated.length} calon santri berhasil dipromosikan!`
     + (mulaiInfo ? ` SPP dihitung mulai ${mulaiInfo}.` : ''), 3500);
 }

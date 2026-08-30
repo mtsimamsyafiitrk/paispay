@@ -555,6 +555,7 @@ function openEditSiswa(nama) {
   if (edPendaftaran) { const p = getPendaftaranNominal(s.nama); edPendaftaran.value = p || ''; }
   const edMulai = document.getElementById('ed_spp_mulai');
   if (edMulai) edMulai.innerHTML = sppMulaiOptionsHtml(sppMulaiBulan(s));
+  renderSppMulaiWarn('edSppMulaiWarn');
   document.getElementById('editSiswaModal').classList.add('open');
 }
 document.addEventListener('DOMContentLoaded', () => {

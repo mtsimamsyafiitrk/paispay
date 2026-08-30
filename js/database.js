@@ -86,19 +86,52 @@ function _isMissingSppHistory(e) {
 }
 
 // Idem untuk kolom spp_mulai (supabase_migration_spp_mulai.sql). Bila migrasi
-// belum dijalankan, penanda bulan masuk santri baru tidak ikut tersimpan —
-// selebihnya aplikasi tetap jalan seperti biasa.
+// belum dijalankan, penanda bulan masuk santri baru tidak bisa tersimpan.
+//
+// DULU kegagalan itu SENYAP: simpan tetap dilaporkan "✅ Tersimpan" padahal
+// kolomnya dibuang diam-diam. Akibatnya bulan yang dipilih saat promosi SPMB
+// terlihat benar sesaat — nilainya masih ada di memori — lalu hilang begitu
+// baris santri ditarik ulang dari server (realtime, polling, atau penyegaran
+// santri terpilih di halaman Input Pembayaran), sehingga SPP-nya kembali
+// dihitung dari Juli persis seperti sebelum promosi.
+//
+// Sekarang: (1) admin diberi tahu sekali dengan jelas + peringatan menetap di
+// modal promosi, (2) penanda di memori TIDAK ikut terhapus oleh baris server
+// yang memang tidak memuat kolomnya, dan (3) flag ini dipasang ulang tiap kali
+// data dimuat supaya keadaan pulih sendiri begitu migrasi dijalankan — termasuk
+// bila penyebabnya cuma schema cache PostgREST yang sesaat masih basi.
 let _sppMulaiSupported = true;
+function sppMulaiKolomAda() { return _sppMulaiSupported; }
 function _isMissingSppMulai(e) {
   const msg = String((e && e.message) || e || '');
   return /spp_mulai/.test(msg);
 }
 
+// Keterangan yang ditampilkan saat kolom penanda belum ada di database.
+const SPP_MULAI_MIGRASI_MSG =
+  'Kolom "spp_mulai" belum ada di database — jalankan supabase_migration_spp_mulai.sql '
+  + 'lewat Supabase → SQL Editor. Sampai itu dilakukan, pilihan "SPP mulai bulan" '
+  + 'tidak tersimpan dan SPP kembali dihitung dari Juli.';
+
+let _sppMulaiWarned = false;
+function _warnSppMulaiKolomHilang() {
+  _sppMulaiSupported = false;
+  if (typeof syncSppMulaiWarnBanners === 'function') syncSppMulaiWarnBanners();
+  if (_sppMulaiWarned) return;   // cukup sekali per sesi, jangan jadi spam
+  _sppMulaiWarned = true;
+  console.warn('spp_mulai:', SPP_MULAI_MIGRASI_MSG);
+  if (typeof toast === 'function') toast('⚠️ ' + SPP_MULAI_MIGRASI_MSG, 9000);
+}
+
+// Dipasang ulang sebelum baris hasil pemuatan diperiksa: bila kolomnya ternyata
+// sudah ada, flag tetap true dan fitur langsung jalan lagi tanpa perlu reload.
+function _resetSppMulaiSupport() { _sppMulaiSupported = true; }
+
 // Matikan flag kolom opsional yang ternyata belum ada di server, supaya simpan
 // bisa diulang tanpa kolom tersebut. true bila ada flag yang baru dimatikan.
 function _degradeMissingColumn(e) {
   if (_sppHistorySupported && _isMissingSppHistory(e)) { _sppHistorySupported = false; return true; }
-  if (_sppMulaiSupported   && _isMissingSppMulai(e))   { _sppMulaiSupported   = false; return true; }
+  if (_sppMulaiSupported   && _isMissingSppMulai(e))   { _warnSppMulaiKolomHilang(); return true; }
   return false;
 }
 
@@ -134,7 +167,16 @@ async function insertKuitansi(kwtData) {
 // `id` ikut dibawa (dulu dibuang) supaya satu baris bisa dikenali walau namanya
 // berubah, dan supaya event DELETE — yang hanya memuat kunci utama — tahu baris
 // mana yang harus dihapus.
-function mapStudentRow(r) {
+//
+// `prev` = objek santri yang sudah ada di appState untuk baris ini (bila ada).
+// Kolom opsional yang TIDAK dibawa baris server — spp_mulai saat migrasinya
+// belum jalan — mempertahankan nilai lama alih-alih dikosongkan: baris tanpa
+// kolom berarti "server belum mengenal kolom ini", bukan "penandanya memang
+// kosong". Tanpa pembedaan ini, satu penyegaran dari server cukup untuk
+// menghapus bulan mulai SPP yang baru saja dipilih admin.
+function mapStudentRow(r, prev) {
+  const adaSppMulai = !!r && Object.prototype.hasOwnProperty.call(r, 'spp_mulai');
+  if (r && !adaSppMulai && _sppMulaiSupported) _warnSppMulaiKolomHilang();
   return {
     id: r.id,
     nama: r.nama,
@@ -145,13 +187,24 @@ function mapStudentRow(r) {
     spp_history: (r.spp_history && typeof r.spp_history === 'object' && !Array.isArray(r.spp_history)) ? r.spp_history : {},
     status_kelulusan: r.status_kelulusan || '',
     // Penanda bulan mulai tagih SPP untuk santri yang masuk di tengah TA.
-    spp_mulai: r.spp_mulai || '',
+    spp_mulai: adaSppMulai ? (r.spp_mulai || '') : ((prev && prev.spp_mulai) || ''),
   };
 }
 
 async function loadStudents() {
   const rows = await sbAll('students?select=*&order=nama.asc,id.asc');
-  return rows.map(mapStudentRow);
+  // Penanda yang sudah ada di memori dipertahankan bila baris server tidak
+  // memuat kolomnya (lihat mapStudentRow). Dicocokkan lewat id lebih dulu agar
+  // santri yang baru diganti namanya tetap ketemu.
+  const prevById = new Map(), prevByNama = new Map();
+  (appState.students || []).forEach(s => {
+    if (s.id) prevById.set(s.id, s);
+    prevByNama.set(s.nama, s);
+  });
+  // Dipasang ulang di sini: bila migrasi sudah dijalankan, baris di bawah akan
+  // membawa kolomnya dan flag tetap true — tanpa perlu memuat ulang halaman.
+  _resetSppMulaiSupport();
+  return rows.map(r => mapStudentRow(r, prevById.get(r.id) || prevByNama.get(r.nama)));
 }
 
 async function saveSiswa(s) {
@@ -160,7 +213,14 @@ async function saveSiswa(s) {
   try {
     await sb('students?on_conflict=nama', 'POST', [_buildStudentRow(s)],
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
-    showSyncIndicator('✅ Tersimpan', 1500);
+    // Jangan laporkan "tersimpan" polos bila penanda bulan mulai SPP terpaksa
+    // dibuang — admin berhak tahu bahwa pilihannya tidak ikut tersimpan.
+    if (!_sppMulaiSupported && (s.spp_mulai || '')) {
+      showSyncIndicator('⚠️ Tersimpan, tapi bulan mulai SPP belum bisa disimpan', 4000);
+      _warnSppMulaiKolomHilang();
+    } else {
+      showSyncIndicator('✅ Tersimpan', 1500);
+    }
   } catch(e) {
     if (_degradeMissingColumn(e)) return saveSiswa(s); // ulangi tanpa kolom yang belum ada
     console.error('saveSiswa error:', e);
@@ -683,24 +743,20 @@ async function refreshStudent(nama) {
   } catch(e) { console.error('refreshStudent error:', e); return false; }
   if (!rows || !rows[0]) return false;
 
-  const r = rows[0];
-  const fresh = {
-    nama: r.nama,
-    kelas: r.kelas,
-    nisn: r.nisn || '',
-    spp: Number(r.spp) || 0,
-    spp_paid_months: Array.isArray(r.spp_paid_months) ? r.spp_paid_months : [],
-    spp_history: (r.spp_history && typeof r.spp_history === 'object' && !Array.isArray(r.spp_history)) ? r.spp_history : {},
-    status_kelulusan: r.status_kelulusan || '',
-    spp_mulai: r.spp_mulai || '',
-  };
+  const idx = appState.students.findIndex(s => s.nama === nama);
+  // Pemetaannya HARUS lewat mapStudentRow, bukan disalin ulang di sini: itulah
+  // satu-satunya tempat yang tahu cara mempertahankan kolom opsional yang tidak
+  // dibawa baris server. Versi lama menyalin manual dan menulis
+  // `spp_mulai: r.spp_mulai || ''`, sehingga penyegaran ini — yang berjalan
+  // tepat saat santri dipilih di Input Pembayaran — menghapus bulan mulai SPP
+  // hasil promosi SPMB dan mengembalikan tagihan ke Juli.
+  const fresh = mapStudentRow(rows[0], idx >= 0 ? appState.students[idx] : null);
   const freshTagihan = (tRows || []).map(t => ({
     id: t.id, nama: t.nama, kelas: t.kelas,
     item_id: t.item_id, item_name: t.item_name,
     nominal: Number(t.nominal) || 0, paid_amount: Number(t.paid_amount) || 0,
   }));
 
-  const idx = appState.students.findIndex(s => s.nama === nama);
   const before = JSON.stringify([idx >= 0 ? appState.students[idx] : null,
                                 appState.tagihan.filter(t => t.nama === nama)]);
   if (idx >= 0) appState.students[idx] = fresh; else appState.students.push(fresh);

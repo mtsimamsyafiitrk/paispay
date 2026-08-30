@@ -195,9 +195,22 @@ masuk. Tanpa penanda ini, ia langsung tampil menunggak Juli s/d Oktober.
   Dashboard, dan surat tagihan menulis *"SPP Bulanan (mulai November s/d …)"*.
 
 **Migrasi database:** jalankan `supabase_migration_spp_mulai.sql` (menambah kolom
-`spp_mulai text` — aman, tidak menghapus data). Bila belum dijalankan, aplikasi
-tetap berfungsi normal (penanda tidak tersimpan, tagihan penuh dari Juli seperti
-sebelumnya) sampai kolom tersedia.
+`spp_mulai text` — aman, tidak menghapus data). **Wajib** agar pilihan bulan
+tersimpan; skripnya sekalian memanggil `NOTIFY pgrst, 'reload schema'` supaya
+schema cache PostgREST tidak tertinggal sesaat setelah migrasi.
+
+> **Gejala bila kolomnya belum ada:** bulan yang dipilih saat Promosi SPMB
+> terlihat benar sesaat, tetapi begitu santrinya dibuka di **Input Pembayaran**,
+> SPP kembali muncul dari **Juli**. Penyebabnya penanda tidak pernah sampai ke
+> database, lalu nilainya di memori tertimpa baris server saat disegarkan.
+>
+> Aplikasi kini menandainya dengan jelas alih-alih diam: peringatan merah muncul
+> di modal **Promosi** dan **Data Santri → Edit**, indikator simpan berbunyi
+> *"Tersimpan, tapi bulan mulai SPP belum bisa disimpan"*, dan penanda di memori
+> tidak lagi dihapus oleh baris server yang memang tidak memuat kolom itu — jadi
+> data yang sudah dipilih bertahan sampai migrasinya dijalankan. Status kolom
+> diperiksa ulang tiap kali data dimuat, sehingga aplikasi pulih sendiri setelah
+> migrasi tanpa perlu reload.
 
 Fungsi terkait di `js/helpers.js`: `buildSppMulai()`, `parseSppMulai()`,
 `sppMulaiBulan()`, `sppBillableMonths()`, `sppDueMonthsFor()`, `isSppDueFor()`,
