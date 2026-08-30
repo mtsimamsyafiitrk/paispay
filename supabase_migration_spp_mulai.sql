@@ -20,3 +20,15 @@
 
 ALTER TABLE students
   ADD COLUMN IF NOT EXISTS spp_mulai text NOT NULL DEFAULT '';
+
+-- PostgREST menyimpan skema di cache. Tanpa baris ini, permintaan aplikasi bisa
+-- ditolak dengan "Could not find the 'spp_mulai' column ... in the schema cache"
+-- selama beberapa saat setelah migrasi dijalankan — dan selama itu penanda bulan
+-- mulai SPP tidak akan tersimpan. Paksa PostgREST memuat ulang skemanya.
+NOTIFY pgrst, 'reload schema';
+
+-- ── Verifikasi (opsional) ──────────────────────────────────────────────────
+-- Jalankan ini setelahnya; harus mengembalikan tepat satu baris. Kalau kosong,
+-- migrasinya belum masuk dan aplikasi akan memperingatkan di modal Promosi.
+--   SELECT column_name FROM information_schema.columns
+--    WHERE table_name = 'students' AND column_name = 'spp_mulai';

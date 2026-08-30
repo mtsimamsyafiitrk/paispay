@@ -1292,6 +1292,7 @@
         <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— untuk santri yang masuk di tengah tahun ajaran</span></label>
         <select id="ed_spp_mulai"></select>
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum pilihan ini tidak dihitung sebagai tunggakan SPP tahun berjalan.</div>
+        <div id="edSppMulaiWarn" style="display:none;"></div>
       </div>
     </div>
     <div style="margin-top:14px;padding:10px 14px;background:var(--primary-pale);border-radius:10px;font-size:12px;color:var(--primary);display:flex;align-items:center;gap:8px;">
@@ -1826,6 +1827,7 @@
       <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— bulan santri ini mulai aktif</span></label>
       <select id="promosiCalonMulaiInput"></select>
       <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
+      <div id="promosiCalonMulaiWarn" style="display:none;"></div>
     </div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
       SPP ini akan langsung sinkron dengan item <strong>SPP Bulanan</strong> di menu Input Pembayaran. Data pembayaran Pangkal &amp; Uang Pendaftaran yang sudah tercatat tetap tersimpan.
@@ -1856,6 +1858,7 @@
       <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— berlaku untuk semua calon terpilih</span></label>
       <select id="promosiMassalMulaiInput"></select>
       <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
+      <div id="promosiMassalMulaiWarn" style="display:none;"></div>
     </div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
       Semua calon terpilih dipindahkan ke Data Siswa aktif sesuai kelas target. SPP langsung sinkron ke <strong>Input Pembayaran</strong>.

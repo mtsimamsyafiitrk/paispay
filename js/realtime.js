@@ -134,13 +134,16 @@ function _rtStudents(evt, baru, lama) {
     return true;
   }
   if (!baru || !baru.nama) return false;
-  const row = mapStudentRow(baru);
   // Cocokkan lewat id lebih dulu supaya penggantian nama (rename) memperbarui
   // baris yang sama, bukan menambah baris kedua. Santri yang baru dibuat di
   // device ini belum punya id — server membalasnya dengan return=minimal —
   // jadi nama dipakai sebagai cadangan; id-nya terisi dari event ini.
-  let i = row.id ? list.findIndex(s => s.id === row.id) : -1;
-  if (i < 0) i = list.findIndex(s => s.nama === row.nama);
+  let i = baru.id ? list.findIndex(s => s.id === baru.id) : -1;
+  if (i < 0) i = list.findIndex(s => s.nama === baru.nama);
+  // Baris lama ikut diserahkan ke mapStudentRow: kolom opsional yang tidak
+  // dibawa payload event (mis. spp_mulai bila migrasinya belum jalan) harus
+  // dipertahankan, bukan dikosongkan.
+  const row = mapStudentRow(baru, i >= 0 ? list[i] : null);
   if (i < 0) { _rtSisipkanSantri(row); return true; }
   if (list[i].nama !== row.nama) { list.splice(i, 1); _rtSisipkanSantri(row); }
   else list[i] = row;

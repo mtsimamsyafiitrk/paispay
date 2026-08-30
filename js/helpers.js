@@ -375,6 +375,27 @@ function sppMulaiOptionsHtml(selected) {
     MONTHS.map(m => `<option value="${m}"${m === sel ? ' selected' : ''}>${MONTH_FULL[m]}</option>`).join('');
 }
 
+// Peringatan di dekat pemilih "SPP mulai bulan": tanpa kolom penandanya di
+// database, pilihan admin tidak akan bertahan — dan dulu itu tidak terlihat di
+// mana pun, sehingga bulan yang dipilih saat promosi SPMB seolah "hilang
+// sendiri" begitu santrinya dibuka di Input Pembayaran.
+function renderSppMulaiWarn(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const ada = (typeof sppMulaiKolomAda !== 'function') || sppMulaiKolomAda();
+  el.style.display = ada ? 'none' : 'block';
+  el.innerHTML = ada ? '' : `
+    <div style="background:var(--danger-pale);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:11px;line-height:1.5;color:var(--danger);">
+      ⚠️ ${esc(typeof SPP_MULAI_MIGRASI_MSG === 'string' ? SPP_MULAI_MIGRASI_MSG : '')}
+    </div>`;
+}
+
+// Segarkan semua peringatan itu sekaligus — dipanggil saat status kolomnya
+// berubah (mis. ketahuan hilang saat menyimpan).
+function syncSppMulaiWarnBanners() {
+  ['promosiCalonMulaiWarn', 'promosiMassalMulaiWarn', 'edSppMulaiWarn'].forEach(renderSppMulaiWarn);
+}
+
 // Nama bulan terakhir yang jatuh tempo — untuk keterangan "dihitung s/d …".
 function sppDueMonthLabel(ref) {
   const due = sppDueMonths(ref);
