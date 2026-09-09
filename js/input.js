@@ -912,7 +912,9 @@ async function cetakKuitansi(data) {
   <title>Kuitansi — ${esc(data.nama)}</title>
   <style>
     @page { size: A4 portrait; margin: 10mm; }
-    @media print { body { margin:0; } .no-print { display:none !important; } }
+    /* Pastikan warna pembeda lembar pembayar & arsip ikut tercetak */
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @media print { body { margin:0; background:#fff; } .no-print { display:none !important; } }
     body { font-family:'Times New Roman',serif; background:#f5f5f5; margin:0; padding:16px; }
     .kuitansi-wrap { display:flex; flex-direction:column; gap:10px; max-width:190mm; margin:0 auto; }
     hr.sep { border:none; border-top:2px dashed #aaa; margin:4px 0; }

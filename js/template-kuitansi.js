@@ -3,7 +3,8 @@
 // ══════════════════════════════════════════
 const KT_DEFAULT = {
   nama: '', alamat: '', kontak: '',
-  warna: '#1e5631', fontsize: '11', judul: 'KUITANSI PEMBAYARAN', prefix: 'KWT',
+  warna: '#1e5631', warna_arsip: '#1d4ed8',
+  fontsize: '11', judul: 'KUITANSI PEMBAYARAN', prefix: 'KWT',
   show_logo: true, show_nisn: true, show_nokwt: true,
   show_terbilang: true, show_ttd: true, show_catatan: true,
   ttd_kiri: 'Bendahara / Admin', ttd_kanan: '',
@@ -28,6 +29,7 @@ async function saveTemplateKuitansi() {
     alamat:         document.getElementById('kt_alamat').value.trim(),
     kontak:         document.getElementById('kt_kontak').value.trim(),
     warna:          document.getElementById('kt_warna').value,
+    warna_arsip:    document.getElementById('kt_warna_arsip').value,
     fontsize:       document.getElementById('kt_fontsize').value,
     judul:          document.getElementById('kt_judul').value.trim() || 'KUITANSI PEMBAYARAN',
     prefix:         (document.getElementById('kt_prefix').value.trim() || 'KWT').toUpperCase(),
@@ -71,6 +73,8 @@ function isiFormKT() {
   document.getElementById('kt_kontak').value      = ktData.kontak || '';
   document.getElementById('kt_warna').value       = ktData.warna || '#1e5631';
   document.getElementById('kt_warna_hex').value   = ktData.warna || '#1e5631';
+  document.getElementById('kt_warna_arsip').value     = ktData.warna_arsip || '#1d4ed8';
+  document.getElementById('kt_warna_arsip_hex').value = ktData.warna_arsip || '#1d4ed8';
   document.getElementById('kt_fontsize').value    = ktData.fontsize || '11';
   document.getElementById('kt_judul').value       = ktData.judul || 'KUITANSI PEMBAYARAN';
   document.getElementById('kt_prefix').value      = ktData.prefix || 'KWT';
@@ -101,15 +105,27 @@ function syncColorHex() {
   renderKTPreview();
 }
 
+function syncColorHexArsip() {
+  const hex = document.getElementById('kt_warna_arsip_hex').value;
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+    document.getElementById('kt_warna_arsip').value = hex;
+  }
+  renderKTPreview();
+}
+
 // Auto preview on any change
 function initKTListeners() {
-  ['kt_nama','kt_alamat','kt_kontak','kt_warna_hex','kt_fontsize','kt_judul','kt_prefix',
+  ['kt_nama','kt_alamat','kt_kontak','kt_warna_hex','kt_warna_arsip_hex','kt_fontsize','kt_judul','kt_prefix',
    'kt_ttd_kiri','kt_ttd_kanan','kt_footer'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', renderKTPreview);
   });
   document.getElementById('kt_warna').addEventListener('input', function() {
     document.getElementById('kt_warna_hex').value = this.value;
+    renderKTPreview();
+  });
+  document.getElementById('kt_warna_arsip')?.addEventListener('input', function() {
+    document.getElementById('kt_warna_arsip_hex').value = this.value;
     renderKTPreview();
   });
   ['kt_show_logo','kt_show_nisn','kt_show_nokwt','kt_show_terbilang',
@@ -125,6 +141,7 @@ function getKTFromForm() {
     alamat:         document.getElementById('kt_alamat')?.value?.trim() || '',
     kontak:         document.getElementById('kt_kontak')?.value?.trim() || '',
     warna:          document.getElementById('kt_warna')?.value || '#1e5631',
+    warna_arsip:    document.getElementById('kt_warna_arsip')?.value || '#1d4ed8',
     fontsize:       document.getElementById('kt_fontsize')?.value || '11',
     judul:          document.getElementById('kt_judul')?.value?.trim() || 'KUITANSI PEMBAYARAN',
     prefix:         (document.getElementById('kt_prefix')?.value?.trim() || 'KWT').toUpperCase(),
@@ -235,7 +252,17 @@ function renderKTPreview() {
     dibayar_oleh: 'Orang Tua Santri',
     no_kuitansi: noContoh,
   };
-  el.innerHTML = buildKuitansiHTML(contoh, kt, 'Lembar Pembayar');
+  el.innerHTML = buildKuitansiHTML(contoh, kt, 'Lembar Pembayar')
+    + '<div style="border-top:2px dashed #aaa;margin:10px 0;"></div>'
+    + buildKuitansiHTML(contoh, kt, 'Lembar Arsip');
+}
+
+// Ubah warna hex jadi rgba dengan alpha tertentu (untuk latar tipis pembeda lembar)
+function ktTint(hex, alpha) {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || ''));
+  if (!m) return 'transparent';
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
 // ── Builder kuitansi HTML (dipakai preview & cetak) ──
@@ -251,11 +278,17 @@ function buildKuitansiHTML(data, kt, label) {
   // Pakai no_kuitansi yang sudah di-generate, fallback ke format lama
   const noKwt     = data.no_kuitansi || data._noKwt || ((kt.prefix||'KWT') + '-' + Date.now().toString().slice(-6));
   const isKoreksi = !!data.is_koreksi;
-  const warnaBorder = isKoreksi ? '#b45309' : w;
+
+  // Warna pembeda: lembar pembayar pakai warna utama, lembar arsip pakai
+  // warna arsip. Kuitansi koreksi tetap oranye pada kedua lembar.
+  const isArsip     = /arsip/i.test(label || '');
+  const wArsip      = kt.warna_arsip || '#1d4ed8';
+  const warnaBorder = isKoreksi ? '#b45309' : (isArsip ? wArsip : w);
+  const bgLembar    = isKoreksi ? '#fff' : ktTint(warnaBorder, 0.045);
+  const bgTotal     = isKoreksi ? '#fef9c3' : ktTint(warnaBorder, 0.10);
 
   // Lembar arsip diberi kotak kosong 2 cm x 0,5 cm tepat di atas label
   // "LEMBAR ARSIP" (jarak 0,2 cm) untuk catatan tulis tangan petugas.
-  const isArsip = /arsip/i.test(label || '');
   const ruangArsipHtml = isArsip
     ? `<div style="width:2cm;height:0.5cm;margin:0 0 0.2cm auto;border:1px solid #bbb;box-sizing:border-box;"></div>`
     : '';
@@ -309,7 +342,7 @@ function buildKuitansiHTML(data, kt, label) {
   }
 
   return `
-  <div style="width:100%;border:2px solid ${warnaBorder};border-radius:8px;padding:12px 16px;font-family:'Times New Roman',serif;box-sizing:border-box;background:#fff;">
+  <div style="width:100%;border:2px solid ${warnaBorder};border-radius:8px;padding:12px 16px;font-family:'Times New Roman',serif;box-sizing:border-box;background:${bgLembar};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
     <!-- Header -->
     <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid ${warnaBorder};padding-bottom:8px;margin-bottom:8px;">
       ${logoHtml}
@@ -348,7 +381,7 @@ function buildKuitansiHTML(data, kt, label) {
         <th style="padding:5px 8px;border:1px solid ${warnaBorder};text-align:right;font-size:${fs}px;">Nominal</th>
       </tr></thead>
       <tbody>${itemRows}</tbody>
-      <tfoot><tr style="background:${isKoreksi?'#fef9c3':'#f0f7f0'};font-weight:700;">
+      <tfoot><tr style="background:${bgTotal};font-weight:700;">
         <td style="padding:5px 8px;border:1px solid #ddd;font-size:${fs}px;">TOTAL</td>
         <td style="padding:5px 8px;border:1px solid #ddd;text-align:right;font-size:${fs+1}px;color:${warnaBorder};">Rp ${fmt(data.total)}</td>
       </tr></tfoot>
