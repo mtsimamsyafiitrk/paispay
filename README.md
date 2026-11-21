@@ -605,3 +605,29 @@ File JS di-load secara berurutan (bukan ES modules). Urutan penting karena modul
 8. `realtime.js` — langganan WebSocket (butuh `SB_URL`, `SB_KEY`, `sbSession`)
 9. `sync.js` — auto-sync lintas device (butuh `loadDataForTA`, `isLoggedIn`, `isRealtimeActive`)
 10. `init.js` — harus terakhir (DOMContentLoaded)
+
+## Beberapa Admin Bersamaan
+
+**Migrasi database:** jalankan `supabase_migration_konkurensi.sql` (aman dijalankan
+ulang). Isinya:
+
+- **Nomor kuitansi unik.** Indeks unik pada `kuitansi.no_kuitansi`. Bila dua admin
+  menyimpan di detik yang sama, yang kedua otomatis mendapat nomor berikutnya.
+  Nomor kembar yang *sudah ada* dirapikan sekali: kuitansi tertua tetap, yang
+  lebih baru diberi akhiran `B`, `C`, … (daftarnya tampil sebagai NOTICE).
+- **Versi baris santri** (`students.versi_baris`, naik otomatis lewat trigger).
+  Simpan pembayaran SPP hanya menulis bila santri itu tidak diubah perangkat lain
+  sejak dibaca; bila diubah, aplikasi membaca ulang lalu mengulang.
+- **`tambah_tagihan_paid(id, delta)`**: pembayaran tagihan ditambahkan dalam satu
+  perintah database, bukan baca → tambah → tulis.
+
+Tanpa migrasi ini aplikasi tetap jalan dengan perilaku lama (tanpa penjagaan).
+
+## Tes
+
+```
+node tests/spp.test.js
+```
+
+Menguji logika uang SPP (angsuran, pelunasan, pembatalan, tunggakan TA lama,
+keranjang → item kuitansi). Tanpa dependensi dan tanpa browser.

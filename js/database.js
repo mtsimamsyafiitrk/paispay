@@ -143,12 +143,19 @@ const SPP_ANGSUR_MIGRASI_MSG =
   'Kolom "spp_angsur" belum ada di database — jalankan supabase_migration_spp_angsur.sql '
   + 'lewat Supabase → SQL Editor agar angsuran SPP tahun berjalan bisa disimpan.';
 
+// Kolom students.versi_baris (supabase_migration_konkurensi.sql) naik otomatis
+// tiap baris diubah. commitSppOps hanya menulis bila versinya masih sama dengan
+// saat dibaca, supaya dua perangkat yang membayar santri yang sama bersamaan
+// tidak saling menimpa. Tanpa migrasi: perilaku lama (tanpa penjagaan).
+let _versiBarisSupported = true;
+
 // Matikan flag kolom opsional yang ternyata belum ada di server, supaya simpan
 // bisa diulang tanpa kolom tersebut. true bila ada flag yang baru dimatikan.
 function _degradeMissingColumn(e) {
   if (_sppHistorySupported && _isMissingSppHistory(e)) { _sppHistorySupported = false; return true; }
   if (_sppMulaiSupported   && _isMissingSppMulai(e))   { _warnSppMulaiKolomHilang(); return true; }
   if (_sppAngsurSupported  && _isMissingSppAngsur(e))  { _sppAngsurSupported = false; return true; }
+  if (_versiBarisSupported && /versi_baris/.test(String((e && e.message) || e || ''))) { _versiBarisSupported = false; return true; }
   return false;
 }
 
@@ -162,17 +169,24 @@ function _isMissingPaymentMeta(e) {
 }
 
 // Insert kuitansi dengan fallback bila kolom metadata pembayaran belum ada.
+// Bila nomornya ternyata sudah dipakai perangkat lain di detik yang sama
+// (indeks unik dari supabase_migration_konkurensi.sql menolaknya), ambil nomor
+// berikutnya lalu ulangi. kwtData.no_kuitansi diperbarui ke nomor yang dipakai.
 async function insertKuitansi(kwtData) {
   const strip = (o) => { const c = { ...o }; delete c.metode; delete c.dibayar_oleh; delete c.tgl_bayar; return c; };
-  const payload = _paymentMetaSupported ? kwtData : strip(kwtData);
-  try {
-    return await sb('kuitansi', 'POST', payload, { 'Prefer': 'return=representation' });
-  } catch(e) {
-    if (_paymentMetaSupported && _isMissingPaymentMeta(e)) {
-      _paymentMetaSupported = false;
-      return await sb('kuitansi', 'POST', strip(kwtData), { 'Prefer': 'return=representation' });
+  for (let coba = 0; ; coba++) {
+    const payload = _paymentMetaSupported ? kwtData : strip(kwtData);
+    try {
+      return await sb('kuitansi', 'POST', payload, { 'Prefer': 'return=representation' });
+    } catch(e) {
+      const msg = String((e && e.message) || e || '');
+      if (_paymentMetaSupported && _isMissingPaymentMeta(e)) { _paymentMetaSupported = false; continue; }
+      if (coba < 3 && /23505/.test(msg) && /no_kuitansi/.test(msg)) {
+        kwtData.no_kuitansi = await generateNoKuitansi();
+        continue;
+      }
+      throw e;
     }
-    throw e;
   }
 }
 
@@ -622,7 +636,7 @@ async function saveSettings() {
 //              [{ m, remove:true }] → batalkan bulan (kembali belum dibayar)
 //   ops.hist : [{ ta, m, delta, rate }] → tambah/kurangi nominal bulan TA lalu
 // Lihat applySppCurDelta() / applySppHistDelta() di helpers.js.
-async function commitSppOps(nama, ops = {}) {
+async function commitSppOps(nama, ops = {}, coba = 0) {
   const cur  = ops.cur  || [];
   const hist = ops.hist || [];
   if (!cur.length && !hist.length) return;
@@ -642,6 +656,7 @@ async function commitSppOps(nama, ops = {}) {
     const cols = ['spp', 'spp_paid_months'];
     if (_sppHistorySupported) cols.push('spp_history');
     if (_sppAngsurSupported)  cols.push('spp_angsur');
+    if (_versiBarisSupported) cols.push('versi_baris');
     const rows = await sb('students?select=' + cols.join(',') + '&nama=eq.' + encodeURIComponent(nama));
     server = (rows && rows[0]) || null;
     serverOk = true;
@@ -678,7 +693,16 @@ async function commitSppOps(nama, ops = {}) {
 
   showSyncIndicator('💾 Menyimpan...');
   try {
-    await sb('students?nama=eq.' + encodeURIComponent(nama), 'PATCH', patch, { 'Prefer': 'return=minimal' });
+    const dijaga = _versiBarisSupported && server.versi_baris != null;
+    const hasil = await sb('students?nama=eq.' + encodeURIComponent(nama)
+      + (dijaga ? '&versi_baris=eq.' + server.versi_baris : ''), 'PATCH', patch,
+      { 'Prefer': dijaga ? 'return=representation' : 'return=minimal' });
+    if (dijaga && Array.isArray(hasil) && !hasil.length) {
+      // Perangkat lain mengubah santri ini di antara baca & tulis → ulangi di
+      // atas data terbarunya.
+      if (coba < 4) return commitSppOps(nama, ops, coba + 1);
+      throw new Error('Data santri terus berubah dari perangkat lain, coba lagi');
+    }
     if (local) {
       local.spp_paid_months = obj.spp_paid_months;
       if (_sppHistorySupported) local.spp_history = obj.spp_history;
@@ -686,79 +710,30 @@ async function commitSppOps(nama, ops = {}) {
     }
     showSyncIndicator('✅ Tersimpan', 1500);
   } catch(e) {
-    if (_degradeMissingColumn(e)) return commitSppOps(nama, ops);
+    if (_degradeMissingColumn(e)) return commitSppOps(nama, ops, coba);
     console.error('commitSppOps error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
     throw e;
   }
 }
 
-// Tandai bulan SPP yang baru lunas — hasil gabungan server + input baru.
-//   months   : ['Jul','Agt']  → SPP tahun ajaran berjalan
-//   histPaid : { '2024/2025': { rate: 100000, months: ['Jul'] } } → tunggakan TA lalu
-async function commitSppPayment(nama, months = [], histPaid = {}) {
-  const local = appState.students.find(s => s.nama === nama) || null;
-
-  let server = null, serverOk = false;
-  try {
-    const sel = _sppHistorySupported ? 'spp_paid_months,spp_history' : 'spp_paid_months';
-    const rows = await sb('students?select=' + sel + '&nama=eq.' + encodeURIComponent(nama));
-    server = (rows && rows[0]) || null;
-    serverOk = true;
-  } catch(e) {
-    if (_sppHistorySupported && _isMissingSppHistory(e)) {
-      _sppHistorySupported = false;
-      return commitSppPayment(nama, months, histPaid);
-    }
-    console.error('commitSppPayment read:', e);
-  }
-
-  // Baris belum ada di server (santri baru yang gagal tersimpan) atau server
-  // tak terbaca → pakai jalur simpan biasa agar pembayaran tidak hilang.
-  if (!serverOk || !server) {
-    if (local) {
-      months.forEach(m => { if (!local.spp_paid_months.includes(m)) local.spp_paid_months.push(m); });
-      Object.entries(histPaid).forEach(([ta, info]) => markSppHistPaid(local, ta, info.rate, info.months || []));
-    }
-    return saveSiswa(local);
-  }
-
-  const basePaid = Array.isArray(server.spp_paid_months)
-    ? server.spp_paid_months
-    : ((local && local.spp_paid_months) || []);
-  const paid = [...new Set([...basePaid, ...months])];
-
-  const srvHist = (server.spp_history && typeof server.spp_history === 'object' && !Array.isArray(server.spp_history))
-    ? server.spp_history : {};
-  const hist = JSON.parse(JSON.stringify(_sppHistorySupported ? srvHist : ((local && local.spp_history) || {})));
-  // markSppHistPaid() bekerja pada objek bergaya siswa; bungkus riwayat server.
-  const carrier = { spp_history: hist };
-  Object.entries(histPaid).forEach(([ta, info]) => markSppHistPaid(carrier, ta, info.rate, info.months || []));
-
-  const patch = { spp_paid_months: paid };
-  if (_sppHistorySupported) patch.spp_history = carrier.spp_history;
-
-  showSyncIndicator('💾 Menyimpan...');
-  try {
-    await sb('students?nama=eq.' + encodeURIComponent(nama), 'PATCH', patch, { 'Prefer': 'return=minimal' });
-    if (local) {
-      local.spp_paid_months = paid;
-      if (_sppHistorySupported) local.spp_history = carrier.spp_history;
-    }
-    showSyncIndicator('✅ Tersimpan', 1500);
-  } catch(e) {
-    if (_sppHistorySupported && _isMissingSppHistory(e)) {
-      _sppHistorySupported = false;
-      return commitSppPayment(nama, months, histPaid);
-    }
-    console.error('commitSppPayment error:', e);
-    showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
-  }
-}
-
 // Tambah pembayaran tagihan sebagai SELISIH (delta) di atas nilai terbaru di
 // server, bukan menimpa dengan angka hasil hitungan lokal.
 async function addTagihanPaid(tagihanId, delta) {
+  // Utamakan fungsi database (satu perintah UPDATE paid_amount = paid_amount +
+  // delta), supaya dua perangkat yang membayar bersamaan tidak saling menimpa.
+  if (_tagihanRpcSupported) {
+    try {
+      const baru = await sb('rpc/tambah_tagihan_paid', 'POST', { p_id: tagihanId, p_delta: Number(delta) || 0 });
+      const idx = appState.tagihan.findIndex(t => t.id === tagihanId);
+      if (idx >= 0 && baru != null) appState.tagihan[idx].paid_amount = Number(baru) || 0;
+      return;
+    } catch(e) {
+      // Fungsi belum dibuat (migrasi belum dijalankan) → jalur lama.
+      if (!/PGRST202|tambah_tagihan_paid/.test(String((e && e.message) || e || ''))) throw e;
+      _tagihanRpcSupported = false;
+    }
+  }
   const local = appState.tagihan.find(t => t.id === tagihanId) || null;
   let base = null;
   try {
@@ -768,24 +743,7 @@ async function addTagihanPaid(tagihanId, delta) {
   if (base == null) base = local ? (Number(local.paid_amount) || 0) : 0;
   return updateTagihanPaid(tagihanId, Math.max(0, base + (Number(delta) || 0)));
 }
-
-// Tambah/hapus bulan SPP terbayar di atas kondisi TERBARU server (dipakai alur
-// hapus kuitansi & koreksi). Mengembalikan daftar bulan hasil akhir.
-async function adjustSppPaidMonths(nama, add = [], remove = []) {
-  const local = appState.students.find(s => s.nama === nama) || null;
-  let base = null;
-  try {
-    const rows = await sb('students?select=spp_paid_months&nama=eq.' + encodeURIComponent(nama));
-    if (rows && rows[0] && Array.isArray(rows[0].spp_paid_months)) base = rows[0].spp_paid_months;
-  } catch(e) { console.error('adjustSppPaidMonths read:', e); }
-  if (base == null) base = (local && local.spp_paid_months) || [];
-
-  const months = [...new Set([...base, ...add])].filter(m => !remove.includes(m));
-  await sb('students?nama=eq.' + encodeURIComponent(nama), 'PATCH',
-    { spp_paid_months: months }, { 'Prefer': 'return=minimal' });
-  if (local) local.spp_paid_months = months;
-  return months;
-}
+let _tagihanRpcSupported = true;
 
 // ── Riwayat/tunggakan SPP tahun ajaran sebelumnya (kolom students.spp_history) ──
 // Dipakai editor "Tunggakan TA Lama". Sengaja memakai PATCH kolom tunggal:

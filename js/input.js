@@ -1244,7 +1244,7 @@ async function _submitPayment() {
     await Promise.all(tagihanUpdates.map(u => addTagihanPaid(u.id, u.delta)));
   } catch (e) {
     console.error('submitPayment data:', e);
-    toast(`⚠️ Kuitansi ${noKwt} tersimpan, tapi data tunggakan santri gagal diperbarui (${e.message}). `
+    toast(`⚠️ Kuitansi ${kwtData.no_kuitansi} tersimpan, tapi data tunggakan santri gagal diperbarui (${e.message}). `
       + 'JANGAN input ulang — jalankan menu Periksa & Pulihkan.', 12000);
   }
   saveTransaction(txn);
