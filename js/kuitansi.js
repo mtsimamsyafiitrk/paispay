@@ -127,6 +127,7 @@ async function konfirmasiHapusKwt() {
               if (t) await addTagihanPaid(t.id, item.amount);
             }
           } else if (dikoreksi) {
+            if (item.bulan && item.selisih) pushOp(sppDeltaOp(item, -item.selisih));
             if (item.item_id && item.item_id !== 'spp') {
               const t = findTagihan(kwt.nama, item.item_id);
               if (t) await addTagihanPaid(t.id, -item.amount);

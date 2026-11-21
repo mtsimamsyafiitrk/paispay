@@ -13,6 +13,7 @@ function renderInputPage() {
   if (chk) chk.checked = false;
   hideInputNamaDropdown();
   resetPaymentMeta();
+  clearCart();
   renderPaymentItems();
 }
 
@@ -196,6 +197,16 @@ function onInputNamaKeydown(e) {
 }
 
 function selectInputNama(nama) {
+  // Keranjang milik satu santri — ganti santri berarti keranjang dikosongkan.
+  const lama = document.getElementById('inputNama').value;
+  if (inputCart.length && lama !== nama) {
+    if (!confirm(`Keranjang ${lama} masih berisi ${inputCart.length} item dan akan dikosongkan. Lanjut ganti santri?`)) {
+      hideInputNamaDropdown();
+      document.getElementById('inputNamaSearch').value = lama;
+      return;
+    }
+    clearCart();
+  }
   document.getElementById('inputNama').value = nama;
   document.getElementById('inputNamaSearch').value = nama;
   document.getElementById('inputNamaSearch').style.borderColor = 'var(--primary)';
@@ -275,7 +286,7 @@ function onStudentSelect() {
 function inputFormHasSelection() {
   const cont = document.getElementById('paymentItems');
   if (cont && cont.querySelector('input[type="checkbox"]:checked')) return true;
-  return getSppMonthsSelected().length > 0 || getSppPrevSelected().length > 0
+  return inputCart.length > 0 || getSppMonthsSelected().length > 0 || getSppPrevSelected().length > 0
     || Number(document.getElementById('sppAngsurNom')?.value || 0) > 0;
 }
 
@@ -889,7 +900,7 @@ function toggleSppMonth(m, labelEl) {
   updateSppMonthInfo();
   // Memilih bulan otomatis mencentang item SPP-nya.
   const itemChk = sppItemCheckbox();
-  if (itemChk && chk.checked) itemChk.checked = true;
+  if (itemChk) itemChk.checked = getSppMonthsSelected().length > 0;
   calcTotal();
 }
 
@@ -946,79 +957,213 @@ function calcTotal() {
   });
   // Tunggakan SPP tahun ajaran sebelumnya (dipilih per bulan)
   getSppPrevSelected().forEach(y => total += y.amount);
+  inputCart.forEach(l => total += l.amount);
   document.getElementById('inputTotal').textContent = rp(total);
 }
 
-async function submitPayment() {
-  const nama = document.getElementById('inputNama').value;
-  if (!nama) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
-  const student = getStudent(nama);
-  const items = [];
-  let sppError = false;
-  getInputItems(student).forEach(item => {
-    const chk = document.getElementById('chk_'+item.id);
-    if (!chk || !chk.checked) return;
-    let amount = item.amount;
-    let payName = item.name;
+// ══════════════════════════════════════════
+// KERANJANG PEMBAYARAN
+// ══════════════════════════════════════════
+// Pilihan di panel kanan bisa dimasukkan ke keranjang berkali-kali (mis. SPP
+// Sep & Okt lunas, lalu Nov angsur), diubah nominalnya atau dihapus, lalu
+// disimpan sekaligus jadi SATU kuitansi. Tiap baris = satu bulan / satu item:
+//   { kind:'cur'|'prev'|'tetap'|'custom', id, base, m, ta, rate,
+//     amount, max (sisa yang boleh dibayar), paidBefore (sudah diangsur) }
+let inputCart = [];
+
+const cartKey = l => l.kind + '|' + (l.ta || '') + '|' + (l.m || l.id);
+
+// Nama baris untuk kuitansi: penanda (Angsur)/(Pelunasan Angsur) mengikuti nominal.
+function cartLineName(l) {
+  if (l.kind === 'custom') return l.base;
+  const base = l.kind === 'prev' ? `SPP Tunggakan TA ${l.ta}` : l.base;
+  if (l.amount < l.max) return base + ' (Angsur)';
+  return base + (l.paidBefore > 0 ? ' (Pelunasan Angsur)' : '');
+}
+
+// Baca pilihan di panel kanan jadi baris keranjang. null = ada isian yang salah
+// (sudah diberi toast); [] = tidak ada yang dicentang.
+function formLines(student) {
+  const lines = [];
+  for (const item of getInputItems(student)) {
+    const chk = document.getElementById('chk_' + item.id);
+    if (!chk || !chk.checked) continue;
     if (item.type === 'custom') {
-      const inp = document.getElementById('custom_'+item.id);
-      amount = Number(inp?.value||0);
-    } else if (item.type === 'bulanan' && student) {
-      amount = student.spp || item.amount || 0;
+      const amt = Number(document.getElementById('custom_' + item.id)?.value || 0);
+      if (amt > 0) lines.push({ kind: 'custom', id: item.id, base: item.name, amount: amt, max: Infinity });
     } else if (item.type === 'tetap' && student) {
       const t = findTagihan(student.nama, item.id);
       const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
-      amount = tetapAmountToPay(item, student);
-      // Tandai "(Angsur)" bila membayar sebagian (belum melunasi sisa)
-      if (amount > 0 && amount < sisa) payName = item.name + ' (Angsur)';
-    }
-    if (amount <= 0 && item.type !== 'custom') return;
-
-    if (item.type === 'bulanan') {
+      const amt = tetapAmountToPay(item, student);
+      if (amt > 0) lines.push({ kind: 'tetap', id: item.id, base: item.name, amount: amt, max: sisa });
+    } else if (item.type === 'bulanan' && student) {
       if ((document.getElementById('sppMode')?.value || 'lunas') === 'angsur') {
-        // Angsur: bayar sebagian untuk satu bulan; sisanya tetap menunggak.
         const ang = getSppAngsur(student);
-        if (!ang || ang.amount <= 0) { toast('⚠️ Isi nominal angsuran SPP!'); sppError = true; return; }
-        if (!(Number(student.spp) > 0)) { toast('⚠️ Nominal SPP santri belum diatur — angsuran tidak bisa dihitung sisanya.'); sppError = true; return; }
-        if (!sppAngsurKolomAda()) { toast('⚠️ ' + SPP_ANGSUR_MIGRASI_MSG, 9000); sppError = true; return; }
-        const lunasJadi = ang.amount >= ang.sisa;
-        items.push({ id: item.id, type: item.type,
-          name: item.name + (lunasJadi ? (sppBulanDibayar(student, ang.m) > 0 ? ' (Pelunasan Angsur)' : '') : ' (Angsur)'),
-          amount: ang.amount, bulanList: [ang.m], bulanAmounts: { [ang.m]: ang.amount }, angsurMonths: [ang.m] });
-        return;
+        if (!ang || ang.amount <= 0) { toast('⚠️ Isi nominal angsuran SPP!'); return null; }
+        lines.push({ kind: 'cur', id: item.id, base: item.name, m: ang.m, amount: ang.amount,
+          max: ang.sisa, paidBefore: sppBulanDibayar(student, ang.m) });
+      } else {
+        const bulan = getSppMonthsSelected();
+        if (!bulan.length) { toast('⚠️ Pilih minimal 1 bulan SPP!'); return null; }
+        bulan.forEach(m => {
+          const sisa = sppInputSisa(student, m);
+          if (sisa > 0) lines.push({ kind: 'cur', id: item.id, base: item.name, m, amount: sisa,
+            max: sisa, paidBefore: sppBulanDibayar(student, m) });
+        });
       }
-      const bulanDipilih = getSppMonthsSelected();
-      if (!bulanDipilih.length) { toast('⚠️ Pilih minimal 1 bulan SPP!'); sppError = true; return; }
-      // Bulan yang sudah diangsur hanya ditagih sisanya (pelunasan angsuran).
-      const bulanAmounts = {};
-      bulanDipilih.forEach(m => { bulanAmounts[m] = sppInputSisa(student, m); });
-      const angsurMonths = bulanDipilih.filter(m => sppBulanDibayar(student, m) > 0);
-      const totalSPP = bulanDipilih.reduce((a, m) => a + bulanAmounts[m], 0);
-      items.push({ id: item.id, type: item.type, name: item.name, amount: totalSPP,
-        bulanList: bulanDipilih, bulanAmounts, angsurMonths });
-    } else {
-      items.push({ id: item.id, type: item.type, name: payName, amount, bulan: null });
     }
-  });
-
-  if (sppError) return;
-
-  // Tunggakan SPP tahun ajaran sebelumnya (dari spp_history) — tiap TA jadi
-  // satu item pembayaran tersendiri, bulan dibayar dicatat balik ke history.
-  const prevSel = getSppPrevSelected();
-  if ((document.getElementById('sppPrevMode')?.value || 'lunas') === 'angsur' && !prevSel.length
-      && document.getElementById('sppPrevAngsurNom')?.value) {
-    toast('⚠️ Nominal angsuran tunggakan tidak valid!'); return;
   }
-  if (!items.length && !prevSel.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
-  prevSel.forEach(y => {
-    const sudah = y.angsur ? (inputPrevArrears.find(p => p.ta === y.ta)?.detail.find(d => d.m === y.months[0])) : null;
-    const lunasJadi = sudah && y.amount >= sudah.sisa;
-    items.push({ id: 'spp', type: 'spp_prev',
-      name: `SPP Tunggakan TA ${y.ta}` + (y.angsur ? (lunasJadi ? (sudah.dibayar > 0 ? ' (Pelunasan Angsur)' : '') : ' (Angsur)') : ''),
-      amount: y.amount, ta: y.ta, rate: y.rate, bulanList: y.months, bulanAmounts: y.bulanAmounts,
-      angsurMonths: y.angsur ? y.months : [] });
+  if ((document.getElementById('sppPrevMode')?.value || 'lunas') === 'angsur' && !getSppPrevSelected().length
+      && document.getElementById('sppPrevAngsurNom')?.value) {
+    toast('⚠️ Nominal angsuran tunggakan tidak valid!'); return null;
+  }
+  getSppPrevSelected().forEach(y => y.months.forEach(m => {
+    const d = inputPrevArrears.find(p => p.ta === y.ta)?.detail.find(x => x.m === m);
+    lines.push({ kind: 'prev', id: 'spp', ta: y.ta, rate: y.rate, m, amount: y.bulanAmounts[m],
+      max: d ? d.sisa : y.bulanAmounts[m], paidBefore: d ? d.dibayar : 0 });
+  }));
+  return lines;
+}
+
+// Baris yang sudah ada di keranjang tidak boleh dimasukkan dua kali.
+function cartConflict(lines) {
+  const ada = new Set(inputCart.map(cartKey));
+  const dup = lines.find(l => ada.has(cartKey(l)));
+  if (dup) toast(`⚠️ ${cartLineName(dup)}${dup.m ? ' ' + MONTH_FULL[dup.m] : ''} sudah ada di keranjang — ubah atau hapus di sana.`);
+  return !!dup;
+}
+
+function addToCart() {
+  const student = getStudent(document.getElementById('inputNama').value);
+  if (!student) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
+  const lines = formLines(student);
+  if (!lines) return;
+  if (!lines.length) { toast('⚠️ Centang / pilih item yang akan dimasukkan ke keranjang!'); return; }
+  if (cartConflict(lines)) return;
+  inputCart.push(...lines);
+  renderPaymentItems(student);   // kosongkan pilihan, siap memilih item berikutnya
+  renderCart();
+  toast(`🛒 ${lines.length} item masuk keranjang`);
+}
+
+function removeCartLine(i) {
+  inputCart.splice(i, 1);
+  renderCart();
+  calcTotal();
+}
+
+function editCartLine(i, el) {
+  const l = inputCart[i];
+  if (!l) return;
+  const v = Math.round(Number(el.value) || 0);
+  if (v <= 0) { toast('⚠️ Nominal harus lebih dari 0 — pakai ✕ untuk menghapus baris.'); renderCart(); return; }
+  l.amount = Math.min(l.max, v);
+  if (v > l.max) toast(`⚠️ Maksimal ${rp(l.max)} (sisa tagihan)`);
+  renderCart();
+  calcTotal();
+}
+
+function clearCart() {
+  inputCart = [];
+  renderCart();
+}
+
+function renderCart() {
+  const box = document.getElementById('inputCart');
+  if (!box) return;
+  if (!inputCart.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `
+    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">🛒 Keranjang (${inputCart.length})</div>
+    ${inputCart.map((l, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--border);font-size:12.5px;">
+        <div style="flex:1;min-width:0;">${esc(cartLineName(l))}${l.m ? ' — <strong>' + esc(MONTH_FULL[l.m]) + '</strong>' : ''}
+          ${l.max !== Infinity && l.amount < l.max ? `<div style="font-size:11px;color:var(--danger);">sisa ${rp(l.max - l.amount)} tetap menunggak</div>` : ''}</div>
+        <input type="number" value="${l.amount}" min="1" ${l.max !== Infinity ? `max="${l.max}"` : ''}
+          onchange="editCartLine(${i}, this)" aria-label="Nominal ${esc(cartLineName(l))}"
+          style="width:110px;padding:4px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;text-align:right;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeCartLine(${i})" aria-label="Hapus">✕</button>
+      </div>`).join('')}`;
+}
+
+// Gabungkan baris keranjang jadi item pembayaran (format lama submitPayment):
+// bulan-bulan dengan nama sama dijadikan satu item ber-bulanList.
+function linesToItems(lines) {
+  const items = [], byKey = {};
+  lines.forEach(l => {
+    const name = cartLineName(l);
+    if (l.kind === 'tetap' || l.kind === 'custom') {
+      items.push({ id: l.id, type: l.kind, name, amount: l.amount, bulan: null });
+      return;
+    }
+    const k = l.kind + '|' + (l.ta || '') + '|' + name;
+    let it = byKey[k];
+    if (!it) {
+      it = byKey[k] = { id: l.id, type: l.kind === 'prev' ? 'spp_prev' : 'bulanan', name, amount: 0,
+        bulanList: [], bulanAmounts: {}, angsurMonths: [], ...(l.kind === 'prev' ? { ta: l.ta, rate: l.rate } : {}) };
+      items.push(it);
+    }
+    it.amount += l.amount;
+    it.bulanList.push(l.m);
+    it.bulanAmounts[l.m] = l.amount;
+    if (l.amount < l.max || l.paidBefore > 0) it.angsurMonths.push(l.m);
   });
+  return items;
+}
+
+// Sisa TERBARU yang boleh dibayar untuk satu baris (dibaca dari appState
+// setelah refreshStudent), untuk menolak baris yang sudah dibayar perangkat lain.
+function cartLineFreshMax(l, student) {
+  if (l.kind === 'cur')  return sppInputSisa(student, l.m);
+  if (l.kind === 'prev') return sppTunggakanPrevList(student).find(y => y.ta === l.ta)?.detail.find(d => d.m === l.m)?.sisa || 0;
+  if (l.kind === 'tetap') {
+    const t = findTagihan(student.nama, l.id);
+    return t ? Math.max(0, t.nominal - t.paid_amount) : l.max;
+  }
+  return l.max;
+}
+
+// Cegah klik "Simpan" dua kali tercatat sebagai dua pembayaran.
+let _menyimpanBayar = false;
+async function submitPayment() {
+  if (_menyimpanBayar) { toast('⏳ Pembayaran sedang disimpan...'); return; }
+  _menyimpanBayar = true;
+  try { await _submitPayment(); }
+  finally { _menyimpanBayar = false; }
+}
+
+async function _submitPayment() {
+  const nama = document.getElementById('inputNama').value;
+  if (!nama) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
+  // Isi keranjang + pilihan yang masih tercentang di panel kanan (alur lama
+  // tanpa keranjang tetap jalan). Pilihan form dibaca sebelum data disegarkan,
+  // karena chip/nominal di layar menunjuk data yang sedang tampil.
+  const formSel = formLines(getStudent(nama));
+  if (!formSel) return;
+  if (cartConflict(formSel)) return;
+  const lines = [...inputCart, ...formSel];
+  if (!lines.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
+
+  // Keranjang bisa berumur beberapa menit: pastikan tak ada yang sudah dibayar
+  // dari perangkat lain sementara itu.
+  try { await refreshStudent(nama); } catch { /* offline: penyimpanan di bawah yang gagal */ }
+  const student = getStudent(nama);
+  const basi = lines.filter(l => l.amount > cartLineFreshMax(l, student));
+  if (basi.length) {
+    inputCart = inputCart
+      .map(l => { const mx = cartLineFreshMax(l, student); return { ...l, max: mx, amount: Math.min(l.amount, mx) }; })
+      .filter(l => l.max > 0);
+    renderCart();
+    renderPaymentItems(student);
+    toast('⚠️ ' + basi.map(l => cartLineName(l) + (l.m ? ' ' + MONTH_FULL[l.m] : '')).join(', ')
+      + ' sudah dibayar/berubah dari perangkat lain — keranjang disesuaikan, periksa lalu simpan lagi.', 9000);
+    return;
+  }
+  // Angsuran SPP tahun berjalan butuh kolom spp_angsur & nominal SPP santri.
+  if (lines.some(l => l.kind === 'cur' && l.amount < l.max)) {
+    if (!(Number(student.spp) > 0)) { toast('⚠️ Nominal SPP santri belum diatur — angsuran tidak bisa dihitung sisanya.'); return; }
+    if (!sppAngsurKolomAda()) { toast('⚠️ ' + SPP_ANGSUR_MIGRASI_MSG, 9000); return; }
+  }
+  const items = linesToItems(lines);
 
   // Kumpulkan perubahan sebagai SELISIH (bulan baru & nominal tambahan), lalu
   // digabungkan ke kondisi terbaru di server. Jangan menghitung nilai akhir
@@ -1054,20 +1199,6 @@ async function submitPayment() {
     nominal: totalAmt, time: timeStr, catatan: document.getElementById('inputCatatan').value,
     metode: meta.metode, dibayar_oleh: meta.dibayar_oleh,
   };
-  appState.transactions.push(txn);
-  // Tulis-gabung ke server (baca kondisi terbaru → tambahkan perubahan ini).
-  // Ditunggu (await) agar ringkasan santri & tabel sesi menampilkan angka yang
-  // benar-benar tersimpan, bukan tebakan lokal.
-  await commitSppOps(nama, sppOps);
-  await Promise.all(tagihanUpdates.map(u => addTagihanPaid(u.id, u.delta).catch(console.error)));
-  saveTransaction(txn);
-
-  // Render session table
-  const tbody = document.querySelector('#sessionTable tbody');
-  const row = document.createElement('tr');
-  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')">🖨️ Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
-  if(tbody.firstChild?.tagName==='TR' && tbody.firstChild.querySelector('[colspan]')) tbody.innerHTML='';
-  tbody.prepend(row);
 
   // Simpan ke tabel kuitansi Supabase (await agar ID tersedia saat cetak)
   const noKwt = await generateNoKuitansi();
@@ -1093,12 +1224,37 @@ async function submitPayment() {
     ta_label: getProfil().ta || '',
     metode: meta.metode, dibayar_oleh: meta.dibayar_oleh, tgl_bayar: timeStr,
   };
+  // Kuitansi (buku besar) disimpan LEBIH DULU: bila gagal, belum ada data yang
+  // berubah dan admin cukup mengulang. Bila data santri yang gagal sesudahnya,
+  // kuitansinya sudah ada sehingga menu Periksa & Pulihkan bisa memulihkannya.
   try {
     const res = await insertKuitansi(kwtData);
     pendingKwtId = res?.[0]?.id || null;
-  } catch { pendingKwtId = null; }
-
+  } catch (e) {
+    console.error('insertKuitansi:', e);
+    toast('⚠️ Gagal menyimpan kuitansi — belum ada yang tercatat, silakan coba lagi. (' + e.message + ')', 9000);
+    return;
+  }
   pendingKwtData = { ...kwtData, time: timeStr };
+
+  appState.transactions.push(txn);
+  // Tulis-gabung ke server (baca kondisi terbaru → tambahkan perubahan ini).
+  try {
+    await commitSppOps(nama, sppOps);
+    await Promise.all(tagihanUpdates.map(u => addTagihanPaid(u.id, u.delta)));
+  } catch (e) {
+    console.error('submitPayment data:', e);
+    toast(`⚠️ Kuitansi ${noKwt} tersimpan, tapi data tunggakan santri gagal diperbarui (${e.message}). `
+      + 'JANGAN input ulang — jalankan menu Periksa & Pulihkan.', 12000);
+  }
+  saveTransaction(txn);
+
+  // Render session table
+  const tbody = document.querySelector('#sessionTable tbody');
+  const row = document.createElement('tr');
+  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')">🖨️ Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
+  if(tbody.firstChild?.tagName==='TR' && tbody.firstChild.querySelector('[colspan]')) tbody.innerHTML='';
+  tbody.prepend(row);
 
   // Reset form
   document.getElementById('inputNama').value='';
@@ -1109,6 +1265,7 @@ async function submitPayment() {
   document.getElementById('studentSummary').innerHTML='';
   document.getElementById('inputCatatan').value='';
   resetPaymentMeta();
+  clearCart();
   renderPaymentItems();
 
   // Tampilkan popup konfirmasi cetak
