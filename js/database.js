@@ -650,7 +650,11 @@ async function commitSppOps(nama, ops = {}) {
     console.error('commitSppOps read:', e);
   }
 
-  if (!serverOk || !server) {
+  // Server tak terbaca → gagalkan (pemanggil yang memberi tahu admin). Jangan
+  // menulis dari salinan lokal yang mungkin usang.
+  if (!serverOk) throw new Error('Data santri tidak bisa dibaca dari server');
+  // Baris belum ada di server (santri baru yang gagal tersimpan) → simpan biasa.
+  if (!server) {
     if (local) { apply(local); return saveSiswa(local); }
     return;
   }
@@ -685,6 +689,7 @@ async function commitSppOps(nama, ops = {}) {
     if (_degradeMissingColumn(e)) return commitSppOps(nama, ops);
     console.error('commitSppOps error:', e);
     showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
+    throw e;
   }
 }
 

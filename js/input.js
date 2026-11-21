@@ -900,7 +900,7 @@ function toggleSppMonth(m, labelEl) {
   updateSppMonthInfo();
   // Memilih bulan otomatis mencentang item SPP-nya.
   const itemChk = sppItemCheckbox();
-  if (itemChk && chk.checked) itemChk.checked = true;
+  if (itemChk) itemChk.checked = getSppMonthsSelected().length > 0;
   calcTotal();
 }
 
@@ -1056,7 +1056,8 @@ function editCartLine(i, el) {
   const l = inputCart[i];
   if (!l) return;
   const v = Math.round(Number(el.value) || 0);
-  l.amount = Math.min(l.max, Math.max(1, v));
+  if (v <= 0) { toast('⚠️ Nominal harus lebih dari 0 — pakai ✕ untuk menghapus baris.'); renderCart(); return; }
+  l.amount = Math.min(l.max, v);
   if (v > l.max) toast(`⚠️ Maksimal ${rp(l.max)} (sisa tagihan)`);
   renderCart();
   calcTotal();
@@ -1109,17 +1110,54 @@ function linesToItems(lines) {
   return items;
 }
 
+// Sisa TERBARU yang boleh dibayar untuk satu baris (dibaca dari appState
+// setelah refreshStudent), untuk menolak baris yang sudah dibayar perangkat lain.
+function cartLineFreshMax(l, student) {
+  if (l.kind === 'cur')  return sppInputSisa(student, l.m);
+  if (l.kind === 'prev') return sppTunggakanPrevList(student).find(y => y.ta === l.ta)?.detail.find(d => d.m === l.m)?.sisa || 0;
+  if (l.kind === 'tetap') {
+    const t = findTagihan(student.nama, l.id);
+    return t ? Math.max(0, t.nominal - t.paid_amount) : l.max;
+  }
+  return l.max;
+}
+
+// Cegah klik "Simpan" dua kali tercatat sebagai dua pembayaran.
+let _menyimpanBayar = false;
 async function submitPayment() {
+  if (_menyimpanBayar) { toast('⏳ Pembayaran sedang disimpan...'); return; }
+  _menyimpanBayar = true;
+  try { await _submitPayment(); }
+  finally { _menyimpanBayar = false; }
+}
+
+async function _submitPayment() {
   const nama = document.getElementById('inputNama').value;
   if (!nama) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
-  const student = getStudent(nama);
   // Isi keranjang + pilihan yang masih tercentang di panel kanan (alur lama
-  // tanpa keranjang tetap jalan).
-  const formSel = formLines(student);
+  // tanpa keranjang tetap jalan). Pilihan form dibaca sebelum data disegarkan,
+  // karena chip/nominal di layar menunjuk data yang sedang tampil.
+  const formSel = formLines(getStudent(nama));
   if (!formSel) return;
   if (cartConflict(formSel)) return;
   const lines = [...inputCart, ...formSel];
   if (!lines.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
+
+  // Keranjang bisa berumur beberapa menit: pastikan tak ada yang sudah dibayar
+  // dari perangkat lain sementara itu.
+  try { await refreshStudent(nama); } catch { /* offline: penyimpanan di bawah yang gagal */ }
+  const student = getStudent(nama);
+  const basi = lines.filter(l => l.amount > cartLineFreshMax(l, student));
+  if (basi.length) {
+    inputCart = inputCart
+      .map(l => { const mx = cartLineFreshMax(l, student); return { ...l, max: mx, amount: Math.min(l.amount, mx) }; })
+      .filter(l => l.max > 0);
+    renderCart();
+    renderPaymentItems(student);
+    toast('⚠️ ' + basi.map(l => cartLineName(l) + (l.m ? ' ' + MONTH_FULL[l.m] : '')).join(', ')
+      + ' sudah dibayar/berubah dari perangkat lain — keranjang disesuaikan, periksa lalu simpan lagi.', 9000);
+    return;
+  }
   // Angsuran SPP tahun berjalan butuh kolom spp_angsur & nominal SPP santri.
   if (lines.some(l => l.kind === 'cur' && l.amount < l.max)) {
     if (!(Number(student.spp) > 0)) { toast('⚠️ Nominal SPP santri belum diatur — angsuran tidak bisa dihitung sisanya.'); return; }
@@ -1161,20 +1199,6 @@ async function submitPayment() {
     nominal: totalAmt, time: timeStr, catatan: document.getElementById('inputCatatan').value,
     metode: meta.metode, dibayar_oleh: meta.dibayar_oleh,
   };
-  appState.transactions.push(txn);
-  // Tulis-gabung ke server (baca kondisi terbaru → tambahkan perubahan ini).
-  // Ditunggu (await) agar ringkasan santri & tabel sesi menampilkan angka yang
-  // benar-benar tersimpan, bukan tebakan lokal.
-  await commitSppOps(nama, sppOps);
-  await Promise.all(tagihanUpdates.map(u => addTagihanPaid(u.id, u.delta).catch(console.error)));
-  saveTransaction(txn);
-
-  // Render session table
-  const tbody = document.querySelector('#sessionTable tbody');
-  const row = document.createElement('tr');
-  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')">🖨️ Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
-  if(tbody.firstChild?.tagName==='TR' && tbody.firstChild.querySelector('[colspan]')) tbody.innerHTML='';
-  tbody.prepend(row);
 
   // Simpan ke tabel kuitansi Supabase (await agar ID tersedia saat cetak)
   const noKwt = await generateNoKuitansi();
@@ -1200,12 +1224,37 @@ async function submitPayment() {
     ta_label: getProfil().ta || '',
     metode: meta.metode, dibayar_oleh: meta.dibayar_oleh, tgl_bayar: timeStr,
   };
+  // Kuitansi (buku besar) disimpan LEBIH DULU: bila gagal, belum ada data yang
+  // berubah dan admin cukup mengulang. Bila data santri yang gagal sesudahnya,
+  // kuitansinya sudah ada sehingga menu Periksa & Pulihkan bisa memulihkannya.
   try {
     const res = await insertKuitansi(kwtData);
     pendingKwtId = res?.[0]?.id || null;
-  } catch { pendingKwtId = null; }
-
+  } catch (e) {
+    console.error('insertKuitansi:', e);
+    toast('⚠️ Gagal menyimpan kuitansi — belum ada yang tercatat, silakan coba lagi. (' + e.message + ')', 9000);
+    return;
+  }
   pendingKwtData = { ...kwtData, time: timeStr };
+
+  appState.transactions.push(txn);
+  // Tulis-gabung ke server (baca kondisi terbaru → tambahkan perubahan ini).
+  try {
+    await commitSppOps(nama, sppOps);
+    await Promise.all(tagihanUpdates.map(u => addTagihanPaid(u.id, u.delta)));
+  } catch (e) {
+    console.error('submitPayment data:', e);
+    toast(`⚠️ Kuitansi ${noKwt} tersimpan, tapi data tunggakan santri gagal diperbarui (${e.message}). `
+      + 'JANGAN input ulang — jalankan menu Periksa & Pulihkan.', 12000);
+  }
+  saveTransaction(txn);
+
+  // Render session table
+  const tbody = document.querySelector('#sessionTable tbody');
+  const row = document.createElement('tr');
+  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')">🖨️ Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
+  if(tbody.firstChild?.tagName==='TR' && tbody.firstChild.querySelector('[colspan]')) tbody.innerHTML='';
+  tbody.prepend(row);
 
   // Reset form
   document.getElementById('inputNama').value='';

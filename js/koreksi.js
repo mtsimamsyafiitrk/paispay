@@ -251,6 +251,13 @@ async function prosesKoreksi() {
       } else if (aksi === 'koreksi_nilai') {
         const selisih = nilaBaru - item.amount;
         keteranganKoreksi.push(`${item.name}${item.bulan?' ('+(MONTH_FULL[item.bulan]||item.bulan)+')':''}: Rp ${fmt(item.amount)} → Rp ${fmt(nilaBaru)}`);
+        // SPP berbulan: nominal terbayar bulan itu ikut digeser sebesar selisihnya
+        // (mis. angsur 150rb dikoreksi jadi 100rb → bulan itu kurang 50rb lagi).
+        if (item.bulan && selisih) {
+          const op = sppDeltaOp(item, selisih);
+          if (op.cur)  sppOps.cur.push(op.cur);
+          if (op.hist) sppOps.hist.push(op.hist);
+        }
         if (item.item_id && item.item_id !== 'spp') {
           const t = findTagihan(kwt.nama, item.item_id);
           if (t) tagihanUpdates.push({ id: t.id, delta: selisih });
@@ -277,6 +284,8 @@ async function prosesKoreksi() {
       ...(item.ta ? { ta: item.ta } : {}),
       ...(item.angsur ? { angsur: true } : {}),
       ...(item.rate ? { rate: item.rate } : {}),
+      // Selisih koreksi nilai, dipakai untuk membaliknya bila kuitansi koreksi dihapus.
+      ...(aksi === 'koreksi_nilai' && item.bulan ? { selisih: nilaBaru - item.amount } : {}),
       _tipe: aksi,
       _dibatalkan: aksi === 'batalkan',
       _koreksi: aksi === 'koreksi_nilai',

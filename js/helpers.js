@@ -701,11 +701,15 @@ function sppItemTa(item) {
 //   • bulan lunas biasa      → tandai/batalkan bulannya (perilaku lama)
 function sppRevertOp(item, sign) {
   if (!item || !item.bulan) return null;
-  const amt = (Number(item.amount) || 0) * sign;
-  const ta = sppItemTa(item);
-  if (ta) return { hist: { ta, m: item.bulan, delta: amt, rate: item.rate } };
-  if (item.angsur) return { cur: { m: item.bulan, delta: amt } };
+  if (sppItemTa(item) || item.angsur) return sppDeltaOp(item, (Number(item.amount) || 0) * sign);
   return { cur: sign < 0 ? { m: item.bulan, remove: true } : { m: item.bulan, add: true } };
+}
+
+// Operasi commitSppOps() yang menambah/mengurangi nominal bulan sebuah item
+// kuitansi SPP sebesar `delta` (tahun berjalan atau tunggakan TA lama).
+function sppDeltaOp(item, delta) {
+  const ta = sppItemTa(item);
+  return ta ? { hist: { ta, m: item.bulan, delta, rate: item.rate } } : { cur: { m: item.bulan, delta } };
 }
 
 // Total nominal tunggakan SPP dari seluruh tahun ajaran sebelumnya.
