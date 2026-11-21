@@ -273,7 +273,7 @@ async function prosesKoreksi() {
     }
 
     // === 2. Buat kuitansi koreksi baru ===
-    const noKoreksi = await generateNoKuitansi();
+    let noKoreksi = await generateNoKuitansi();
     const catatanKoreksi = (catatan ? catatan + ' · ' : '') + 'Koreksi atas ' + kwt.no_kuitansi + ': ' + keteranganKoreksi.join('; ');
     const itemsKoreksi = koreksiItems.map(({ item, aksi, nilaBaru }) => ({
       name: item.name + (item.bulan ? ' (' + (MONTH_FULL[item.bulan]||item.bulan) + ')' : ''),
@@ -292,7 +292,7 @@ async function prosesKoreksi() {
     }));
     const totalKoreksi = itemsKoreksi.reduce((s, i) => s + i.amount, 0);
 
-    const resKoreksi = await sb('kuitansi', 'POST', {
+    const kwtKoreksiData = {
       no_kuitansi: noKoreksi,
       nama: kwt.nama, kelas: kwt.kelas, nisn: kwt.nisn || '',
       items: itemsKoreksi,
@@ -302,7 +302,9 @@ async function prosesKoreksi() {
       ref_no_kuitansi: kwt.no_kuitansi,
       dicetak: false,
       ta_label: getProfil().ta || '',
-    }, { 'Prefer': 'return=representation' });
+    };
+    const resKoreksi = await insertKuitansi(kwtKoreksiData);
+    noKoreksi = kwtKoreksiData.no_kuitansi;   // bisa berganti bila nomornya bentrok
 
     // === 3. Tandai kuitansi lama sebagai "dikoreksi" ===
     await sb('kuitansi?id=eq.' + kwt.id, 'PATCH', {

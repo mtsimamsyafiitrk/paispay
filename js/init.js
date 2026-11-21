@@ -2,9 +2,6 @@
 // Pustaka Excel TIDAK lagi dimuat di sini. Lihat xlsxReady() di js/config.js:
 // pustakanya ditarik saat menu Import/Export benar-benar dipakai.
 
-function isGuest() {
-  return localStorage.getItem('sipay_auth') === 'guest';
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Modal click-outside listeners

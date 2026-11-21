@@ -387,12 +387,13 @@ async function applyAuditFix() {
           // rate diambil dari entri riwayat yang sudah ada (temuan tanpa entri
           // sudah disaring keluar saat pemeriksaan), jadi tidak menebak nominal.
           const s = appState.students.find(x => x.nama === nama);
-          const histPayload = {};
+          const hist = [];
           Object.entries(p.hist).forEach(([ta, rec]) => {
             const existing = s && s.spp_history && s.spp_history[ta];
-            histPayload[ta] = { rate: existing ? (existing.spp || 0) : 0, months: rec.months };
+            const rate = existing ? (existing.spp || 0) : 0;
+            rec.months.forEach(m => hist.push({ ta, m, delta: Infinity, rate }));   // Infinity = lunasi
           });
-          await commitSppPayment(nama, p.months, histPayload);
+          await commitSppOps(nama, { cur: p.months.map(m => ({ m, add: true })), hist });
           okSpp++;
         } catch(e) { console.error('applyAuditFix spp', nama, e); gagal++; }
       }

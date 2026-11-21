@@ -639,20 +639,6 @@ function sppTunggakanPrevList(s) {
   return out;
 }
 
-// Tandai bulan-bulan tunggakan TA lama sebagai LUNAS setelah dibayar.
-// Menyentuh dua tempat sekaligus supaya bentuk ringkas & rinci tetap konsisten.
-function markSppHistPaid(stu, ta, rate, monthCodes) {
-  if (!stu || !ta) return;
-  stu.spp_history = (stu.spp_history && typeof stu.spp_history === 'object' && !Array.isArray(stu.spp_history))
-    ? stu.spp_history : {};
-  const rec = stu.spp_history[ta] || (stu.spp_history[ta] = { spp: Number(rate) || 0, spp_paid_months: [] });
-  if (!Array.isArray(rec.spp_paid_months)) rec.spp_paid_months = [];
-  (monthCodes || []).forEach(m => {
-    if (rec.months && rec.months[m]) rec.months[m].d = Math.max(0, Number(rec.months[m].n) || 0);
-    if (!rec.spp_paid_months.includes(m)) rec.spp_paid_months.push(m);
-  });
-}
-
 // Ubah nominal terbayar satu bulan tunggakan TA lalu sebesar `delta` (boleh
 // negatif). Entri ringkas diubah ke bentuk rinci hanya bila perlu mencatat
 // pembayaran sebagian, supaya data lama tetap seringkas mungkin.
@@ -748,6 +734,5 @@ function pangkalTunggakan(s) {
   return Math.max(0, (s.pangkal || 0) - (s.pangkal_paid || 0));
 }
 
-function crossTATunggakan(s) { return 0; }
 
 // ── DASHBOARD ──
