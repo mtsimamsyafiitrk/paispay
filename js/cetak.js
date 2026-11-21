@@ -43,6 +43,9 @@ function siswaToRow(s) {
   const sppBayar = (s.spp_paid_months||[]).length;
   const tunggak = totalTunggakan(s);
   const bulanLunas = MONTHS.filter(m => (s.spp_paid_months||[]).includes(m)).map(m => MONTH_FULL[m]).join(', ');
+  const angsur = (s.spp_angsur && typeof s.spp_angsur === 'object') ? s.spp_angsur : {};
+  const bulanAngsur = MONTHS.filter(m => Number(angsur[m]) > 0 && !(s.spp_paid_months||[]).includes(m))
+    .map(m => MONTH_FULL[m] + ' ' + Number(angsur[m]).toLocaleString('id-ID')).join(', ');
   const tkItems = itemsTunggakan(s);
   const prevList = sppTunggakanPrevList(s);
   return {
@@ -52,6 +55,7 @@ function siswaToRow(s) {
     'SPP/Bulan': s.spp || 0,
     'Bulan SPP Lunas': sppBayar,
     'Bulan Lunas (detail)': bulanLunas,
+    'Angsuran SPP (belum lunas)': bulanAngsur,
     'Tunggakan SPP': sppTunggakan(s),
     'Tunggakan SPP TA Lalu': sppTunggakanPrev(s),
     'Rincian TA Lalu': prevList.map(y => 'TA ' + y.ta + ': ' + y.unpaid.length + ' bln').join('; '),
@@ -67,7 +71,7 @@ async function exportSiswaExcel(mode) {
     try {
       const rows = appState.students.map(s => siswaToRow(s));
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws['!cols'] = [24,6,12,10,8,32,14,18,28,14,12,10].map(w => ({wch: w}));
+      ws['!cols'] = [24,6,12,10,8,32,24,14,18,28,14,12,10].map(w => ({wch: w}));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Data Santri');
       const tgl = new Date().toISOString().slice(0,10);
@@ -143,7 +147,7 @@ async function exportBackupLengkap() {
           spp_paid_months: Array.isArray(s.spp_paid_months) ? s.spp_paid_months : [],
         }))
       );
-      wsSiswa['!cols'] = [24,6,12,10,8,32,14,18,28,14,12,10].map(w => ({wch: w}));
+      wsSiswa['!cols'] = [24,6,12,10,8,32,24,14,18,28,14,12,10].map(w => ({wch: w}));
       XLSX.utils.book_append_sheet(wb, wsSiswa, 'Data Santri');
 
       // Sheet 2: Transaksi
@@ -213,7 +217,8 @@ function buildSuratHTML(s, tgl) {
   const bulanDimuka   = (s.spp_paid_months||[])
     .filter(m => !bulanDue.includes(m) && !isSppSebelumMasuk(s, m));
   const sppTagihanDue = (s.spp || 0) * bulanDue.length;
-  const sppTerbayarDue = (s.spp || 0) * bulanLunasDue.length;
+  // Angsuran (bayar sebagian) bulan yang belum lunas ikut dihitung terbayar.
+  const sppTerbayarDue = (s.spp || 0) * bulanLunasDue.length + sppAngsurTotal(s, bulanBelum);
   const P = getProfil();
   const siswaTagihan = appState.tagihan.filter(t => t.nama === s.nama);
   let no = 0;
@@ -253,7 +258,7 @@ function buildSuratHTML(s, tgl) {
           ${sppAktif ? `<tr>
             <td style="text-align:center">${++no}</td>
             <td>SPP Bulanan <span style="font-size:9pt">(${mulaiLabel ? 'mulai ' + esc(mulaiLabel) + ' ' : ''}s/d ${esc(sppDueMonthLabel() || '—')})</span></td>
-            <td style="font-size:10pt">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}</td>
+            <td style="font-size:10pt">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]+(sppBulanDibayar(s,m)>0?' (sisa '+sppBulanSisa(s,m).toLocaleString('id-ID')+')':'')).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}</td>
             <td style="text-align:right">${sppTagihanDue.toLocaleString('id-ID')}</td>
             <td style="text-align:right">${sppTerbayarDue.toLocaleString('id-ID')}</td>
             <td style="text-align:right;${sppT>0?'color:#c0392b;font-weight:bold;':''}">${sppT.toLocaleString('id-ID')}</td>

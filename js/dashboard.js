@@ -18,7 +18,7 @@ function _renderDashboard() {
 
   // Uang yang benar-benar masuk — dihitung dari SEMUA santri, termasuk yang
   // sudah tidak aktif, karena pembayaran mereka tetap pemasukan yang nyata.
-  const totalBayarSPP = all.reduce((a,s) => a + (s.spp||0)*(s.spp_paid_months||[]).length, 0);
+  const totalBayarSPP = all.reduce((a,s) => a + (s.spp||0)*(s.spp_paid_months||[]).length + sppAngsurTotal(s, MONTHS), 0);
   const totalBayarTagihan = appState.tagihan.reduce((a,t) => a + (t.paid_amount||0), 0);
 
   // Tunggakan berjalan = santri aktif saja. Tunggakan santri non-aktif tetap

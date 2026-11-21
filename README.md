@@ -212,6 +212,37 @@ schema cache PostgREST tidak tertinggal sesaat setelah migrasi.
 > diperiksa ulang tiap kali data dimuat, sehingga aplikasi pulih sendiri setelah
 > migrasi tanpa perlu reload.
 
+## Angsuran SPP per Bulan
+
+Wali kadang membayar SPP satu bulan hanya **sebagian**. Di **Input Pembayaran**,
+item SPP Bulanan dan blok *Tunggakan SPP Tahun Ajaran Sebelumnya* kini punya
+pilihan mode:
+
+- **💰 Lunas per bulan** — seperti sebelumnya, pilih chip bulan. Bulan yang sudah
+  diangsur ditandai garis putus-putus + *"sisa Rp …"*, dan bila dipilih hanya
+  **sisanya** yang ditagih (tercatat *pelunasan angsuran*).
+- **📆 Angsur** — pilih **satu bulan** lalu isi nominal bebas (dibatasi sisa bulan
+  itu). Bulan tersebut tetap **menunggak** dengan nominal tinggal sisanya; begitu
+  total angsurannya mencapai nominal SPP, bulan otomatis menjadi **lunas**.
+
+Pencatatan:
+- SPP tahun berjalan → kolom baru `students.spp_angsur` = `{ "Agt": 50000 }`.
+- Tunggakan TA lalu → `spp_history[TA].months[bulan] = { n, d }` (bentuk rinci
+  yang sudah ada).
+- Item kuitansi angsuran membawa penanda `angsur: true` (dan `ta` untuk TA lalu),
+  sehingga **hapus kuitansi / koreksi "batalkan"** mengurangi tepat sebesar
+  nominalnya — bulan yang lunas berkat angsuran itu kembali jadi belum lunas.
+  Sekalian diperbaiki: menghapus kuitansi tunggakan TA lalu kini membalik
+  `spp_history` TA tersebut, bukan bulan SPP tahun berjalan.
+- Tunggakan, Dashboard, detail santri, surat tagihan & ekspor Excel ikut
+  menghitung angsuran. Saat **Promosi Kelas / Lulus**, angsuran yang belum lunas
+  ikut diarsipkan ke `spp_history` sebagai tunggakan tahun lalu.
+
+**Migrasi database:** jalankan `supabase_migration_spp_angsur.sql` (menambah kolom
+`spp_angsur jsonb` — aman). Tanpa kolom ini, mode angsur SPP tahun berjalan
+ditolak dengan peringatan (angsuran tunggakan TA lalu tetap bisa, karena memakai
+`spp_history`).
+
 Fungsi terkait di `js/helpers.js`: `buildSppMulai()`, `parseSppMulai()`,
 `sppMulaiBulan()`, `sppBillableMonths()`, `sppDueMonthsFor()`, `isSppDueFor()`,
 `isSppSebelumMasuk()`, `sppMulaiLabel()`, `sppMulaiOptionsHtml()`.

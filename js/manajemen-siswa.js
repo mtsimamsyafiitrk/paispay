@@ -186,6 +186,7 @@ async function confirmPromosiKelas() {
       // hanya berlaku untuk TA yang baru diarsipkan — di tahun ajaran baru
       // santri tersebut ditagih penuh dari Juli seperti santri lain.
       s.spp_paid_months = [];
+      s.spp_angsur = {};
       s.spp_mulai = '';
 
       if (action === 'naik') {
@@ -320,6 +321,7 @@ async function confirmBulkStatus() {
       if (statusVal === 'lulus' && s.status_kelulusan !== 'lulus') {
         snapshotSppTahunBerjalan(s, ta);
         s.spp_paid_months = [];
+        s.spp_angsur = {};
       }
       s.status_kelulusan = statusVal;
       touched.push(s);

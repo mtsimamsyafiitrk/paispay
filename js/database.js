@@ -76,6 +76,8 @@ function _buildStudentRow(s, full = false) {
   if (full || s.status_kelulusan !== undefined)  row.status_kelulusan = s.status_kelulusan || '';
   if (_sppHistorySupported && (full || histOk))  row.spp_history      = histOk ? s.spp_history : {};
   if (_sppMulaiSupported && (full || s.spp_mulai !== undefined)) row.spp_mulai = s.spp_mulai || '';
+  const angsurOk = s.spp_angsur && typeof s.spp_angsur === 'object' && !Array.isArray(s.spp_angsur);
+  if (_sppAngsurSupported && (full || angsurOk)) row.spp_angsur = angsurOk ? s.spp_angsur : {};
   return row;
 }
 
@@ -127,11 +129,26 @@ function _warnSppMulaiKolomHilang() {
 // sudah ada, flag tetap true dan fitur langsung jalan lagi tanpa perlu reload.
 function _resetSppMulaiSupport() { _sppMulaiSupported = true; }
 
+// Idem untuk kolom spp_angsur (supabase_migration_spp_angsur.sql): nominal SPP
+// tahun berjalan yang baru dibayar SEBAGIAN per bulan. Tanpa kolom ini angsuran
+// tidak bisa tersimpan — form Input Pembayaran menolak mode angsur SPP tahun
+// berjalan (bukannya diam-diam membuang nominalnya).
+let _sppAngsurSupported = true;
+function sppAngsurKolomAda() { return _sppAngsurSupported; }
+function _isMissingSppAngsur(e) {
+  const msg = String((e && e.message) || e || '');
+  return /spp_angsur/.test(msg);
+}
+const SPP_ANGSUR_MIGRASI_MSG =
+  'Kolom "spp_angsur" belum ada di database — jalankan supabase_migration_spp_angsur.sql '
+  + 'lewat Supabase → SQL Editor agar angsuran SPP tahun berjalan bisa disimpan.';
+
 // Matikan flag kolom opsional yang ternyata belum ada di server, supaya simpan
 // bisa diulang tanpa kolom tersebut. true bila ada flag yang baru dimatikan.
 function _degradeMissingColumn(e) {
   if (_sppHistorySupported && _isMissingSppHistory(e)) { _sppHistorySupported = false; return true; }
   if (_sppMulaiSupported   && _isMissingSppMulai(e))   { _warnSppMulaiKolomHilang(); return true; }
+  if (_sppAngsurSupported  && _isMissingSppAngsur(e))  { _sppAngsurSupported = false; return true; }
   return false;
 }
 
@@ -177,6 +194,8 @@ async function insertKuitansi(kwtData) {
 function mapStudentRow(r, prev) {
   const adaSppMulai = !!r && Object.prototype.hasOwnProperty.call(r, 'spp_mulai');
   if (r && !adaSppMulai && _sppMulaiSupported) _warnSppMulaiKolomHilang();
+  const adaSppAngsur = !!r && Object.prototype.hasOwnProperty.call(r, 'spp_angsur');
+  if (r && !adaSppAngsur) _sppAngsurSupported = false;
   return {
     id: r.id,
     nama: r.nama,
@@ -188,6 +207,10 @@ function mapStudentRow(r, prev) {
     status_kelulusan: r.status_kelulusan || '',
     // Penanda bulan mulai tagih SPP untuk santri yang masuk di tengah TA.
     spp_mulai: adaSppMulai ? (r.spp_mulai || '') : ((prev && prev.spp_mulai) || ''),
+    // Angsuran SPP tahun berjalan per bulan: { Agt: 50000 }.
+    spp_angsur: adaSppAngsur
+      ? ((r.spp_angsur && typeof r.spp_angsur === 'object' && !Array.isArray(r.spp_angsur)) ? r.spp_angsur : {})
+      : ((prev && prev.spp_angsur) || {}),
   };
 }
 
@@ -204,6 +227,7 @@ async function loadStudents() {
   // Dipasang ulang di sini: bila migrasi sudah dijalankan, baris di bawah akan
   // membawa kolomnya dan flag tetap true — tanpa perlu memuat ulang halaman.
   _resetSppMulaiSupport();
+  _sppAngsurSupported = true;
   return rows.map(r => mapStudentRow(r, prevById.get(r.id) || prevByNama.get(r.nama)));
 }
 
@@ -590,6 +614,79 @@ async function saveSettings() {
 // lalu menggabungkannya dengan perubahan yang baru dibuat. Tanpa ini,
 // salinan di memori device B (yang bisa saja sudah usang karena device A
 // menyimpan lebih dulu) akan menimpa hasil input device A.
+
+// Terapkan perubahan pembayaran SPP sebagai SELISIH di atas kondisi TERBARU
+// server (SPP tahun berjalan, angsurannya, dan riwayat TA lalu sekaligus).
+//   ops.cur  : [{ m, delta }]       → tambah/kurangi nominal bulan tahun berjalan
+//              [{ m, add:true }]    → tandai lunas penuh
+//              [{ m, remove:true }] → batalkan bulan (kembali belum dibayar)
+//   ops.hist : [{ ta, m, delta, rate }] → tambah/kurangi nominal bulan TA lalu
+// Lihat applySppCurDelta() / applySppHistDelta() di helpers.js.
+async function commitSppOps(nama, ops = {}) {
+  const cur  = ops.cur  || [];
+  const hist = ops.hist || [];
+  if (!cur.length && !hist.length) return;
+  const local = appState.students.find(s => s.nama === nama) || null;
+
+  const apply = (obj) => {
+    cur.forEach(o => {
+      if (o.add)         applySppCurDelta(obj, o.m, Infinity);
+      else if (o.remove) applySppCurRemove(obj, o.m);
+      else               applySppCurDelta(obj, o.m, Number(o.delta) || 0);
+    });
+    hist.forEach(o => applySppHistDelta(obj, o.ta, o.m, Number(o.delta) || 0, o.rate));
+  };
+
+  let server = null, serverOk = false;
+  try {
+    const cols = ['spp', 'spp_paid_months'];
+    if (_sppHistorySupported) cols.push('spp_history');
+    if (_sppAngsurSupported)  cols.push('spp_angsur');
+    const rows = await sb('students?select=' + cols.join(',') + '&nama=eq.' + encodeURIComponent(nama));
+    server = (rows && rows[0]) || null;
+    serverOk = true;
+  } catch(e) {
+    if (_degradeMissingColumn(e)) return commitSppOps(nama, ops);
+    console.error('commitSppOps read:', e);
+  }
+
+  if (!serverOk || !server) {
+    if (local) { apply(local); return saveSiswa(local); }
+    return;
+  }
+
+  const obj = {
+    spp: Number(server.spp) || Number(local && local.spp) || 0,
+    spp_paid_months: Array.isArray(server.spp_paid_months) ? [...server.spp_paid_months]
+      : [...((local && local.spp_paid_months) || [])],
+    spp_angsur: JSON.parse(JSON.stringify(
+      (_sppAngsurSupported && server.spp_angsur && typeof server.spp_angsur === 'object' && !Array.isArray(server.spp_angsur))
+        ? server.spp_angsur : ((local && local.spp_angsur) || {}))),
+    spp_history: JSON.parse(JSON.stringify(
+      (_sppHistorySupported && server.spp_history && typeof server.spp_history === 'object' && !Array.isArray(server.spp_history))
+        ? server.spp_history : ((local && local.spp_history) || {}))),
+  };
+  apply(obj);
+
+  const patch = { spp_paid_months: obj.spp_paid_months };
+  if (_sppHistorySupported) patch.spp_history = obj.spp_history;
+  if (_sppAngsurSupported)  patch.spp_angsur  = obj.spp_angsur;
+
+  showSyncIndicator('💾 Menyimpan...');
+  try {
+    await sb('students?nama=eq.' + encodeURIComponent(nama), 'PATCH', patch, { 'Prefer': 'return=minimal' });
+    if (local) {
+      local.spp_paid_months = obj.spp_paid_months;
+      if (_sppHistorySupported) local.spp_history = obj.spp_history;
+      if (_sppAngsurSupported)  local.spp_angsur  = obj.spp_angsur;
+    }
+    showSyncIndicator('✅ Tersimpan', 1500);
+  } catch(e) {
+    if (_degradeMissingColumn(e)) return commitSppOps(nama, ops);
+    console.error('commitSppOps error:', e);
+    showSyncIndicator('⚠️ Gagal simpan: ' + e.message, 3000);
+  }
+}
 
 // Tandai bulan SPP yang baru lunas — hasil gabungan server + input baru.
 //   months   : ['Jul','Agt']  → SPP tahun ajaran berjalan
