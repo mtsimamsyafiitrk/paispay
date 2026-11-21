@@ -214,6 +214,10 @@ function buildSuratHTML(s, tgl) {
   const bulanDue   = sppAktif ? sppDueMonthsFor(s) : [];
   const mulaiLabel = sppAktif ? sppMulaiLabel(s) : '';
   const bulanLunasDue = bulanDue.filter(m => (s.spp_paid_months||[]).includes(m));
+  // Bulan belum jatuh tempo yang sudah diangsur sebagian — hanya keterangan,
+  // tidak masuk kolom Tagihan/Terbayar (keduanya hanya s/d bulan berjalan).
+  const angsurDimuka  = sppAktif ? MONTHS.filter(m => !bulanDue.includes(m)
+    && !(s.spp_paid_months||[]).includes(m) && !isSppSebelumMasuk(s, m) && sppBulanDibayar(s, m) > 0) : [];
   const bulanDimuka   = (s.spp_paid_months||[])
     .filter(m => !bulanDue.includes(m) && !isSppSebelumMasuk(s, m));
   const sppTagihanDue = (s.spp || 0) * bulanDue.length;
@@ -258,7 +262,7 @@ function buildSuratHTML(s, tgl) {
           ${sppAktif ? `<tr>
             <td style="text-align:center">${++no}</td>
             <td>SPP Bulanan <span style="font-size:9pt">(${mulaiLabel ? 'mulai ' + esc(mulaiLabel) + ' ' : ''}s/d ${esc(sppDueMonthLabel() || '—')})</span></td>
-            <td style="font-size:10pt">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]+(sppBulanDibayar(s,m)>0?' (sisa '+sppBulanSisa(s,m).toLocaleString('id-ID')+')':'')).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}</td>
+            <td style="font-size:10pt">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]+(sppBulanDibayar(s,m)>0?' (sisa '+sppBulanSisa(s,m).toLocaleString('id-ID')+')':'')).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}${angsurDimuka.length>0?';<br>Diangsur di muka: '+angsurDimuka.map(m=>MONTH_FULL[m]+' '+sppBulanDibayar(s,m).toLocaleString('id-ID')+' (sisa '+sppBulanSisa(s,m).toLocaleString('id-ID')+')').join(', '):''}</td>
             <td style="text-align:right">${sppTagihanDue.toLocaleString('id-ID')}</td>
             <td style="text-align:right">${sppTerbayarDue.toLocaleString('id-ID')}</td>
             <td style="text-align:right;${sppT>0?'color:#c0392b;font-weight:bold;':''}">${sppT.toLocaleString('id-ID')}</td>
