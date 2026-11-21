@@ -243,9 +243,8 @@
           <button type="button" id="metodeTransferBtn" class="seg-btn" onclick="setMetode('transfer')">🏦 Transfer</button>
         </div>
 
-        <details class="pos-detail">
-          <summary>📝 Tanggal, pembayar &amp; catatan</summary>
-          <div class="form-group" style="margin:10px 0 10px;">
+        <div class="pos-detail">
+          <div class="form-group" style="margin:0 0 10px;">
             <label>Tanggal &amp; Jam Pembayaran</label>
             <div style="display:flex;gap:6px;margin-bottom:6px;">
               <button type="button" id="tglTodayBtn" class="seg-btn active" onclick="setTglMode('today')">Hari ini</button>
@@ -264,7 +263,7 @@
             <label>Catatan</label>
             <input type="text" id="inputCatatan" placeholder="Opsional...">
           </div>
-        </details>
+        </div>
 
         <button class="btn btn-primary pos-pay" onclick="submitPayment()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
