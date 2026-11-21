@@ -703,6 +703,21 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 /* ══ INPUT PEMBAYARAN — GAYA KASIR (POS) ══ */
 .pos-grid { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 20px; align-items: start; }
 .pos-left { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+/* Laptop: kolom kiri setinggi layar & menempel — kartu santri diam, hanya daftar
+   tagihan yang di-scroll (120px ≈ judul halaman di atasnya). */
+@media (min-width: 901px) {
+  .pos-left { position: sticky; top: 16px; height: calc(100vh - 120px); min-height: 420px; }
+  #itemBayarCard { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  /* Kartu santri ringkas: nama · kelas · NISN satu baris, ringkasan SPP satu baris. */
+  .pos-left > .card:first-child { padding: 16px 20px; flex-shrink: 0; }
+  .pos-left > .card:first-child > div:first-child { margin-bottom: 10px !important; }
+  .pos-left .form-grid { grid-template-columns: minmax(0, 1fr) 80px 150px; gap: 0 12px; align-items: start; }
+  .pos-left #inputNamaField { grid-column: auto; margin-bottom: 0; }
+  .pos-left .form-grid .form-group { margin-bottom: 0; }
+  .pos-left .field-info { padding-top: 9px; padding-bottom: 9px; }
+  #studentSummary > div { grid-template-columns: auto auto auto auto !important; justify-content: start; gap: 4px 12px !important; margin-top: 10px !important; padding: 8px 12px !important; }
+  #itemBayarCard .payment-items { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-bottom: 0; padding: 2px 8px 8px 2px; margin-right: -8px; overscroll-behavior: contain; }
+}
 .pos-section-title { font-weight: 700; font-size: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
 .pos-section-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
 .pos-empty { padding: 28px 12px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); }
@@ -763,7 +778,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .pos-fly { position: fixed; z-index: 1000; margin: 0; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
 
 /* Panel keranjang: menempel saat halaman di-scroll */
-.pos-cart { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 32px); }
+.pos-cart { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 120px); }
 .cart-count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; transform: scale(0); transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
 .cart-count.show { transform: scale(1); }
 .cart-list { overflow-y: auto; min-height: 90px; flex: 1 1 auto; margin: 0 -6px; padding: 0 6px; }
