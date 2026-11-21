@@ -796,7 +796,6 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 #inputTotal { font-size: 24px; font-weight: 800; color: var(--primary-light); display: inline-block; }
 .pos-metode { display: flex; gap: 6px; }
 .pos-metode .seg-btn { flex: 1; }
-.pos-detail summary { font-size: 12.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
 .pos-pay { width: 100%; justify-content: center; padding: 13px; font-size: 15px; transition: transform .15s, box-shadow .2s; }
 .pos-pay:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(30,86,49,.3); }
 .pos-pay:active { transform: scale(.98); }
