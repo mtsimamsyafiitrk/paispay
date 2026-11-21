@@ -261,6 +261,7 @@
           </div>
 
           <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:16px;">
+            <div id="inputCart" style="margin-bottom:12px;"></div>
             <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:12px;">
               <span style="font-weight:700;font-size:15px;">Total Bayar</span>
               <span style="font-size:22px;font-weight:800;color:var(--primary-light);" id="inputTotal">Rp 0</span>
@@ -279,6 +280,10 @@
         <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:4px;">💳 Item Pembayaran Aktif</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Centang item yang ingin dibayarkan</div>
         <div class="payment-items" id="paymentItems"></div>
+        <button type="button" class="btn btn-sm" style="width:100%;justify-content:center;margin-top:12px;border:1.5px dashed var(--primary-light);color:var(--primary);background:var(--primary-pale);" onclick="addToCart()">
+          🛒 Tambah ke Keranjang
+        </button>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;text-align:center;">Masukkan beberapa pilihan (mis. SPP Sep–Okt lunas + Nov angsur) lalu simpan sekali jadi satu kuitansi.</div>
       </div>
 
     </div>
