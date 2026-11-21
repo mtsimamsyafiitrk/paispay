@@ -1,4 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════
+-- ⚠️ SESUDAH file ini, jalankan juga supabase_migration_admin.sql — tanpa itu
+--    SEMUA akun login (termasuk hasil pendaftaran publik) mendapat akses penuh.
 -- SiPay v2 · Supabase Full Reset Migration
 -- Jalankan di: Supabase Dashboard → SQL Editor → Run
 -- PERINGATAN: Ini akan menghapus SEMUA data yang ada!

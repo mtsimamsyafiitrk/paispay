@@ -1,4 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════
+-- ⚠️ SESUDAH file ini, jalankan juga supabase_migration_admin.sql — tanpa itu
+--    SEMUA akun login (termasuk hasil pendaftaran publik) mendapat akses penuh.
 -- SiPay · Migrasi Keamanan: RLS Admin-Only + Supabase Auth
 -- Jalankan di: Supabase Dashboard → SQL Editor → Run
 --

@@ -32,6 +32,16 @@ async function doLogin() {
   if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
   try {
     const sess = await sbSignIn(email, pass);
+    // Akun yang tidak ada di daftar admin (mis. hasil pendaftaran publik) ditolak
+    // di sini supaya tidak melihat layar kosong. Penjaga utamanya tetap RLS server.
+    let admin = true;
+    try { admin = (await sb('rpc/is_admin', 'POST', {})) !== false; } catch { /* migrasi belum dijalankan */ }
+    if (!admin) {
+      await sbSignOut();
+      showLoginError('Akun ini belum terdaftar sebagai admin SiPay');
+      document.getElementById('loginPass').value = '';
+      return;
+    }
     const label = (sess.user && sess.user.email) ? sess.user.email : email;
     localStorage.setItem('sipay_admin', JSON.stringify({ user: label }));
     localStorage.setItem('sipay_auth', 'admin'); // penanda UI (otoritas ada di token)
