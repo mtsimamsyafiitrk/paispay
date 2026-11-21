@@ -703,6 +703,18 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 /* ══ INPUT PEMBAYARAN — GAYA KASIR (POS) ══ */
 .pos-grid { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 20px; align-items: start; }
 .pos-left { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+/* Laptop: kolom kiri setinggi layar & menempel — hanya kartu nama santri yang
+   diam; info santri + daftar tagihan di bawahnya punya scroll sendiri
+   (120px ≈ judul halaman di atasnya). */
+@media (min-width: 901px) {
+  .pos-left { position: sticky; top: 16px; height: calc(100vh - 120px); min-height: 360px; }
+  .pos-left > .card:first-child { flex-shrink: 0; padding: 16px 20px; }
+  .pos-left > .card:first-child > div:first-child { margin-bottom: 10px !important; }
+  #itemBayarCard { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+}
+.pos-info { font-size: 12.5px; color: var(--text-muted); }
+.pos-info b { color: var(--text); }
+
 .pos-section-title { font-weight: 700; font-size: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
 .pos-section-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
 .pos-empty { padding: 28px 12px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); }
@@ -763,7 +775,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .pos-fly { position: fixed; z-index: 1000; margin: 0; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
 
 /* Panel keranjang: menempel saat halaman di-scroll */
-.pos-cart { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 32px); }
+.pos-cart { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 120px); }
 .cart-count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; transform: scale(0); transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
 .cart-count.show { transform: scale(1); }
 .cart-list { overflow-y: auto; min-height: 90px; flex: 1 1 auto; margin: 0 -6px; padding: 0 6px; }
