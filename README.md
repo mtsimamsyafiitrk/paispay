@@ -631,3 +631,19 @@ node tests/spp.test.js
 
 Menguji logika uang SPP (angsuran, pelunasan, pembatalan, tunggakan TA lama,
 keranjang → item kuitansi). Tanpa dependensi dan tanpa browser.
+
+## Hanya Daftar Admin yang Bisa Mengakses Data
+
+**Migrasi database:** jalankan `supabase_migration_admin.sql` (aman dijalankan ulang).
+
+- Akses data kini dibatasi ke akun di tabel `admin_users`, bukan lagi ke *semua*
+  akun yang bisa login. Akun hasil pendaftaran publik tidak mendapat akses walau
+  toggle "Allow new users to sign up" lupa dimatikan (tetap sebaiknya dimatikan).
+- Saat pertama dijalankan, semua akun yang sudah ada dimasukkan sebagai admin —
+  periksa daftarnya di tab *Messages* dan hapus akun yang tidak dikenal.
+- Tambah admin baru: buat user di Authentication → Users, lalu
+  `INSERT INTO admin_users (user_id, email) SELECT id, email FROM auth.users WHERE email = '…';`
+- Login dengan akun yang bukan admin ditolak dengan pesan *"Akun ini belum
+  terdaftar sebagai admin SiPay"*.
+- Menjalankan ulang `supabase_migration.sql` / `supabase_migration_auth.sql`
+  mengembalikan aturan lama — jalankan lagi `supabase_migration_admin.sql` sesudahnya.
