@@ -420,13 +420,65 @@ function sppUpcomingMonths(s, ref) {
   return sppBillableMonths(s).filter(m => !due.includes(m) && !paid.includes(m));
 }
 
+// ── Angsuran SPP tahun berjalan (kolom students.spp_angsur) ──
+// Bulan yang baru dibayar SEBAGIAN dicatat di s.spp_angsur = { Agt: 50000 }.
+// Bulan itu tetap BELUM lunas (tidak masuk spp_paid_months), jadi tetap muncul
+// sebagai tunggakan — hanya saja nominal tunggakannya tinggal sisanya.
+
+// Nominal yang sudah dibayar untuk bulan `m` tahun berjalan.
+function sppBulanDibayar(s, m) {
+  if (!s) return 0;
+  const rate = Number(s.spp) || 0;
+  if ((s.spp_paid_months || []).includes(m)) return rate;
+  const a = (s.spp_angsur && typeof s.spp_angsur === 'object') ? Number(s.spp_angsur[m]) || 0 : 0;
+  return Math.max(0, Math.min(rate, a));
+}
+
+// Sisa yang masih harus dibayar untuk bulan `m` tahun berjalan.
+function sppBulanSisa(s, m) {
+  return Math.max(0, (Number(s && s.spp) || 0) - sppBulanDibayar(s, m));
+}
+
+// Ubah nominal terbayar bulan `m` tahun berjalan sebesar `delta` (boleh negatif;
+// Infinity = lunasi). Bila mencapai nominal SPP → bulan pindah ke
+// spp_paid_months; bila turun di bawahnya → keluar dari daftar lunas dan
+// sisanya dicatat sebagai angsuran.
+function applySppCurDelta(obj, m, delta) {
+  if (!obj || !m) return;
+  if (!Array.isArray(obj.spp_paid_months)) obj.spp_paid_months = [];
+  if (!obj.spp_angsur || typeof obj.spp_angsur !== 'object' || Array.isArray(obj.spp_angsur)) obj.spp_angsur = {};
+  const rate = Number(obj.spp) || 0;
+  const now  = sppBulanDibayar(obj, m);
+  const next = delta === Infinity ? rate : Math.max(0, now + (Number(delta) || 0));
+  if (rate <= 0 ? delta > 0 : next >= rate) {
+    if (!obj.spp_paid_months.includes(m)) obj.spp_paid_months.push(m);
+    delete obj.spp_angsur[m];
+  } else {
+    obj.spp_paid_months = obj.spp_paid_months.filter(x => x !== m);
+    if (next > 0) obj.spp_angsur[m] = next; else delete obj.spp_angsur[m];
+  }
+}
+
+// Batalkan bulan lunas `m` (perilaku lama hapus/koreksi kuitansi): bulan keluar
+// dari spp_paid_months. Angsuran bulan itu (bila ada) tidak disentuh.
+function applySppCurRemove(obj, m) {
+  if (!obj || !Array.isArray(obj.spp_paid_months)) return;
+  obj.spp_paid_months = obj.spp_paid_months.filter(x => x !== m);
+}
+
+// Total angsuran (dibayar sebagian) pada bulan-bulan tahun berjalan yang masih
+// ditagih — dikurangkan dari tunggakan.
+function sppAngsurTotal(s, months) {
+  return (months || []).reduce((a, m) => a + sppBulanDibayar(s, m), 0);
+}
+
 function sppTunggakan(s) {
   // Lulusan tidak punya kewajiban SPP tahun berjalan — SPP-nya sudah diarsipkan
   // ke spp_history (dihitung sebagai tunggakan tahun lalu). Tanpa ini, bulan
   // yang direset saat lulus akan tampil sebagai 12 bulan "belum bayar" palsu.
   if (s.status_kelulusan === 'lulus') return 0;
   if (!s.spp || s.spp === 0) return 0;
-  return sppUnpaidDueMonths(s).length * s.spp;
+  return sppUnpaidDueMonths(s).reduce((a, m) => a + sppBulanSisa(s, m), 0);
 }
 
 // Arsipkan SPP tahun berjalan ke riwayat (spp_history) SEBELUM spp_paid_months
@@ -443,10 +495,16 @@ function snapshotSppTahunBerjalan(s, ta) {
   // Santri yang masuk di tengah TA ini hanya ditagih sejak bulan masuknya —
   // arsipnya harus memakai bentuk rinci (`months`) supaya bulan sebelum ia
   // masuk tidak ikut jadi tunggakan tahun lalu.
+  // Begitu pula bila ada bulan yang baru diangsur: sisa angsurannya harus
+  // terbawa sebagai tunggakan tahun lalu, bukan hilang atau dianggap lunas.
   const mulai = sppMulaiIndexTa(s, ta);
-  if (mulai > 0) {
+  const angsur = (s.spp_angsur && typeof s.spp_angsur === 'object') ? s.spp_angsur : {};
+  const adaAngsur = Object.keys(angsur).some(m => MONTHS.includes(m) && Number(angsur[m]) > 0);
+  if (mulai > 0 || adaAngsur) {
     rec.months = {};
-    MONTHS.slice(mulai).forEach(m => { rec.months[m] = { n: rate, d: paid.includes(m) ? rate : 0 }; });
+    MONTHS.slice(Math.max(0, mulai)).forEach(m => {
+      rec.months[m] = { n: rate, d: paid.includes(m) ? rate : Math.min(rate, Math.max(0, Number(angsur[m]) || 0)) };
+    });
   }
   s.spp_history[ta] = rec;
 }
@@ -593,6 +651,61 @@ function markSppHistPaid(stu, ta, rate, monthCodes) {
     if (rec.months && rec.months[m]) rec.months[m].d = Math.max(0, Number(rec.months[m].n) || 0);
     if (!rec.spp_paid_months.includes(m)) rec.spp_paid_months.push(m);
   });
+}
+
+// Ubah nominal terbayar satu bulan tunggakan TA lalu sebesar `delta` (boleh
+// negatif). Entri ringkas diubah ke bentuk rinci hanya bila perlu mencatat
+// pembayaran sebagian, supaya data lama tetap seringkas mungkin.
+function applySppHistDelta(stu, ta, m, delta, rate) {
+  if (!stu || !ta || !m) return;
+  stu.spp_history = (stu.spp_history && typeof stu.spp_history === 'object' && !Array.isArray(stu.spp_history))
+    ? stu.spp_history : {};
+  const rec = stu.spp_history[ta] || (stu.spp_history[ta] = { spp: Number(rate) || 0, spp_paid_months: [] });
+  if (!Array.isArray(rec.spp_paid_months)) rec.spp_paid_months = [];
+  const info = sppHistMonths(rec).find(x => x.m === m)
+    || { m, nominal: Number(rate) || Number(rec.spp) || 0, dibayar: 0 };
+  const n = info.nominal;
+  const d = Math.min(n, Math.max(0, info.dibayar + (Number(delta) || 0)));
+  const rich = rec.months && typeof rec.months === 'object' && !Array.isArray(rec.months);
+  if (!rich && (d === 0 || d >= n) && n === (Number(rec.spp) || 0)) {
+    // Bentuk ringkas cukup: bulan lunas penuh atau belum dibayar sama sekali.
+    if (d >= n) { if (!rec.spp_paid_months.includes(m)) rec.spp_paid_months.push(m); }
+    else rec.spp_paid_months = rec.spp_paid_months.filter(x => x !== m);
+    return;
+  }
+  if (!rich) {
+    rec.months = {};
+    sppHistMonths({ spp: rec.spp, spp_paid_months: rec.spp_paid_months })
+      .forEach(x => { rec.months[x.m] = { n: x.nominal, d: x.dibayar }; });
+  }
+  rec.months[m] = { n, d };
+  if (d >= n) { if (!rec.spp_paid_months.includes(m)) rec.spp_paid_months.push(m); }
+  else rec.spp_paid_months = rec.spp_paid_months.filter(x => x !== m);
+}
+
+// TA lama yang dibayar sebuah item kuitansi SPP ('' = SPP tahun berjalan).
+// Item baru membawa field `ta`; item lama dikenali dari namanya
+// ("SPP Tunggakan TA 2024/2025").
+function sppItemTa(item) {
+  if (!item) return '';
+  if (item.ta) return String(item.ta);
+  const m = String(item.name || '').match(/Tunggakan\s+TA\s+([0-9]{4}\s*\/\s*[0-9]{4})/i);
+  return m ? m[1].replace(/\s+/g, '') : '';
+}
+
+// Operasi commitSppOps() untuk MEMBATALKAN (sign=-1) atau MENGEMBALIKAN
+// (sign=+1) efek satu item kuitansi SPP berbulan. null bila bukan item SPP.
+//   • tunggakan TA lama      → selisih nominal di spp_history
+//   • angsuran tahun berjalan → selisih nominal (bisa membuat bulan lunas jadi
+//                              belum lunas lagi, atau sebaliknya)
+//   • bulan lunas biasa      → tandai/batalkan bulannya (perilaku lama)
+function sppRevertOp(item, sign) {
+  if (!item || !item.bulan) return null;
+  const amt = (Number(item.amount) || 0) * sign;
+  const ta = sppItemTa(item);
+  if (ta) return { hist: { ta, m: item.bulan, delta: amt, rate: item.rate } };
+  if (item.angsur) return { cur: { m: item.bulan, delta: amt } };
+  return { cur: sign < 0 ? { m: item.bulan, remove: true } : { m: item.bulan, add: true } };
 }
 
 // Total nominal tunggakan SPP dari seluruh tahun ajaran sebelumnya.

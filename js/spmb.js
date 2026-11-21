@@ -352,6 +352,7 @@ async function _doPromoteSingle(nama) {
   appState.students[idx].status_kelulusan = '';
   appState.students[idx].spp = spp;
   appState.students[idx].spp_paid_months = [];
+  appState.students[idx].spp_angsur = {};
   appState.students[idx].spp_history = {};
   appState.students[idx].spp_mulai = buildSppMulai(getProfil().ta || '', mulai);
   spmbSelectedRows.delete(nama);
@@ -396,6 +397,7 @@ async function _doPromoteMassal(names) {
     // Pakai override jika diisi, jika tidak pakai SPP masing-masing calon
     if (globalSpp !== null) appState.students[idx].spp = globalSpp;
     appState.students[idx].spp_paid_months = [];
+    appState.students[idx].spp_angsur = {};
     appState.students[idx].spp_history = {};
     appState.students[idx].spp_mulai = mulai;
     updated.push(appState.students[idx]);

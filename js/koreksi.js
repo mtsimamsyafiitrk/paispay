@@ -227,15 +227,19 @@ async function prosesKoreksi() {
     // server — koreksi dari device ini tidak boleh menghapus pembayaran yang
     // sudah diinput dari device lain.
     const sppMonthsLokal = new Set(appState.students[si]?.spp_paid_months || []);
-    const sppRemove = [];
+    const sppOps = { cur: [], hist: [] };
     const keteranganKoreksi = [];
     const tagihanUpdates = [];   // { id, delta }
 
     koreksiItems.forEach(({ item, idx, aksi, nilaBaru }) => {
       if (aksi === 'batalkan') {
-        if (item.bulan && sppMonthsLokal.has(item.bulan)) {
-          sppRemove.push(item.bulan);
-          keteranganKoreksi.push(`SPP ${MONTH_FULL[item.bulan]||item.bulan} dibatalkan`);
+        // Angsuran & tunggakan TA lama dibatalkan sebesar nominalnya; bulan
+        // lunas biasa tahun berjalan dibatalkan utuh (perilaku lama).
+        const op = item.bulan ? sppRevertOp(item, -1) : null;
+        if (op && (op.hist || op.cur.delta !== undefined || sppMonthsLokal.has(item.bulan))) {
+          if (op.cur)  sppOps.cur.push(op.cur);
+          if (op.hist) sppOps.hist.push(op.hist);
+          keteranganKoreksi.push(`SPP ${MONTH_FULL[item.bulan]||item.bulan}${item.angsur ? ' (angsur Rp ' + fmt(item.amount) + ')' : ''} dibatalkan`);
         }
         if (item.item_id && item.item_id !== 'spp') {
           const t = findTagihan(kwt.nama, item.item_id);
@@ -255,7 +259,7 @@ async function prosesKoreksi() {
     });
 
     // Update SPP months di siswa & Supabase
-    if (sppRemove.length) await adjustSppPaidMonths(kwt.nama, [], sppRemove);
+    if (sppOps.cur.length || sppOps.hist.length) await commitSppOps(kwt.nama, sppOps);
     // Update tagihan paid_amount
     for (const u of tagihanUpdates) {
       await addTagihanPaid(u.id, u.delta);
@@ -268,6 +272,11 @@ async function prosesKoreksi() {
       name: item.name + (item.bulan ? ' (' + (MONTH_FULL[item.bulan]||item.bulan) + ')' : ''),
       amount: aksi === 'batalkan' ? item.amount : nilaBaru,
       bulan: item.bulan || null,
+      // Dibawa agar menghapus kuitansi koreksi ini bisa mengembalikan efeknya
+      // ke tempat yang benar (angsuran / tunggakan TA lama).
+      ...(item.ta ? { ta: item.ta } : {}),
+      ...(item.angsur ? { angsur: true } : {}),
+      ...(item.rate ? { rate: item.rate } : {}),
       _tipe: aksi,
       _dibatalkan: aksi === 'batalkan',
       _koreksi: aksi === 'koreksi_nilai',

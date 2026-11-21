@@ -75,7 +75,8 @@ async function auditLedger() {
   };
 
   const addBulan = (kwt, item, sign) => {
-    if (!item.bulan) return;
+    // Angsuran (bayar sebagian) tidak berarti bulannya lunas — dilewati.
+    if (!item.bulan || item.angsur) return;
     const { ta, sumber } = _auditTargetTA(kwt, item, currentTA);
     const set = !ta ? slot(kwt.nama).spp
               : taSet(kwt.nama, sumber === 'nama' ? 'histPasti' : 'histDuga', ta);

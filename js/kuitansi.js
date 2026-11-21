@@ -111,7 +111,8 @@ async function konfirmasiHapusKwt() {
     // di server — supaya pembayaran yang diinput dari device lain sesudah
     // kuitansi ini dibuat tidak ikut terhapus.
     if (kwt.nama && kwt.items?.length) {
-      const sppAdd = [], sppRemove = [];
+      const ops = { cur: [], hist: [] };
+      const pushOp = (o) => { if (o) { if (o.cur) ops.cur.push(o.cur); if (o.hist) ops.hist.push(o.hist); } };
 
       for (const item of kwt.items) {
         const dibatalkan = item._dibatalkan || item._tipe === 'batalkan';
@@ -120,7 +121,7 @@ async function konfirmasiHapusKwt() {
         if (kwt.is_koreksi) {
           // Kuitansi koreksi: balik efek koreksi
           if (dibatalkan) {
-            if (item.bulan) sppAdd.push(item.bulan);
+            if (item.bulan) pushOp(sppRevertOp(item, +1));
             if (item.item_id && item.item_id !== 'spp') {
               const t = findTagihan(kwt.nama, item.item_id);
               if (t) await addTagihanPaid(t.id, item.amount);
@@ -134,7 +135,7 @@ async function konfirmasiHapusKwt() {
         } else {
           // Kuitansi biasa: kurangi pembayaran
           if (item.bulan) {
-            sppRemove.push(item.bulan);
+            pushOp(sppRevertOp(item, -1));
           } else if (item.item_id && item.item_id !== 'spp') {
             const t = findTagihan(kwt.nama, item.item_id);
             if (t) await addTagihanPaid(t.id, -item.amount);
@@ -142,8 +143,8 @@ async function konfirmasiHapusKwt() {
         }
       }
 
-      if (sppAdd.length || sppRemove.length) {
-        await adjustSppPaidMonths(kwt.nama, sppAdd, sppRemove);
+      if (ops.cur.length || ops.hist.length) {
+        await commitSppOps(kwt.nama, ops);
       }
 
       // Hapus tanda "dikoreksi" dari kuitansi lama jika ini kuitansi koreksi

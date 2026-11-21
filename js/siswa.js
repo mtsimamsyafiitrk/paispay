@@ -156,8 +156,10 @@ function _renderSiswaTable(resetPage) {
         const due    = !sebelum && isSppDueFor(s, m);
         const bg   = paid ? 'var(--primary)' : due ? 'var(--danger-pale)' : '#e5e0d8';
         const fg   = paid ? '#fff' : due ? 'var(--danger)' : '#999';
-        const ttl  = paid ? 'Lunas' : sebelum ? mulaiTtl : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo';
-        return `<span title="${ttl}" style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${bg};color:${fg};${sebelum?'opacity:.45;':''}">${m}</span>`;
+        const ang  = paid ? 0 : sppBulanDibayar(s, m);
+        const ttl  = (paid ? 'Lunas' : sebelum ? mulaiTtl : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo')
+          + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
+        return `<span title="${esc(ttl)}" style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${ang > 0 ? 'var(--accent-pale)' : bg};color:${fg};${ang > 0 ? 'outline:1px dashed var(--accent);' : ''}${sebelum?'opacity:.45;':''}">${m}</span>`;
       }).join('');
     }
     const nama_safe = escJs(s.nama);
@@ -377,13 +379,15 @@ function renderTunggakanDetail(s) {
     const border = paid ? 'var(--primary)' : due ? 'var(--danger)' : 'var(--border)';
     const bg     = paid ? 'var(--primary)' : due ? 'var(--danger-pale)' : 'var(--card)';
     const fg     = paid ? '#fff' : due ? 'var(--danger)' : 'var(--text-muted)';
-    const ttl    = paid ? 'Lunas'
+    const ang    = paid ? 0 : sppBulanDibayar(s, m);
+    const ttl    = (paid ? 'Lunas'
       : sebelum ? `Sebelum masuk — tidak ditagih (SPP mulai ${mulaiLabel})`
-      : due ? 'Belum bayar (sudah jatuh tempo)' : 'Belum jatuh tempo';
-    return `<div title="${ttl}"
+      : due ? 'Belum bayar (sudah jatuh tempo)' : 'Belum jatuh tempo')
+      + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
+    return `<div title="${esc(ttl)}"
       style="padding:5px 2px;border-radius:8px;border:1.5px solid ${border};
-      background:${bg};color:${fg};${paid || due ? '' : 'border-style:dashed;'}${sebelum ? 'opacity:.45;' : ''}
-      font-size:11px;font-weight:600;text-align:center;">${m}</div>`;
+      background:${ang > 0 ? 'var(--accent-pale)' : bg};color:${fg};${paid || due ? '' : 'border-style:dashed;'}${sebelum ? 'opacity:.45;' : ''}
+      font-size:11px;font-weight:600;text-align:center;">${m}${ang > 0 ? `<div style="font-size:9px;font-weight:500;">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
   }).join('');
 
   // Riwayat berlabel TA berjalan tidak ikut dihitung (lihat sppTunggakanPrevList)

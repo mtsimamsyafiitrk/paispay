@@ -275,7 +275,8 @@ function onStudentSelect() {
 function inputFormHasSelection() {
   const cont = document.getElementById('paymentItems');
   if (cont && cont.querySelector('input[type="checkbox"]:checked')) return true;
-  return getSppMonthsSelected().length > 0 || getSppPrevSelected().length > 0;
+  return getSppMonthsSelected().length > 0 || getSppPrevSelected().length > 0
+    || Number(document.getElementById('sppAngsurNom')?.value || 0) > 0;
 }
 
 let _refreshSelSeq = 0;
@@ -384,18 +385,47 @@ function renderPaymentItems(student) {
       // bulan sebelum ia masuk tidak ditagih sama sekali, jadi tidak muncul
       // sebagai tunggakan maupun sebagai pilihan bayar di muka.
       const mulaiSpp = sppMulaiLabel(student);
-      const chip = (m, jatuhTempo) => `
-        <label style="display:flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px solid ${jatuhTempo?'var(--danger)':'var(--border)'};border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s;${jatuhTempo?'color:var(--danger);':'color:var(--text-muted);'}"
-          id="sppMonthLabel_${m}" onclick="toggleSppMonth('${m}',this)">
+      // Bulan yang sudah diangsur sebagian menampilkan sisanya.
+      const chip = (m, jatuhTempo) => {
+        const dibayar = sppBulanDibayar(student, m);
+        const sisa = sppInputSisa(student, m);
+        return `
+        <label style="display:flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px ${dibayar > 0 ? 'dashed' : 'solid'} ${jatuhTempo?'var(--danger)':'var(--border)'};border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s;${jatuhTempo?'color:var(--danger);':'color:var(--text-muted);'}"
+          id="sppMonthLabel_${m}" onclick="toggleSppMonth('${m}',this)"
+          title="${esc(MONTH_FULL[m])}${dibayar > 0 ? ' — sudah diangsur ' + rp(dibayar) + ', sisa ' + rp(sisa) : ''}">
           <input type="checkbox" id="sppChk_${m}" value="${m}" style="display:none;">
-          ${MONTH_FULL[m]}
+          ${MONTH_FULL[m]}${dibayar > 0 ? ` <span style="font-size:10px;opacity:.8;">sisa ${rp(sisa)}</span>` : ''}
         </label>`;
+      };
+      // Pilihan bulan untuk mode angsur: bulan menunggak dulu, lalu bulan di muka.
+      const angsurOpts = [...tunggak, ...dimuka].map(m => {
+        const dibayar = sppBulanDibayar(student, m);
+        return `<option value="${m}">${esc(MONTH_FULL[m])}${isSppDueFor(student, m) ? '' : ' (di muka)'} — sisa ${rp(sppInputSisa(student, m))}${dibayar > 0 ? ' · sudah diangsur ' + rp(dibayar) : ''}</option>`;
+      }).join('');
       if (tunggak.length === 0 && dimuka.length === 0) {
         doneNote = { kind: 'lunas', text: 'Semua bulan sudah lunas' };
       } else if (amount > 0) {
         extra = `<div style="margin-top:8px;">
           ${mulaiSpp ? `
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">📅 Santri masuk di tengah tahun ajaran — SPP dihitung mulai <strong>${esc(mulaiSpp)}</strong>.</div>` : ''}
+          <select id="sppMode" onchange="onSppModeChange()"
+            style="margin-bottom:8px;padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;">
+            <option value="lunas">💰 Lunas per bulan — pilih bulan</option>
+            <option value="angsur">📆 Angsur — bayar sebagian untuk 1 bulan</option>
+          </select>
+          <div id="sppAngsurWrap" style="display:none;margin-bottom:4px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <select id="sppAngsurBulan" onchange="onSppAngsurInput()"
+                style="padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;max-width:100%;">
+                ${angsurOpts}
+              </select>
+              <input type="number" id="sppAngsurNom" placeholder="Nominal angsur..." min="1"
+                oninput="onSppAngsurInput()"
+                style="width:160px;padding:5px 9px;border:1.5px solid var(--primary-light);border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
+            </div>
+            <div id="sppAngsurInfo" style="margin-top:6px;font-size:12px;color:var(--text-muted);">Isi nominal yang dibayarkan — sisanya tetap tercatat sebagai tunggakan bulan tersebut.</div>
+          </div>
+          <div id="sppLunasWrap">
           ${tunggak.length ? `
           <div style="font-size:11px;font-weight:600;color:var(--danger);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Tunggakan — ${tunggak.length} bulan (s/d bulan berjalan):</div>
           <div style="display:flex;flex-wrap:wrap;gap:5px;">
@@ -410,6 +440,7 @@ function renderPaymentItems(student) {
             </div>
           </details>` : ''}
           <div style="margin-top:6px;font-size:12px;color:var(--text-muted);" id="sppMonthInfo">Belum ada bulan dipilih</div>
+          </div>
         </div>`;
       }
     } else if (item.type === 'tetap' && student) {
@@ -548,6 +579,8 @@ function selectAllTunggakan() {
       // dicentang — bulan bayar di muka tetap harus dipilih manual.
       const unpaid = sppUnpaidDueMonths(student);
       if (!unpaid.length || !(student.spp || item.amount || 0)) return;
+      const mode = document.getElementById('sppMode');
+      if (mode && mode.value !== 'lunas') { mode.value = 'lunas'; onSppModeChange(); }
       unpaid.forEach(m => setSppMonth(m, true));
       updateSppMonthInfo();
       chk.checked = true;
@@ -590,13 +623,35 @@ function renderPrevArrearsBlock(list) {
     </div>`;
   }).join('');
 
+  const angsurOpts = list.map((y, yi) => y.detail.map(d =>
+    `<option value="${yi}|${d.m}">TA ${esc(y.ta)} · ${esc(MONTH_FULL[d.m])} — sisa ${rp(d.sisa)}${d.dibayar > 0 ? ' · sudah diangsur ' + rp(d.dibayar) : ''}</option>`
+  ).join('')).join('');
+
   return `<div class="pay-item" style="display:block;border-color:var(--danger);background:var(--danger-pale);">
     <div style="display:flex;align-items:flex-start;gap:10px;">
       <input type="checkbox" id="chk_spp_prev" onchange="toggleAllSppPrev(this)" title="Pilih semua bulan tunggakan">
       <div class="pay-item-info" style="flex:1;min-width:0;">
         <div class="pay-item-name" style="color:var(--danger);">⚠️ Tunggakan SPP Tahun Ajaran Sebelumnya</div>
         <div class="pay-item-amount" style="color:var(--danger);">${rp(totalAll)} <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(${totalBln} bulan · ${list.length} tahun ajaran)</span></div>
+        <select id="sppPrevMode" onchange="onSppPrevModeChange()"
+          style="margin-top:8px;padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;">
+          <option value="lunas">💰 Lunas per bulan — pilih bulan</option>
+          <option value="angsur">📆 Angsur — bayar sebagian untuk 1 bulan</option>
+        </select>
+        <div id="sppPrevAngsurWrap" style="display:none;margin-top:8px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="sppPrevAngsurSel" onchange="onSppPrevAngsurInput()"
+              style="padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;max-width:100%;">
+              ${angsurOpts}
+            </select>
+            <input type="number" id="sppPrevAngsurNom" placeholder="Nominal angsur..." min="1"
+              oninput="onSppPrevAngsurInput()"
+              style="width:160px;padding:5px 9px;border:1.5px solid var(--danger);border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
+          </div>
+        </div>
+        <div id="sppPrevLunasWrap">
         ${rows}
+        </div>
         <div style="margin-top:8px;font-size:12px;color:var(--text-muted);" id="sppPrevInfo">Belum ada bulan dipilih</div>
       </div>
     </div>
@@ -620,8 +675,45 @@ function toggleSppPrevMonth(yi, m, labelEl) {
   calcTotal();
 }
 
+// Ganti mode tunggakan TA lalu: Lunas per bulan (chip) ↔ Angsur (nominal bebas).
+function onSppPrevModeChange() {
+  const mode = document.getElementById('sppPrevMode')?.value || 'lunas';
+  const aw = document.getElementById('sppPrevAngsurWrap');
+  const lw = document.getElementById('sppPrevLunasWrap');
+  if (aw) aw.style.display = mode === 'angsur' ? 'block' : 'none';
+  if (lw) lw.style.display = mode === 'angsur' ? 'none' : 'block';
+  if (mode === 'angsur') {
+    setTimeout(() => document.getElementById('sppPrevAngsurNom')?.focus(), 0);
+  } else {
+    const nom = document.getElementById('sppPrevAngsurNom');
+    if (nom) nom.value = '';
+  }
+  updateSppPrevInfo();
+  calcTotal();
+}
+
+function onSppPrevAngsurInput() {
+  updateSppPrevInfo();
+  calcTotal();
+}
+
+// Bulan TA lalu yang dipilih di mode angsur + nominalnya (dibatasi sisa bulan itu).
+function getSppPrevAngsur() {
+  if ((document.getElementById('sppPrevMode')?.value || 'lunas') !== 'angsur') return null;
+  const sel = document.getElementById('sppPrevAngsurSel')?.value || '';
+  const [yiStr, m] = sel.split('|');
+  const y = inputPrevArrears[Number(yiStr)];
+  const d = y && y.detail.find(x => x.m === m);
+  if (!d) return null;
+  const raw = Math.max(0, Number(document.getElementById('sppPrevAngsurNom')?.value || 0));
+  return { y, d, raw, amount: Math.min(d.sisa, raw) };
+}
+
 // Checkbox induk: pilih / batal semua bulan tunggakan tahun lalu sekaligus.
 function toggleAllSppPrev(master) {
+  // Centang semua hanya bermakna di mode lunas per bulan.
+  const mode = document.getElementById('sppPrevMode');
+  if (master.checked && mode && mode.value !== 'lunas') { mode.value = 'lunas'; onSppPrevModeChange(); }
   inputPrevArrears.forEach((y, yi) => y.unpaid.forEach(m => {
     const chk = document.getElementById(`sppPrevChk_${yi}_${m}`);
     if (chk) chk.checked = master.checked;
@@ -636,6 +728,14 @@ function toggleAllSppPrev(master) {
 // benar saat nominal SPP berbeda antar bulan atau bulan itu sudah diangsur.
 function getSppPrevSelected() {
   const out = [];
+  const ang = getSppPrevAngsur();
+  if ((document.getElementById('sppPrevMode')?.value || 'lunas') === 'angsur') {
+    if (ang && ang.amount > 0) out.push({
+      ta: ang.y.ta, rate: ang.y.rate, months: [ang.d.m], amount: ang.amount,
+      bulanAmounts: { [ang.d.m]: ang.amount }, angsur: true,
+    });
+    return out;
+  }
   inputPrevArrears.forEach((y, yi) => {
     const picked = y.detail.filter(d => document.getElementById(`sppPrevChk_${yi}_${d.m}`)?.checked);
     if (!picked.length) return;
@@ -656,7 +756,16 @@ function updateSppPrevInfo() {
   const sel = getSppPrevSelected();
   const totalMonths = sel.reduce((a, y) => a + y.months.length, 0);
   const totalAmt    = sel.reduce((a, y) => a + y.amount, 0);
-  if (info) {
+  const ang = getSppPrevAngsur();
+  if (info && ang) {
+    const sisaNanti = ang.d.sisa - ang.amount;
+    info.textContent = ang.amount > 0
+      ? `Angsur TA ${ang.y.ta} ${MONTH_FULL[ang.d.m]}: ${rp(ang.amount)}` +
+        (sisaNanti > 0 ? ` · sisa tunggakan bulan ini ${rp(sisaNanti)}` : ' · bulan ini jadi LUNAS') +
+        (ang.raw > ang.d.sisa ? ` (dibatasi sisa ${rp(ang.d.sisa)})` : '')
+      : 'Isi nominal yang dibayarkan — sisanya tetap tercatat sebagai tunggakan.';
+    info.style.color = ang.amount > 0 ? 'var(--danger)' : 'var(--text-muted)';
+  } else if (info) {
     info.textContent = totalMonths
       ? `${totalMonths} bulan dipilih · ${rp(totalAmt)}`
       : 'Belum ada bulan dipilih';
@@ -686,10 +795,82 @@ function updateSppMonthInfo() {
   const selected = getSppMonthsSelected();
   const info = document.getElementById('sppMonthInfo');
   if (!info) return;
+  const student = getStudent(document.getElementById('inputNama').value);
+  const total = student ? selected.reduce((a, m) => a + sppInputSisa(student, m), 0) : 0;
   info.textContent = selected.length
-    ? selected.length + ' bulan dipilih: ' + selected.map(m => MONTH_FULL[m]).join(', ')
+    ? selected.length + ' bulan dipilih: ' + selected.map(m => MONTH_FULL[m]).join(', ') + (student ? ' · ' + rp(total) : '')
     : 'Belum ada bulan dipilih';
   info.style.color = selected.length ? 'var(--primary-light)' : 'var(--text-muted)';
+}
+
+// Nominal SPP per bulan yang dipakai form (SPP santri, atau nominal baku item).
+function sppInputRate(student) {
+  if (!student) return 0;
+  const it = getInputItems(student).find(i => i.type === 'bulanan');
+  return Number(student.spp) || Number(it && it.amount) || 0;
+}
+
+// Sisa bulan `m` tahun berjalan yang masih harus dibayar (memperhitungkan angsuran).
+function sppInputSisa(student, m) {
+  if (!student || (student.spp_paid_months || []).includes(m)) return 0;
+  const a = (student.spp_angsur && Number(student.spp_angsur[m])) || 0;
+  return Math.max(0, sppInputRate(student) - a);
+}
+
+// Checkbox item SPP tahun berjalan (tipe 'bulanan') di form input.
+function sppItemCheckbox() {
+  const student = getStudent(document.getElementById('inputNama').value);
+  const it = getInputItems(student).find(i => i.type === 'bulanan');
+  return it ? document.getElementById('chk_' + it.id) : null;
+}
+
+// Ganti mode SPP tahun berjalan: Lunas per bulan (chip) ↔ Angsur (nominal bebas).
+function onSppModeChange() {
+  const mode = document.getElementById('sppMode')?.value || 'lunas';
+  const aw = document.getElementById('sppAngsurWrap');
+  const lw = document.getElementById('sppLunasWrap');
+  if (aw) aw.style.display = mode === 'angsur' ? 'block' : 'none';
+  if (lw) lw.style.display = mode === 'angsur' ? 'none' : 'block';
+  if (mode === 'angsur') {
+    if (typeof sppAngsurKolomAda === 'function' && !sppAngsurKolomAda()) {
+      toast('⚠️ ' + SPP_ANGSUR_MIGRASI_MSG, 9000);
+    }
+    setTimeout(() => document.getElementById('sppAngsurNom')?.focus(), 0);
+  } else {
+    const nom = document.getElementById('sppAngsurNom');
+    if (nom) nom.value = '';
+  }
+  onSppAngsurInput();
+}
+
+// Bulan + nominal angsuran SPP tahun berjalan (dibatasi sisa bulan itu).
+function getSppAngsur(student) {
+  if (!student || (document.getElementById('sppMode')?.value || 'lunas') !== 'angsur') return null;
+  const m = document.getElementById('sppAngsurBulan')?.value;
+  if (!m) return null;
+  const sisa = sppInputSisa(student, m);
+  const raw = Math.max(0, Number(document.getElementById('sppAngsurNom')?.value || 0));
+  return { m, sisa, raw, amount: Math.min(sisa, raw) };
+}
+
+function onSppAngsurInput() {
+  const student = getStudent(document.getElementById('inputNama').value);
+  const a = getSppAngsur(student);
+  const info = document.getElementById('sppAngsurInfo');
+  if (a) {
+    const chk = sppItemCheckbox();
+    if (chk && a.amount > 0) chk.checked = true;
+    if (info) {
+      const sisaNanti = a.sisa - a.amount;
+      info.textContent = a.amount > 0
+        ? `Angsur ${MONTH_FULL[a.m]}: ${rp(a.amount)}` +
+          (sisaNanti > 0 ? ` · sisa tunggakan ${MONTH_FULL[a.m]} ${rp(sisaNanti)}` : ` · ${MONTH_FULL[a.m]} jadi LUNAS`) +
+          (a.raw > a.sisa ? ` (dibatasi sisa ${rp(a.sisa)})` : '')
+        : 'Isi nominal yang dibayarkan — sisanya tetap tercatat sebagai tunggakan bulan tersebut.';
+      info.style.color = a.amount > 0 ? 'var(--primary-light)' : 'var(--text-muted)';
+    }
+  }
+  calcTotal();
 }
 
 // Set satu bulan SPP tahun berjalan tanpa toggle (dipakai "Centang semua tunggakan").
@@ -706,6 +887,9 @@ function toggleSppMonth(m, labelEl) {
   chk.checked = !chk.checked;
   styleSppMonthLabel(labelEl, chk.checked);
   updateSppMonthInfo();
+  // Memilih bulan otomatis mencentang item SPP-nya.
+  const itemChk = sppItemCheckbox();
+  if (itemChk && chk.checked) itemChk.checked = true;
   calcTotal();
 }
 
@@ -747,9 +931,13 @@ function calcTotal() {
       const inp = document.getElementById('custom_'+item.id);
       total += Number(inp?.value||0);
     } else if (item.type === 'bulanan' && student) {
-      const bulanDipilih = getSppMonthsSelected();
-      const sppRate = student.spp || item.amount || 0;
-      total += sppRate * Math.max(1, bulanDipilih.length);
+      const ang = getSppAngsur(student);
+      if ((document.getElementById('sppMode')?.value || 'lunas') === 'angsur') {
+        total += ang ? ang.amount : 0;
+      } else {
+        // Bulan yang sudah diangsur hanya ditagih sisanya.
+        total += getSppMonthsSelected().reduce((a, m) => a + sppInputSisa(student, m), 0);
+      }
     } else if (item.type === 'tetap' && student) {
       total += tetapAmountToPay(item, student);
     } else {
@@ -766,6 +954,7 @@ async function submitPayment() {
   if (!nama) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
   const student = getStudent(nama);
   const items = [];
+  let sppError = false;
   getInputItems(student).forEach(item => {
     const chk = document.getElementById('chk_'+item.id);
     if (!chk || !chk.checked) return;
@@ -786,37 +975,68 @@ async function submitPayment() {
     if (amount <= 0 && item.type !== 'custom') return;
 
     if (item.type === 'bulanan') {
+      if ((document.getElementById('sppMode')?.value || 'lunas') === 'angsur') {
+        // Angsur: bayar sebagian untuk satu bulan; sisanya tetap menunggak.
+        const ang = getSppAngsur(student);
+        if (!ang || ang.amount <= 0) { toast('⚠️ Isi nominal angsuran SPP!'); sppError = true; return; }
+        if (!(Number(student.spp) > 0)) { toast('⚠️ Nominal SPP santri belum diatur — angsuran tidak bisa dihitung sisanya.'); sppError = true; return; }
+        if (!sppAngsurKolomAda()) { toast('⚠️ ' + SPP_ANGSUR_MIGRASI_MSG, 9000); sppError = true; return; }
+        const lunasJadi = ang.amount >= ang.sisa;
+        items.push({ id: item.id, type: item.type,
+          name: item.name + (lunasJadi ? (sppBulanDibayar(student, ang.m) > 0 ? ' (Pelunasan Angsur)' : '') : ' (Angsur)'),
+          amount: ang.amount, bulanList: [ang.m], bulanAmounts: { [ang.m]: ang.amount }, angsurMonths: [ang.m] });
+        return;
+      }
       const bulanDipilih = getSppMonthsSelected();
-      if (!bulanDipilih.length) { toast('⚠️ Pilih minimal 1 bulan SPP!'); items.length = 0; return; }
-      const totalSPP = (student.spp || item.amount || 0) * bulanDipilih.length;
-      items.push({ id: item.id, type: item.type, name: item.name, amount: totalSPP, bulanList: bulanDipilih });
+      if (!bulanDipilih.length) { toast('⚠️ Pilih minimal 1 bulan SPP!'); sppError = true; return; }
+      // Bulan yang sudah diangsur hanya ditagih sisanya (pelunasan angsuran).
+      const bulanAmounts = {};
+      bulanDipilih.forEach(m => { bulanAmounts[m] = sppInputSisa(student, m); });
+      const angsurMonths = bulanDipilih.filter(m => sppBulanDibayar(student, m) > 0);
+      const totalSPP = bulanDipilih.reduce((a, m) => a + bulanAmounts[m], 0);
+      items.push({ id: item.id, type: item.type, name: item.name, amount: totalSPP,
+        bulanList: bulanDipilih, bulanAmounts, angsurMonths });
     } else {
       items.push({ id: item.id, type: item.type, name: payName, amount, bulan: null });
     }
   });
 
+  if (sppError) return;
+
   // Tunggakan SPP tahun ajaran sebelumnya (dari spp_history) — tiap TA jadi
   // satu item pembayaran tersendiri, bulan dibayar dicatat balik ke history.
   const prevSel = getSppPrevSelected();
+  if ((document.getElementById('sppPrevMode')?.value || 'lunas') === 'angsur' && !prevSel.length
+      && document.getElementById('sppPrevAngsurNom')?.value) {
+    toast('⚠️ Nominal angsuran tunggakan tidak valid!'); return;
+  }
   if (!items.length && !prevSel.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
   prevSel.forEach(y => {
-    items.push({ id: 'spp', type: 'spp_prev', name: `SPP Tunggakan TA ${y.ta}`,
-      amount: y.amount, ta: y.ta, rate: y.rate, bulanList: y.months, bulanAmounts: y.bulanAmounts });
+    const sudah = y.angsur ? (inputPrevArrears.find(p => p.ta === y.ta)?.detail.find(d => d.m === y.months[0])) : null;
+    const lunasJadi = sudah && y.amount >= sudah.sisa;
+    items.push({ id: 'spp', type: 'spp_prev',
+      name: `SPP Tunggakan TA ${y.ta}` + (y.angsur ? (lunasJadi ? (sudah.dibayar > 0 ? ' (Pelunasan Angsur)' : '') : ' (Angsur)') : ''),
+      amount: y.amount, ta: y.ta, rate: y.rate, bulanList: y.months, bulanAmounts: y.bulanAmounts,
+      angsurMonths: y.angsur ? y.months : [] });
   });
 
   // Kumpulkan perubahan sebagai SELISIH (bulan baru & nominal tambahan), lalu
   // digabungkan ke kondisi terbaru di server. Jangan menghitung nilai akhir
   // dari salinan lokal: bila device lain sudah menginput lebih dulu, salinan
   // lokal sudah usang dan pembayaran mereka akan tertimpa.
-  const sppMonthsBaru = [];              // bulan SPP tahun berjalan
-  const sppHistBaru   = {};              // { ta: { rate, months: [] } }
+  //   • bulan lunas biasa  → tandai lunas
+  //   • angsuran/pelunasan → tambah nominal; lunas otomatis bila mencapai SPP
+  //   • tunggakan TA lalu  → tambah nominal pada bulan TA tersebut
+  const sppOps = { cur: [], hist: [] };
   const tagihanUpdates = [];             // { id, delta }
   items.forEach(it => {
     if (it.type === 'spp_prev') {
-      const rec = sppHistBaru[it.ta] || (sppHistBaru[it.ta] = { rate: it.rate, months: [] });
-      (it.bulanList || []).forEach(b => { if (!rec.months.includes(b)) rec.months.push(b); });
+      (it.bulanList || []).forEach(b => sppOps.hist.push({ ta: it.ta, m: b, delta: it.bulanAmounts[b], rate: it.rate }));
     } else if (it.bulanList?.length) {
-      it.bulanList.forEach(b => { if (!sppMonthsBaru.includes(b)) sppMonthsBaru.push(b); });
+      it.bulanList.forEach(b => {
+        if ((it.angsurMonths || []).includes(b)) sppOps.cur.push({ m: b, delta: it.bulanAmounts[b] });
+        else sppOps.cur.push({ m: b, add: true });
+      });
     }
     if (it.type === 'tetap') {
       const t = findTagihan(nama, it.id);
@@ -838,7 +1058,7 @@ async function submitPayment() {
   // Tulis-gabung ke server (baca kondisi terbaru → tambahkan perubahan ini).
   // Ditunggu (await) agar ringkasan santri & tabel sesi menampilkan angka yang
   // benar-benar tersimpan, bukan tebakan lokal.
-  await commitSppPayment(nama, sppMonthsBaru, sppHistBaru);
+  await commitSppOps(nama, sppOps);
   await Promise.all(tagihanUpdates.map(u => addTagihanPaid(u.id, u.delta).catch(console.error)));
   saveTransaction(txn);
 
@@ -858,10 +1078,14 @@ async function submitPayment() {
     // Rincian per bulan: pakai nominal asli tiap bulan bila ada (tunggakan lama
     // bisa beda nominal per bulan / sisa angsuran), selain itu bagi rata.
     items: items.flatMap(i => {
+      // `angsur` & `ta` dipakai saat kuitansi dihapus/dikoreksi supaya efeknya
+      // dibalik sebesar nominalnya, di tempat yang benar (lihat sppRevertOp).
       if (i.bulanList?.length) return i.bulanList.map(b => ({
         item_id: i.id, name: i.name,
         amount: (i.bulanAmounts && i.bulanAmounts[b] != null) ? i.bulanAmounts[b] : i.amount / i.bulanList.length,
         bulan: b,
+        ...((i.angsurMonths || []).includes(b) ? { angsur: true } : {}),
+        ...(i.type === 'spp_prev' ? { ta: i.ta, rate: i.rate } : {}),
       }));
       return [{ item_id: i.id, name: i.name, amount: i.amount, bulan: i.bulan || null }];
     }),
