@@ -284,10 +284,7 @@ function onStudentSelect() {
 // Apakah admin sudah mencentang sesuatu di form input?
 // Bila ya, form JANGAN digambar ulang oleh sinkronisasi latar belakang.
 function inputFormHasSelection() {
-  const cont = document.getElementById('paymentItems');
-  if (cont && cont.querySelector('input[type="checkbox"]:checked')) return true;
-  return inputCart.length > 0 || getSppMonthsSelected().length > 0 || getSppPrevSelected().length > 0
-    || Number(document.getElementById('sppAngsurNom')?.value || 0) > 0;
+  return inputCart.length > 0;
 }
 
 let _refreshSelSeq = 0;
@@ -366,453 +363,12 @@ function getInputItems(student) {
   return list;
 }
 
-function renderPaymentItems(student) {
-  const cont = document.getElementById('paymentItems');
-  const activeItems = getInputItems(student);
-  if (!activeItems.length) {
-    cont.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">Tidak ada item aktif. Aktifkan di menu "Kelola Item Bayar"</div>';
-    return;
-  }
-
-  let html = activeItems.map(item => {
-    let amount = item.amount;
-    let extra = '';
-    // Item yang tak perlu tindakan (sudah lunas / nominal belum diatur) tidak
-    // lagi digambar sebagai kartu penuh yang diredupkan — cukup satu baris
-    // tipis, supaya perhatian tertuju pada item yang masih harus dibayar.
-    let doneNote = null;
-    // Tagihan santri untuk item ini, dipakai bersama oleh semua cabang di bawah
-    // (termasuk cabang 'custom', yang dulu tidak memeriksanya sama sekali).
-    const tagih = student ? findTagihan(student.nama, item.id) : null;
-
-    if (item.type === 'bulanan' && student) {
-      amount = student.spp || item.amount || 0;
-      // Bulan menunggak = yang sudah jatuh tempo (Juli s/d bulan berjalan) &
-      // belum dibayar. Bulan yang belum tiba tetap ditampilkan terpisah agar
-      // wali yang ingin membayar di muka tetap bisa memilihnya.
-      const tunggak  = sppUnpaidDueMonths(student);
-      const dimuka   = sppUpcomingMonths(student);
-      // Santri yang masuk di tengah TA (mis. promosi SPMB bulan November):
-      // bulan sebelum ia masuk tidak ditagih sama sekali, jadi tidak muncul
-      // sebagai tunggakan maupun sebagai pilihan bayar di muka.
-      const mulaiSpp = sppMulaiLabel(student);
-      // Bulan yang sudah diangsur sebagian menampilkan sisanya.
-      const chip = (m, jatuhTempo) => {
-        const dibayar = sppBulanDibayar(student, m);
-        const sisa = sppInputSisa(student, m);
-        return `
-        <label style="display:flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px ${dibayar > 0 ? 'dashed' : 'solid'} ${jatuhTempo?'var(--danger)':'var(--border)'};border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s;${jatuhTempo?'color:var(--danger);':'color:var(--text-muted);'}"
-          id="sppMonthLabel_${m}" onclick="toggleSppMonth('${m}',this)"
-          title="${esc(MONTH_FULL[m])}${dibayar > 0 ? ' — sudah diangsur ' + rp(dibayar) + ', sisa ' + rp(sisa) : ''}">
-          <input type="checkbox" id="sppChk_${m}" value="${m}" style="display:none;">
-          ${MONTH_FULL[m]}${dibayar > 0 ? ` <span style="font-size:10px;opacity:.8;">sisa ${rp(sisa)}</span>` : ''}
-        </label>`;
-      };
-      // Pilihan bulan untuk mode angsur: bulan menunggak dulu, lalu bulan di muka.
-      const angsurOpts = [...tunggak, ...dimuka].map(m => {
-        const dibayar = sppBulanDibayar(student, m);
-        return `<option value="${m}">${esc(MONTH_FULL[m])}${isSppDueFor(student, m) ? '' : ' (di muka)'} — sisa ${rp(sppInputSisa(student, m))}${dibayar > 0 ? ' · sudah diangsur ' + rp(dibayar) : ''}</option>`;
-      }).join('');
-      if (tunggak.length === 0 && dimuka.length === 0) {
-        doneNote = { kind: 'lunas', text: 'Semua bulan sudah lunas' };
-      } else if (amount > 0) {
-        extra = `<div style="margin-top:8px;">
-          ${mulaiSpp ? `
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">📅 Santri masuk di tengah tahun ajaran — SPP dihitung mulai <strong>${esc(mulaiSpp)}</strong>.</div>` : ''}
-          <select id="sppMode" onchange="onSppModeChange()"
-            style="margin-bottom:8px;padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;">
-            <option value="lunas">💰 Lunas per bulan — pilih bulan</option>
-            <option value="angsur">📆 Angsur — bayar sebagian untuk 1 bulan</option>
-          </select>
-          <div id="sppAngsurWrap" style="display:none;margin-bottom:4px;">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <select id="sppAngsurBulan" onchange="onSppAngsurInput()"
-                style="padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;max-width:100%;">
-                ${angsurOpts}
-              </select>
-              <input type="number" id="sppAngsurNom" placeholder="Nominal angsur..." min="1"
-                oninput="onSppAngsurInput()"
-                style="width:160px;padding:5px 9px;border:1.5px solid var(--primary-light);border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
-            </div>
-            <div id="sppAngsurInfo" style="margin-top:6px;font-size:12px;color:var(--text-muted);">Isi nominal yang dibayarkan — sisanya tetap tercatat sebagai tunggakan bulan tersebut.</div>
-          </div>
-          <div id="sppLunasWrap">
-          ${tunggak.length ? `
-          <div style="font-size:11px;font-weight:600;color:var(--danger);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Tunggakan — ${tunggak.length} bulan (s/d bulan berjalan):</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;">
-            ${tunggak.map(m => chip(m, true)).join('')}
-          </div>` : `
-          <div style="font-size:12px;color:var(--primary-light);font-weight:600;margin-bottom:6px;">✅ Tidak ada tunggakan SPP s/d bulan berjalan</div>`}
-          ${dimuka.length ? `
-          <details style="margin-top:10px;">
-            <summary style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;cursor:pointer;">Bayar di muka (${dimuka.length} bulan belum jatuh tempo)</summary>
-            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
-              ${dimuka.map(m => chip(m, false)).join('')}
-            </div>
-          </details>` : ''}
-          <div style="margin-top:6px;font-size:12px;color:var(--text-muted);" id="sppMonthInfo">Belum ada bulan dipilih</div>
-          </div>
-        </div>`;
-      }
-    } else if (item.type === 'tetap' && student) {
-      const t = tagih;
-      const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
-      amount = sisa;
-      // Syarat "nominal belum diatur" & "lunas" TIDAK boleh bergantung pada
-      // adanya baris tagihan. Dulu keduanya diawali `t &&`, sehingga item aktif
-      // yang belum punya tagihan dan nominalnya Rp 0 lolos ke bawah tanpa
-      // cabang mana pun — tergambar sebagai kartu bercentang "Rp 0 (sisa)".
-      if (t ? t.nominal <= 0 : (item.amount || 0) <= 0) {
-        doneNote = { kind: 'warn', text: 'Nominal belum diatur — atur di "Kelola Item Bayar"' };
-      } else if (sisa <= 0) {
-        doneNote = { kind: 'lunas', text: 'Lunas ' + rp(t.nominal) };
-      } else if (t) {
-        extra = `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
-            Total: <strong>${rp(t.nominal)}</strong> &nbsp;|&nbsp;
-            Dibayar: <strong style="color:var(--primary-light);">${rp(t.paid_amount)}</strong> &nbsp;|&nbsp;
-            <strong style="color:var(--danger);">Sisa: ${rp(sisa)}</strong>
-          </div>
-          <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <select id="tetapMode_${esc(item.id)}" onchange="onTetapModeChange('${escJs(item.id)}')"
-              style="padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;">
-              <option value="lunas">💰 Lunas — bayar sisa (${rp(sisa)})</option>
-              <option value="angsur">📆 Angsur — cicil sebagian</option>
-            </select>
-            <input type="number" id="tetapAngsur_${esc(item.id)}" placeholder="Nominal angsur..." min="1" max="${sisa}"
-              oninput="calcTotal()"
-              style="display:none;width:160px;padding:5px 9px;border:1.5px solid var(--primary-light);border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
-          </div>`;
-      }
-    } else if (item.type === 'custom') {
-      // Cabang ini dulu mengabaikan tagihan sepenuhnya: item custom yang sudah
-      // lunas tetap tampil bercentang dengan kolom nominal kosong. Karena
-      // submitPayment() mengecualikan tipe custom dari penjagaan `amount <= 0`,
-      // mencentangnya akan mencatat baris pembayaran Rp 0 di kuitansi.
-      if (tagih && tagih.nominal > 0 && (tagih.nominal - tagih.paid_amount) <= 0) {
-        doneNote = { kind: 'lunas', text: 'Lunas ' + rp(tagih.nominal) };
-      } else {
-        extra = `<div class="pay-item-custom" style="margin-top:6px;"><input type="number" id="custom_${item.id}" placeholder="Nominal..." value="${amount||''}" oninput="calcTotal()" style="font-size:12px;padding:4px 8px;width:150px;"></div>`;
-      }
-    }
-
-    // Baris tipis: tidak ada checkbox sama sekali. calcTotal(), submitPayment(),
-    // dan selectAllTunggakan() sudah melewati item yang checkbox-nya tak ada.
-    if (doneNote) {
-      return `<div class="pay-item-done ${doneNote.kind === 'warn' ? 'is-warn' : 'is-lunas'}">
-        <span class="pid-mark">${doneNote.kind === 'warn' ? '⚠️' : '✓'}</span>
-        <span class="pid-name">${esc(item.name)}</span>
-        <span class="pid-note">${esc(doneNote.text)}</span>
-      </div>`;
-    }
-
-    return `<div class="pay-item">
-      <input type="checkbox" id="chk_${item.id}" onchange="calcTotal()">
-      <div class="pay-item-info">
-        <div class="pay-item-name">${esc(item.name)}${item._fromTagihan ? ' <span style="font-size:10px;font-weight:700;color:var(--danger);background:var(--danger-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">tunggakan lama</span>' : ''}</div>
-        <div class="pay-item-amount">${
-          item.type === 'custom' ? 'Nominal custom'
-          : item.type === 'tetap' && student
-            // "(sisa)" hanya benar bila santri ini memang punya tagihannya.
-            // Tanpa tagihan, angkanya adalah nominal baku item — belum ditagihkan.
-            ? rp(amount) + `<span style="font-size:10px;font-weight:400;color:var(--text-muted);"> ${tagih ? '(sisa)' : '(belum ditagihkan)'}</span>`
-            : rp(amount)
-        }</div>
-        ${extra}
-      </div>
-    </div>`;
-  }).join('');
-
-  // Blok tunggakan SPP tahun ajaran sebelumnya (dari spp_history) — hanya
-  // muncul bila siswa terpilih & masih ada bulan yang belum dibayar tahun lalu.
-  inputPrevArrears = student ? sppTunggakanPrevList(student) : [];
-  if (inputPrevArrears.length) html += renderPrevArrearsBlock(inputPrevArrears);
-
-  // Ringkasan seluruh tunggakan santri + tombol centang semua (di paling atas).
-  cont.innerHTML = (student ? renderArrearsBanner(student, inputPrevArrears) : '') + html;
-  calcTotal();
-}
-
-// Panel ringkas "semua tunggakan" santri terpilih: SPP tahun berjalan, SPP tiap
-// tahun ajaran sebelumnya, dan tiap item tagihan yang masih bersisa — supaya
-// petugas langsung melihat seluruh kewajiban tanpa menelusuri satu per satu.
-function renderArrearsBanner(student, prevList) {
-  const sppNow = sppTunggakan(student);
-  // Hanya bulan yang sudah jatuh tempo (s/d bulan berjalan) yang dihitung —
-  // sejalan dengan nominal sppNow.
-  const bulanNow = (student.spp || 0) > 0 ? sppUnpaidDueMonths(student).length : 0;
-  const tagihanRows = appState.tagihan
-    .filter(t => t.nama === student.nama && Math.max(0, (t.nominal || 0) - (t.paid_amount || 0)) > 0)
-    .map(t => ({ label: t.item_name, amount: Math.max(0, t.nominal - t.paid_amount) }));
-
-  const baris = [];
-  if (sppNow > 0) baris.push({ label: `SPP tahun berjalan (${bulanNow} bln)`, amount: sppNow });
-  prevList.forEach(y => baris.push({ label: `SPP TA ${y.ta} (${y.unpaid.length} bln)`, amount: y.amount }));
-  tagihanRows.forEach(r => baris.push(r));
-
-  const total = baris.reduce((a, r) => a + r.amount, 0);
-  if (total <= 0) {
-    return `<div class="pay-item" style="display:block;border-color:var(--primary-light);background:var(--primary-pale);">
-      <div style="font-weight:700;font-size:13px;color:var(--primary-light);">✅ Tidak ada tunggakan — seluruh kewajiban ${esc(student.nama)} sudah lunas</div>
-    </div>`;
-  }
-
-  return `<div class="pay-item" style="display:block;border-color:var(--danger);background:#fff;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
-      <div style="font-weight:800;font-size:14px;color:var(--danger);">🧾 Total Seluruh Tunggakan: ${rp(total)}</div>
-      <button type="button" class="btn btn-danger btn-sm" onclick="selectAllTunggakan()">✔️ Centang semua tunggakan</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr auto;gap:3px 12px;font-size:12px;">
-      ${baris.map(r => `<div style="color:var(--text-muted);">${esc(r.label)}</div>
-        <div style="font-weight:700;color:var(--danger);text-align:right;">${rp(r.amount)}</div>`).join('')}
-    </div>
-  </div>`;
-}
-
-// Centang sekaligus seluruh tunggakan santri terpilih: SPP tahun berjalan,
-// semua bulan tunggakan TA sebelumnya, dan tiap item tagihan yang bersisa
-// (mode "Lunas"). Item bernominal custom sengaja dilewati — nominalnya manual.
-function selectAllTunggakan() {
-  const student = getStudent(document.getElementById('inputNama').value);
-  if (!student) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
-
-  getInputItems(student).forEach(item => {
-    const chk = document.getElementById('chk_' + item.id);
-    if (!chk || chk.disabled) return;
-    if (item.type === 'tetap') {
-      const t = findTagihan(student.nama, item.id);
-      const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
-      if (sisa <= 0) return;
-      const mode = document.getElementById('tetapMode_' + item.id);
-      if (mode) { mode.value = 'lunas'; onTetapModeChange(item.id); }
-      chk.checked = true;
-    } else if (item.type === 'bulanan') {
-      // Hanya bulan yang benar-benar menunggak (sudah jatuh tempo) yang
-      // dicentang — bulan bayar di muka tetap harus dipilih manual.
-      const unpaid = sppUnpaidDueMonths(student);
-      if (!unpaid.length || !(student.spp || item.amount || 0)) return;
-      const mode = document.getElementById('sppMode');
-      if (mode && mode.value !== 'lunas') { mode.value = 'lunas'; onSppModeChange(); }
-      unpaid.forEach(m => setSppMonth(m, true));
-      updateSppMonthInfo();
-      chk.checked = true;
-    }
-  });
-
-  const master = document.getElementById('chk_spp_prev');
-  if (master) { master.checked = true; toggleAllSppPrev(master); }
-
-  calcTotal();
-  toast('✅ Semua tunggakan dicentang — periksa dulu sebelum menyimpan');
-}
-
-// Render kartu "Tunggakan SPP Tahun Ajaran Sebelumnya": tiap tahun ajaran
-// menampilkan chip bulan yang belum dibayar (bisa dipilih sebagian).
-function renderPrevArrearsBlock(list) {
-  const totalAll  = list.reduce((a, y) => a + y.amount, 0);
-  const totalBln  = list.reduce((a, y) => a + y.unpaid.length, 0);
-  const rows = list.map((y, yi) => {
-    // Nominal per bulan bisa berbeda dalam satu TA (mis. SPP naik di tengah
-    // tahun) atau tersisa sebagian karena sudah diangsur — tampilkan apa adanya.
-    const seragam = y.detail.every(d => d.sisa === y.detail[0].sisa);
-    return `
-    <div style="margin-top:10px;padding-top:10px;${yi > 0 ? 'border-top:1px dashed var(--border);' : ''}">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
-        <div style="font-size:12px;font-weight:700;">TA ${esc(y.ta)}
-          ${y.kelas ? `<span style="font-weight:500;color:var(--text-muted);">· Kelas ${esc(y.kelas)}</span>` : ''}
-          ${seragam ? `<span style="font-weight:500;color:var(--text-muted);">· ${rp(y.detail[0].sisa)}/bln</span>` : ''}</div>
-        <span style="font-size:11px;font-weight:700;color:var(--danger);">${y.unpaid.length} bln · ${rp(y.amount)}</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;">
-        ${y.detail.map(d => `
-          <label style="display:flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:.15s;"
-            id="sppPrevLabel_${yi}_${d.m}" onclick="toggleSppPrevMonth(${yi},'${d.m}',this)"
-            title="${esc(MONTH_FULL[d.m])} — sisa ${rp(d.sisa)}${d.dibayar > 0 ? ' (sudah dibayar ' + rp(d.dibayar) + ' dari ' + rp(d.nominal) + ')' : ''}">
-            <input type="checkbox" id="sppPrevChk_${yi}_${d.m}" value="${d.m}" style="display:none;">
-            ${MONTH_FULL[d.m]}${seragam ? '' : ` <span style="font-size:10px;opacity:.75;">${rp(d.sisa)}</span>`}
-          </label>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
-
-  const angsurOpts = list.map((y, yi) => y.detail.map(d =>
-    `<option value="${yi}|${d.m}">TA ${esc(y.ta)} · ${esc(MONTH_FULL[d.m])} — sisa ${rp(d.sisa)}${d.dibayar > 0 ? ' · sudah diangsur ' + rp(d.dibayar) : ''}</option>`
-  ).join('')).join('');
-
-  return `<div class="pay-item" style="display:block;border-color:var(--danger);background:var(--danger-pale);">
-    <div style="display:flex;align-items:flex-start;gap:10px;">
-      <input type="checkbox" id="chk_spp_prev" onchange="toggleAllSppPrev(this)" title="Pilih semua bulan tunggakan">
-      <div class="pay-item-info" style="flex:1;min-width:0;">
-        <div class="pay-item-name" style="color:var(--danger);">⚠️ Tunggakan SPP Tahun Ajaran Sebelumnya</div>
-        <div class="pay-item-amount" style="color:var(--danger);">${rp(totalAll)} <span style="font-size:10px;font-weight:400;color:var(--text-muted);">(${totalBln} bulan · ${list.length} tahun ajaran)</span></div>
-        <select id="sppPrevMode" onchange="onSppPrevModeChange()"
-          style="margin-top:8px;padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;">
-          <option value="lunas">💰 Lunas per bulan — pilih bulan</option>
-          <option value="angsur">📆 Angsur — bayar sebagian untuk 1 bulan</option>
-        </select>
-        <div id="sppPrevAngsurWrap" style="display:none;margin-top:8px;">
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <select id="sppPrevAngsurSel" onchange="onSppPrevAngsurInput()"
-              style="padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff;max-width:100%;">
-              ${angsurOpts}
-            </select>
-            <input type="number" id="sppPrevAngsurNom" placeholder="Nominal angsur..." min="1"
-              oninput="onSppPrevAngsurInput()"
-              style="width:160px;padding:5px 9px;border:1.5px solid var(--danger);border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
-          </div>
-        </div>
-        <div id="sppPrevLunasWrap">
-        ${rows}
-        </div>
-        <div style="margin-top:8px;font-size:12px;color:var(--text-muted);" id="sppPrevInfo">Belum ada bulan dipilih</div>
-      </div>
-    </div>
-  </div>`;
-}
-
-// Warnai chip bulan tunggakan sesuai status pilih.
-function styleSppPrevLabel(labelEl, on) {
-  if (!labelEl) return;
-  labelEl.style.background   = on ? 'var(--danger)' : '';
-  labelEl.style.color        = on ? '#fff' : '';
-  labelEl.style.borderColor  = on ? 'var(--danger)' : '';
-}
-
-function toggleSppPrevMonth(yi, m, labelEl) {
-  const chk = document.getElementById(`sppPrevChk_${yi}_${m}`);
-  if (!chk) return;
-  chk.checked = !chk.checked;
-  styleSppPrevLabel(labelEl, chk.checked);
-  updateSppPrevInfo();
-  calcTotal();
-}
-
-// Ganti mode tunggakan TA lalu: Lunas per bulan (chip) ↔ Angsur (nominal bebas).
-function onSppPrevModeChange() {
-  const mode = document.getElementById('sppPrevMode')?.value || 'lunas';
-  const aw = document.getElementById('sppPrevAngsurWrap');
-  const lw = document.getElementById('sppPrevLunasWrap');
-  if (aw) aw.style.display = mode === 'angsur' ? 'block' : 'none';
-  if (lw) lw.style.display = mode === 'angsur' ? 'none' : 'block';
-  if (mode === 'angsur') {
-    setTimeout(() => document.getElementById('sppPrevAngsurNom')?.focus(), 0);
-  } else {
-    const nom = document.getElementById('sppPrevAngsurNom');
-    if (nom) nom.value = '';
-  }
-  updateSppPrevInfo();
-  calcTotal();
-}
-
-function onSppPrevAngsurInput() {
-  updateSppPrevInfo();
-  calcTotal();
-}
-
-// Bulan TA lalu yang dipilih di mode angsur + nominalnya (dibatasi sisa bulan itu).
-function getSppPrevAngsur() {
-  if ((document.getElementById('sppPrevMode')?.value || 'lunas') !== 'angsur') return null;
-  const sel = document.getElementById('sppPrevAngsurSel')?.value || '';
-  const [yiStr, m] = sel.split('|');
-  const y = inputPrevArrears[Number(yiStr)];
-  const d = y && y.detail.find(x => x.m === m);
-  if (!d) return null;
-  const raw = Math.max(0, Number(document.getElementById('sppPrevAngsurNom')?.value || 0));
-  return { y, d, raw, amount: Math.min(d.sisa, raw) };
-}
-
-// Checkbox induk: pilih / batal semua bulan tunggakan tahun lalu sekaligus.
-function toggleAllSppPrev(master) {
-  // Centang semua hanya bermakna di mode lunas per bulan.
-  const mode = document.getElementById('sppPrevMode');
-  if (master.checked && mode && mode.value !== 'lunas') { mode.value = 'lunas'; onSppPrevModeChange(); }
-  inputPrevArrears.forEach((y, yi) => y.unpaid.forEach(m => {
-    const chk = document.getElementById(`sppPrevChk_${yi}_${m}`);
-    if (chk) chk.checked = master.checked;
-    styleSppPrevLabel(document.getElementById(`sppPrevLabel_${yi}_${m}`), master.checked);
-  }));
-  updateSppPrevInfo();
-  calcTotal();
-}
-
-// Bulan tunggakan tahun lalu yang dicentang, dikelompokkan per tahun ajaran.
-// Nominal diambil dari sisa tiap bulan (bukan rate × jumlah bulan) agar tetap
-// benar saat nominal SPP berbeda antar bulan atau bulan itu sudah diangsur.
-function getSppPrevSelected() {
-  const out = [];
-  const ang = getSppPrevAngsur();
-  if ((document.getElementById('sppPrevMode')?.value || 'lunas') === 'angsur') {
-    if (ang && ang.amount > 0) out.push({
-      ta: ang.y.ta, rate: ang.y.rate, months: [ang.d.m], amount: ang.amount,
-      bulanAmounts: { [ang.d.m]: ang.amount }, angsur: true,
-    });
-    return out;
-  }
-  inputPrevArrears.forEach((y, yi) => {
-    const picked = y.detail.filter(d => document.getElementById(`sppPrevChk_${yi}_${d.m}`)?.checked);
-    if (!picked.length) return;
-    const bulanAmounts = {};
-    picked.forEach(d => { bulanAmounts[d.m] = d.sisa; });
-    out.push({
-      ta: y.ta, rate: y.rate,
-      months: picked.map(d => d.m),
-      amount: picked.reduce((a, d) => a + d.sisa, 0),
-      bulanAmounts,
-    });
-  });
-  return out;
-}
-
-function updateSppPrevInfo() {
-  const info = document.getElementById('sppPrevInfo');
-  const sel = getSppPrevSelected();
-  const totalMonths = sel.reduce((a, y) => a + y.months.length, 0);
-  const totalAmt    = sel.reduce((a, y) => a + y.amount, 0);
-  const ang = getSppPrevAngsur();
-  if (info && ang) {
-    const sisaNanti = ang.d.sisa - ang.amount;
-    info.textContent = ang.amount > 0
-      ? `Angsur TA ${ang.y.ta} ${MONTH_FULL[ang.d.m]}: ${rp(ang.amount)}` +
-        (sisaNanti > 0 ? ` · sisa tunggakan bulan ini ${rp(sisaNanti)}` : ' · bulan ini jadi LUNAS') +
-        (ang.raw > ang.d.sisa ? ` (dibatasi sisa ${rp(ang.d.sisa)})` : '')
-      : 'Isi nominal yang dibayarkan — sisanya tetap tercatat sebagai tunggakan.';
-    info.style.color = ang.amount > 0 ? 'var(--danger)' : 'var(--text-muted)';
-  } else if (info) {
-    info.textContent = totalMonths
-      ? `${totalMonths} bulan dipilih · ${rp(totalAmt)}`
-      : 'Belum ada bulan dipilih';
-    info.style.color = totalMonths ? 'var(--danger)' : 'var(--text-muted)';
-  }
-  // Sinkronkan status checkbox induk (checked / indeterminate)
-  const master = document.getElementById('chk_spp_prev');
-  if (master) {
-    const totalUnpaid = inputPrevArrears.reduce((a, y) => a + y.unpaid.length, 0);
-    master.checked = totalMonths > 0 && totalMonths === totalUnpaid;
-    master.indeterminate = totalMonths > 0 && totalMonths < totalUnpaid;
-  }
-}
-
-function styleSppMonthLabel(labelEl, on) {
-  if (!labelEl) return;
-  // Saat tidak terpilih, kembalikan ke warna asalnya: merah untuk bulan yang
-  // sudah jatuh tempo (tunggakan), abu-abu untuk bulan bayar di muka.
-  const m = (labelEl.id || '').replace('sppMonthLabel_', '');
-  const jatuhTempo = isSppDue(m);
-  labelEl.style.background  = on ? 'var(--primary)' : '';
-  labelEl.style.color       = on ? '#fff' : (jatuhTempo ? 'var(--danger)' : 'var(--text-muted)');
-  labelEl.style.borderColor = on ? 'var(--primary)' : (jatuhTempo ? 'var(--danger)' : 'var(--border)');
-}
-
-function updateSppMonthInfo() {
-  const selected = getSppMonthsSelected();
-  const info = document.getElementById('sppMonthInfo');
-  if (!info) return;
-  const student = getStudent(document.getElementById('inputNama').value);
-  const total = student ? selected.reduce((a, m) => a + sppInputSisa(student, m), 0) : 0;
-  info.textContent = selected.length
-    ? selected.length + ' bulan dipilih: ' + selected.map(m => MONTH_FULL[m]).join(', ') + (student ? ' · ' + rp(total) : '')
-    : 'Belum ada bulan dipilih';
-  info.style.color = selected.length ? 'var(--primary-light)' : 'var(--text-muted)';
-}
+// ══════════════════════════════════════════
+// KARTU TAGIHAN — gaya kasir (POS)
+// ══════════════════════════════════════════
+// Klik chip bulan / tombol "Lunas" langsung memasukkan baris ke keranjang (klik
+// lagi = keluarkan). Bayar sebagian = ubah nominal baris itu di keranjang.
+// Keranjang lalu disimpan sekaligus jadi SATU kuitansi (lihat submitPayment).
 
 // Nominal SPP per bulan yang dipakai form (SPP santri, atau nominal baku item).
 function sppInputRate(student) {
@@ -828,148 +384,138 @@ function sppInputSisa(student, m) {
   return Math.max(0, sppInputRate(student) - a);
 }
 
-// Checkbox item SPP tahun berjalan (tipe 'bulanan') di form input.
-function sppItemCheckbox() {
-  const student = getStudent(document.getElementById('inputNama').value);
-  const it = getInputItems(student).find(i => i.type === 'bulanan');
-  return it ? document.getElementById('chk_' + it.id) : null;
+function inputStudent() {
+  return getStudent(document.getElementById('inputNama').value);
 }
 
-// Ganti mode SPP tahun berjalan: Lunas per bulan (chip) ↔ Angsur (nominal bebas).
-function onSppModeChange() {
-  const mode = document.getElementById('sppMode')?.value || 'lunas';
-  const aw = document.getElementById('sppAngsurWrap');
-  const lw = document.getElementById('sppLunasWrap');
-  if (aw) aw.style.display = mode === 'angsur' ? 'block' : 'none';
-  if (lw) lw.style.display = mode === 'angsur' ? 'none' : 'block';
-  if (mode === 'angsur') {
-    if (typeof sppAngsurKolomAda === 'function' && !sppAngsurKolomAda()) {
-      toast('⚠️ ' + SPP_ANGSUR_MIGRASI_MSG, 9000);
-    }
-    setTimeout(() => document.getElementById('sppAngsurNom')?.focus(), 0);
-  } else {
-    const nom = document.getElementById('sppAngsurNom');
-    if (nom) nom.value = '';
+function renderPaymentItems(student) {
+  const cont = document.getElementById('paymentItems');
+  inputPrevArrears = student ? sppTunggakanPrevList(student) : [];
+  if (!student) {
+    cont.innerHTML = `<div class="pos-empty">👆 Pilih santri dulu — tagihannya akan muncul di sini.</div>`;
+    syncChips(); calcTotal();
+    return;
   }
-  onSppAngsurInput();
-}
-
-// Bulan + nominal angsuran SPP tahun berjalan (dibatasi sisa bulan itu).
-function getSppAngsur(student) {
-  if (!student || (document.getElementById('sppMode')?.value || 'lunas') !== 'angsur') return null;
-  const m = document.getElementById('sppAngsurBulan')?.value;
-  if (!m) return null;
-  const sisa = sppInputSisa(student, m);
-  const raw = Math.max(0, Number(document.getElementById('sppAngsurNom')?.value || 0));
-  return { m, sisa, raw, amount: Math.min(sisa, raw) };
-}
-
-function onSppAngsurInput() {
-  const student = getStudent(document.getElementById('inputNama').value);
-  const a = getSppAngsur(student);
-  const info = document.getElementById('sppAngsurInfo');
-  if (a) {
-    const chk = sppItemCheckbox();
-    if (chk && a.amount > 0) chk.checked = true;
-    if (info) {
-      const sisaNanti = a.sisa - a.amount;
-      info.textContent = a.amount > 0
-        ? `Angsur ${MONTH_FULL[a.m]}: ${rp(a.amount)}` +
-          (sisaNanti > 0 ? ` · sisa tunggakan ${MONTH_FULL[a.m]} ${rp(sisaNanti)}` : ` · ${MONTH_FULL[a.m]} jadi LUNAS`) +
-          (a.raw > a.sisa ? ` (dibatasi sisa ${rp(a.sisa)})` : '')
-        : 'Isi nominal yang dibayarkan — sisanya tetap tercatat sebagai tunggakan bulan tersebut.';
-      info.style.color = a.amount > 0 ? 'var(--primary-light)' : 'var(--text-muted)';
-    }
+  const activeItems = getInputItems(student);
+  if (!activeItems.length && !inputPrevArrears.length) {
+    cont.innerHTML = '<div class="pos-empty">Tidak ada item aktif. Aktifkan di menu "Kelola Item Bayar"</div>';
+    return;
   }
+  const chip = (key, onclick, label, sub, cls) =>
+    `<button type="button" class="pos-chip ${cls}" data-key="${esc(key)}" onclick="${onclick}" aria-pressed="false">
+      <span>${label}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
+
+  const cards = activeItems.map(item => {
+    const tagih = findTagihan(student.nama, item.id);
+    const head = (right) => `<div class="pos-card-head">
+        <div class="pos-card-name">${esc(item.name)}${item._fromTagihan ? ' <span class="pos-tag danger">tunggakan lama</span>' : ''}</div>
+        <div class="pos-card-meta">${right}</div></div>`;
+
+    if (item.type === 'bulanan') {
+      const rate = sppInputRate(student);
+      const tunggak = sppUnpaidDueMonths(student);
+      const dimuka  = sppUpcomingMonths(student);
+      if (!tunggak.length && !dimuka.length) return doneRow(item.name, 'lunas', 'Semua bulan sudah lunas');
+      if (rate <= 0) return doneRow(item.name, 'warn', 'Nominal SPP santri belum diatur');
+      const mulaiSpp = sppMulaiLabel(student);
+      const mchip = (m, due) => {
+        const dibayar = sppBulanDibayar(student, m);
+        return chip('cur||' + m, `toggleCartLine('cur','${m}',this)`, esc(MONTH_FULL[m]),
+          dibayar > 0 ? 'sisa ' + rp(sppInputSisa(student, m)) : '', (due ? 'due' : 'ahead') + (dibayar > 0 ? ' partial' : ''));
+      };
+      return `<div class="pos-card">${head(rp(rate) + '/bln')}
+        ${mulaiSpp ? `<div class="pos-note">📅 Santri masuk di tengah tahun ajaran — SPP dihitung mulai <strong>${esc(mulaiSpp)}</strong>.</div>` : ''}
+        ${tunggak.length
+          ? `<div class="pos-label danger">Menunggak · ${tunggak.length} bulan</div><div class="pos-chips">${tunggak.map(m => mchip(m, true)).join('')}</div>`
+          : `<div class="pos-note ok">✅ Tidak ada tunggakan SPP s/d bulan berjalan</div>`}
+        ${dimuka.length ? `<details class="pos-more"><summary>Bayar di muka · ${dimuka.length} bulan</summary>
+          <div class="pos-chips">${dimuka.map(m => mchip(m, false)).join('')}</div></details>` : ''}
+      </div>`;
+    }
+
+    if (item.type === 'tetap') {
+      const sisa = tagih ? Math.max(0, tagih.nominal - tagih.paid_amount) : (item.amount || 0);
+      // "Nominal belum diatur" & "lunas" tak boleh bergantung pada adanya tagihan
+      // (item aktif tanpa tagihan bernominal 0 dulu tampil sebagai "Rp 0").
+      if (tagih ? tagih.nominal <= 0 : (item.amount || 0) <= 0) return doneRow(item.name, 'warn', 'Nominal belum diatur — atur di "Kelola Item Bayar"');
+      if (sisa <= 0) return doneRow(item.name, 'lunas', 'Lunas ' + rp(tagih.nominal));
+      const id = escJs(item.id);
+      return `<div class="pos-card">${head(tagih
+          ? `sisa <strong class="danger">${rp(sisa)}</strong> dari ${rp(tagih.nominal)}`
+          : `${rp(sisa)} <span class="muted">(belum ditagihkan)</span>`)}
+        ${tagih && tagih.paid_amount > 0 ? `<div class="pos-progress"><i style="width:${Math.min(100, tagih.paid_amount / tagih.nominal * 100)}%"></i></div>` : ''}
+        <div class="pos-actions">
+          ${chip('tetap||' + item.id, `toggleCartLine('tetap','${id}',this)`, 'Lunas ' + rp(sisa), '', 'due wide')}
+          <button type="button" class="pos-ghost-btn" onclick="angsurLine('tetap','${id}',this)">✎ Bayar sebagian</button>
+        </div></div>`;
+    }
+
+    // custom: nominal diketik bebas.
+    if (tagih && tagih.nominal > 0 && (tagih.nominal - tagih.paid_amount) <= 0) return doneRow(item.name, 'lunas', 'Lunas ' + rp(tagih.nominal));
+    return `<div class="pos-card">${head('nominal bebas')}
+      <div class="pos-actions">
+        <input type="number" id="custom_${esc(item.id)}" class="pos-input" placeholder="Nominal..." min="1" aria-label="Nominal ${esc(item.name)}"
+          onkeydown="if(event.key==='Enter')addCustomLine('${escJs(item.id)}',this)">
+        <button type="button" class="pos-chip due" data-key="${esc('custom||' + item.id)}" onclick="addCustomLine('${escJs(item.id)}',this)"><span>+ Tambah</span></button>
+      </div></div>`;
+  }).join('');
+
+  cont.innerHTML = renderArrearsBanner(student, inputPrevArrears) + cards
+    + (inputPrevArrears.length ? renderPrevArrearsBlock(inputPrevArrears, chip) : '');
+  syncChips();
   calcTotal();
 }
 
-// Set satu bulan SPP tahun berjalan tanpa toggle (dipakai "Centang semua tunggakan").
-function setSppMonth(m, on) {
-  const chk = document.getElementById('sppChk_' + m);
-  if (!chk) return;
-  chk.checked = !!on;
-  styleSppMonthLabel(document.getElementById('sppMonthLabel_' + m), !!on);
+// Item yang tak perlu tindakan (lunas / nominal belum diatur): satu baris tipis.
+function doneRow(name, kind, text) {
+  return `<div class="pay-item-done ${kind === 'warn' ? 'is-warn' : 'is-lunas'}">
+    <span class="pid-mark">${kind === 'warn' ? '⚠️' : '✓'}</span>
+    <span class="pid-name">${esc(name)}</span>
+    <span class="pid-note">${esc(text)}</span>
+  </div>`;
 }
 
-function toggleSppMonth(m, labelEl) {
-  const chk = document.getElementById('sppChk_' + m);
-  if (!chk) return;
-  chk.checked = !chk.checked;
-  styleSppMonthLabel(labelEl, chk.checked);
-  updateSppMonthInfo();
-  // Memilih bulan otomatis mencentang item SPP-nya.
-  const itemChk = sppItemCheckbox();
-  if (itemChk) itemChk.checked = getSppMonthsSelected().length > 0;
-  calcTotal();
+// Ringkasan seluruh tunggakan santri + tombol "masukkan semua".
+function renderArrearsBanner(student, prevList) {
+  const sppNow = sppTunggakan(student);
+  const bulanNow = (student.spp || 0) > 0 ? sppUnpaidDueMonths(student).length : 0;
+  const baris = [];
+  if (sppNow > 0) baris.push({ label: `SPP tahun berjalan (${bulanNow} bln)`, amount: sppNow });
+  prevList.forEach(y => baris.push({ label: `SPP TA ${y.ta} (${y.unpaid.length} bln)`, amount: y.amount }));
+  appState.tagihan
+    .filter(t => t.nama === student.nama && Math.max(0, (t.nominal || 0) - (t.paid_amount || 0)) > 0)
+    .forEach(t => baris.push({ label: t.item_name, amount: Math.max(0, t.nominal - t.paid_amount) }));
+  const total = baris.reduce((a, r) => a + r.amount, 0);
+  if (total <= 0) return `<div class="pos-banner ok">✅ Tidak ada tunggakan — seluruh kewajiban ${esc(student.nama)} sudah lunas</div>`;
+  return `<div class="pos-banner">
+    <div class="pos-banner-top">
+      <div><div class="pos-banner-label">Total tunggakan</div><div class="pos-banner-total">${rp(total)}</div></div>
+      <button type="button" class="btn btn-danger btn-sm" onclick="selectAllTunggakan(this)">⚡ Masukkan semua</button>
+    </div>
+    <div class="pos-banner-rows">${baris.map(r => `<span>${esc(r.label)}</span><b>${rp(r.amount)}</b>`).join('')}</div>
+  </div>`;
 }
 
-function getSppMonthsSelected() {
-  return MONTHS.filter(m => document.getElementById('sppChk_' + m)?.checked);
-}
-
-// Toggle input angsur untuk item tetap saat mode Lunas/Angsur diganti.
-function onTetapModeChange(itemId) {
-  const mode = document.getElementById('tetapMode_' + itemId)?.value;
-  const inp  = document.getElementById('tetapAngsur_' + itemId);
-  if (inp) {
-    inp.style.display = mode === 'angsur' ? 'inline-block' : 'none';
-    if (mode === 'angsur') setTimeout(() => inp.focus(), 0);
-    else inp.value = '';
-  }
-  calcTotal();
-}
-
-// Nominal yang akan dibayar untuk satu item tetap (hormati mode Lunas/Angsur).
-function tetapAmountToPay(item, student) {
-  const t = findTagihan(student.nama, item.id);
-  const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
-  const mode = document.getElementById('tetapMode_' + item.id)?.value || 'lunas';
-  if (mode === 'angsur') {
-    const inp = document.getElementById('tetapAngsur_' + item.id);
-    return Math.min(sisa, Math.max(0, Number(inp?.value || 0)));
-  }
-  return sisa;
-}
-
-function calcTotal() {
-  let total = 0;
-  const student = getStudent(document.getElementById('inputNama').value);
-  getInputItems(student).forEach(item => {
-    const chk = document.getElementById('chk_'+item.id);
-    if (!chk || !chk.checked) return;
-    if (item.type === 'custom') {
-      const inp = document.getElementById('custom_'+item.id);
-      total += Number(inp?.value||0);
-    } else if (item.type === 'bulanan' && student) {
-      const ang = getSppAngsur(student);
-      if ((document.getElementById('sppMode')?.value || 'lunas') === 'angsur') {
-        total += ang ? ang.amount : 0;
-      } else {
-        // Bulan yang sudah diangsur hanya ditagih sisanya.
-        total += getSppMonthsSelected().reduce((a, m) => a + sppInputSisa(student, m), 0);
-      }
-    } else if (item.type === 'tetap' && student) {
-      total += tetapAmountToPay(item, student);
-    } else {
-      total += item.amount||0;
-    }
-  });
-  // Tunggakan SPP tahun ajaran sebelumnya (dipilih per bulan)
-  getSppPrevSelected().forEach(y => total += y.amount);
-  inputCart.forEach(l => total += l.amount);
-  document.getElementById('inputTotal').textContent = rp(total);
+// Tunggakan SPP tahun ajaran sebelumnya: chip per bulan per TA.
+function renderPrevArrearsBlock(list, chip) {
+  return `<div class="pos-card prev">
+    <div class="pos-card-head"><div class="pos-card-name danger">⚠️ Tunggakan SPP TA sebelumnya</div>
+      <div class="pos-card-meta">${rp(list.reduce((a, y) => a + y.amount, 0))}</div></div>
+    ${list.map(y => `<div class="pos-label">TA ${esc(y.ta)}${y.kelas ? ' · Kelas ' + esc(y.kelas) : ''}</div>
+      <div class="pos-chips">${y.detail.map(d => chip('prev|' + y.ta + '|' + d.m,
+        `toggleCartLine('prev','${escJs(y.ta)}|${d.m}',this)`, esc(MONTH_FULL[d.m]), rp(d.sisa),
+        'due' + (d.dibayar > 0 ? ' partial' : ''))).join('')}</div>`).join('')}
+  </div>`;
 }
 
 // ══════════════════════════════════════════
-// KERANJANG PEMBAYARAN
+// KERANJANG
 // ══════════════════════════════════════════
-// Pilihan di panel kanan bisa dimasukkan ke keranjang berkali-kali (mis. SPP
-// Sep & Okt lunas, lalu Nov angsur), diubah nominalnya atau dihapus, lalu
-// disimpan sekaligus jadi SATU kuitansi. Tiap baris = satu bulan / satu item:
+// Tiap baris = satu bulan / satu item:
 //   { kind:'cur'|'prev'|'tetap'|'custom', id, base, m, ta, rate,
 //     amount, max (sisa yang boleh dibayar), paidBefore (sudah diangsur) }
 let inputCart = [];
+let _cartBaru = '';   // key baris terakhir yang masuk (untuk animasi)
 
 const cartKey = l => l.kind + '|' + (l.ta || '') + '|' + (l.m || l.id);
 
@@ -981,75 +527,93 @@ function cartLineName(l) {
   return base + (l.paidBefore > 0 ? ' (Pelunasan Angsur)' : '');
 }
 
-// Baca pilihan di panel kanan jadi baris keranjang. null = ada isian yang salah
-// (sudah diberi toast); [] = tidak ada yang dicentang.
-function formLines(student) {
-  const lines = [];
-  for (const item of getInputItems(student)) {
-    const chk = document.getElementById('chk_' + item.id);
-    if (!chk || !chk.checked) continue;
-    if (item.type === 'custom') {
-      const amt = Number(document.getElementById('custom_' + item.id)?.value || 0);
-      if (amt > 0) lines.push({ kind: 'custom', id: item.id, base: item.name, amount: amt, max: Infinity });
-    } else if (item.type === 'tetap' && student) {
-      const t = findTagihan(student.nama, item.id);
-      const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : (item.amount || 0);
-      const amt = tetapAmountToPay(item, student);
-      if (amt > 0) lines.push({ kind: 'tetap', id: item.id, base: item.name, amount: amt, max: sisa });
-    } else if (item.type === 'bulanan' && student) {
-      if ((document.getElementById('sppMode')?.value || 'lunas') === 'angsur') {
-        const ang = getSppAngsur(student);
-        if (!ang || ang.amount <= 0) { toast('⚠️ Isi nominal angsuran SPP!'); return null; }
-        lines.push({ kind: 'cur', id: item.id, base: item.name, m: ang.m, amount: ang.amount,
-          max: ang.sisa, paidBefore: sppBulanDibayar(student, ang.m) });
-      } else {
-        const bulan = getSppMonthsSelected();
-        if (!bulan.length) { toast('⚠️ Pilih minimal 1 bulan SPP!'); return null; }
-        bulan.forEach(m => {
-          const sisa = sppInputSisa(student, m);
-          if (sisa > 0) lines.push({ kind: 'cur', id: item.id, base: item.name, m, amount: sisa,
-            max: sisa, paidBefore: sppBulanDibayar(student, m) });
-        });
-      }
-    }
+// Baris keranjang (nominal awal = sisa penuh) untuk satu pilihan. null bila tak ada sisa.
+function lineFor(student, kind, ref) {
+  if (kind === 'cur') {
+    const it = getInputItems(student).find(i => i.type === 'bulanan');
+    const sisa = sppInputSisa(student, ref);
+    return sisa > 0 ? { kind, id: it ? it.id : 'spp', base: it ? it.name : 'SPP Bulanan', m: ref,
+      amount: sisa, max: sisa, paidBefore: sppBulanDibayar(student, ref) } : null;
   }
-  if ((document.getElementById('sppPrevMode')?.value || 'lunas') === 'angsur' && !getSppPrevSelected().length
-      && document.getElementById('sppPrevAngsurNom')?.value) {
-    toast('⚠️ Nominal angsuran tunggakan tidak valid!'); return null;
+  if (kind === 'prev') {
+    const [ta, m] = ref.split('|');
+    const y = inputPrevArrears.find(p => p.ta === ta);
+    const d = y && y.detail.find(x => x.m === m);
+    return d && d.sisa > 0 ? { kind, id: 'spp', ta, rate: y.rate, m, amount: d.sisa, max: d.sisa, paidBefore: d.dibayar } : null;
   }
-  getSppPrevSelected().forEach(y => y.months.forEach(m => {
-    const d = inputPrevArrears.find(p => p.ta === y.ta)?.detail.find(x => x.m === m);
-    lines.push({ kind: 'prev', id: 'spp', ta: y.ta, rate: y.rate, m, amount: y.bulanAmounts[m],
-      max: d ? d.sisa : y.bulanAmounts[m], paidBefore: d ? d.dibayar : 0 });
-  }));
-  return lines;
+  if (kind === 'tetap') {
+    const item = getInputItems(student).find(i => i.id === ref);
+    const t = findTagihan(student.nama, ref);
+    const sisa = t ? Math.max(0, t.nominal - t.paid_amount) : ((item && item.amount) || 0);
+    return item && sisa > 0 ? { kind, id: ref, base: item.name, amount: sisa, max: sisa } : null;
+  }
+  return null;
 }
 
-// Baris yang sudah ada di keranjang tidak boleh dimasukkan dua kali.
-function cartConflict(lines) {
-  const ada = new Set(inputCart.map(cartKey));
-  const dup = lines.find(l => ada.has(cartKey(l)));
-  if (dup) toast(`⚠️ ${cartLineName(dup)}${dup.m ? ' ' + MONTH_FULL[dup.m] : ''} sudah ada di keranjang — ubah atau hapus di sana.`);
-  return !!dup;
+// Klik chip: masuk keranjang, atau keluar bila sudah ada.
+function toggleCartLine(kind, ref, el) {
+  const student = inputStudent();
+  if (!student) return;
+  const l = lineFor(student, kind, ref);
+  if (!l) return;
+  const i = inputCart.findIndex(x => cartKey(x) === cartKey(l));
+  if (i >= 0) inputCart.splice(i, 1);
+  else { inputCart.push(l); _cartBaru = cartKey(l); flyToCart(el); }
+  afterCartChange();
 }
 
-function addToCart() {
-  const student = getStudent(document.getElementById('inputNama').value);
+// "Bayar sebagian": pastikan baris ada di keranjang, lalu fokus ke nominalnya.
+function angsurLine(kind, ref, el) {
+  const student = inputStudent();
+  const l = student && lineFor(student, kind, ref);
+  if (!l) return;
+  if (!inputCart.some(x => cartKey(x) === cartKey(l))) { inputCart.push(l); _cartBaru = cartKey(l); flyToCart(el); }
+  afterCartChange();
+  const inp = document.querySelector(`#inputCart [data-key="${CSS.escape(cartKey(l))}"] input`);
+  if (inp) { inp.focus(); inp.select(); }
+}
+
+function addCustomLine(id, el) {
+  const student = inputStudent();
+  const inp = document.getElementById('custom_' + id);
+  const amt = Math.round(Number(inp && inp.value) || 0);
+  const item = student && getInputItems(student).find(i => i.id === id);
+  if (!item) return;
+  if (amt <= 0) { toast('⚠️ Isi nominalnya dulu'); if (inp) inp.focus(); return; }
+  const l = { kind: 'custom', id, base: item.name, amount: amt, max: Infinity };
+  const ada = inputCart.find(x => cartKey(x) === cartKey(l));
+  if (ada) ada.amount = amt; else inputCart.push(l);
+  _cartBaru = cartKey(l);
+  flyToCart(el);
+  if (inp) inp.value = '';
+  afterCartChange();
+}
+
+// Masukkan seluruh tunggakan (bulan jatuh tempo, TA lalu, sisa tagihan) sekaligus.
+function selectAllTunggakan(el) {
+  const student = inputStudent();
   if (!student) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
-  const lines = formLines(student);
-  if (!lines) return;
-  if (!lines.length) { toast('⚠️ Centang / pilih item yang akan dimasukkan ke keranjang!'); return; }
-  if (cartConflict(lines)) return;
-  inputCart.push(...lines);
-  renderPaymentItems(student);   // kosongkan pilihan, siap memilih item berikutnya
-  renderCart();
-  toast(`🛒 ${lines.length} item masuk keranjang`);
+  const ada = new Set(inputCart.map(cartKey));
+  const baru = [
+    ...sppUnpaidDueMonths(student).map(m => lineFor(student, 'cur', m)),
+    ...inputPrevArrears.flatMap(y => y.detail.map(d => lineFor(student, 'prev', y.ta + '|' + d.m))),
+    ...getInputItems(student).filter(i => i.type === 'tetap').map(i => lineFor(student, 'tetap', i.id)),
+  ].filter(l => l && !ada.has(cartKey(l)));
+  if (!baru.length) { toast('Semua tunggakan sudah ada di keranjang'); return; }
+  inputCart.push(...baru);
+  _cartBaru = cartKey(baru[baru.length - 1]);
+  flyToCart(el);
+  afterCartChange();
+  toast(`🛒 ${baru.length} tunggakan masuk keranjang — periksa sebelum membayar`);
 }
 
 function removeCartLine(i) {
-  inputCart.splice(i, 1);
-  renderCart();
-  calcTotal();
+  const row = document.querySelectorAll('#inputCart .cart-row')[i];
+  const hapus = () => { inputCart.splice(i, 1); afterCartChange(); };
+  if (row && row.animate && !_reduceMotion()) row.animate(
+    [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(24px)' }],
+    { duration: 180, easing: 'ease-in' }).onfinish = hapus;
+  else hapus();
 }
 
 function editCartLine(i, el) {
@@ -1066,23 +630,100 @@ function editCartLine(i, el) {
 function clearCart() {
   inputCart = [];
   renderCart();
+  syncChips();
+}
+
+function afterCartChange() {
+  renderCart();
+  syncChips();
+  calcTotal();
+}
+
+// Tandai chip yang barisnya sedang ada di keranjang.
+function syncChips() {
+  const ada = new Set(inputCart.map(cartKey));
+  document.querySelectorAll('#paymentItems [data-key]').forEach(el => {
+    const on = ada.has(el.dataset.key);
+    el.classList.toggle('in-cart', on);
+    el.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
 }
 
 function renderCart() {
   const box = document.getElementById('inputCart');
+  const count = document.getElementById('cartCount');
+  if (count) {
+    count.textContent = inputCart.length;
+    count.classList.toggle('show', inputCart.length > 0);
+  }
   if (!box) return;
-  if (!inputCart.length) { box.innerHTML = ''; return; }
-  box.innerHTML = `
-    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">🛒 Keranjang (${inputCart.length})</div>
-    ${inputCart.map((l, i) => `
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--border);font-size:12.5px;">
-        <div style="flex:1;min-width:0;">${esc(cartLineName(l))}${l.m ? ' — <strong>' + esc(MONTH_FULL[l.m]) + '</strong>' : ''}
-          ${l.max !== Infinity && l.amount < l.max ? `<div style="font-size:11px;color:var(--danger);">sisa ${rp(l.max - l.amount)} tetap menunggak</div>` : ''}</div>
+  if (!inputCart.length) {
+    box.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">🛒</div>Keranjang kosong<br><small>Klik bulan atau tombol <b>Lunas</b> di daftar tagihan</small></div>`;
+    _cartBaru = '';
+    return;
+  }
+  box.innerHTML = inputCart.map((l, i) => {
+    const sebagian = l.max !== Infinity && l.amount < l.max;
+    return `<div class="cart-row${cartKey(l) === _cartBaru ? ' is-new' : ''}" data-key="${esc(cartKey(l))}">
+      <div class="cart-row-info">
+        <div class="cart-row-name">${esc(l.kind === 'prev' ? 'SPP TA ' + l.ta : l.base)}${l.m ? ' · <b>' + esc(MONTH_FULL[l.m]) + '</b>' : ''}</div>
+        ${sebagian ? `<div class="cart-row-sub"><span class="pos-tag">Angsur</span> sisa ${rp(l.max - l.amount)} tetap menunggak</div>`
+          : l.paidBefore > 0 ? `<div class="cart-row-sub"><span class="pos-tag ok">Pelunasan</span></div>` : ''}
+      </div>
+      <label class="cart-amount" title="Ubah nominal untuk bayar sebagian">✎
         <input type="number" value="${l.amount}" min="1" ${l.max !== Infinity ? `max="${l.max}"` : ''}
-          onchange="editCartLine(${i}, this)" aria-label="Nominal ${esc(cartLineName(l))}"
-          style="width:110px;padding:4px 7px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;text-align:right;">
-        <button type="button" class="btn btn-danger btn-sm" onclick="removeCartLine(${i})" aria-label="Hapus">✕</button>
-      </div>`).join('')}`;
+          onchange="editCartLine(${i}, this)" onkeydown="if(event.key==='Enter')this.blur()" aria-label="Nominal ${esc(cartLineName(l))}">
+      </label>
+      <button type="button" class="cart-del" onclick="removeCartLine(${i})" aria-label="Hapus ${esc(cartLineName(l))}">✕</button>
+    </div>`;
+  }).join('');
+  _cartBaru = '';
+}
+
+function calcTotal() {
+  const total = inputCart.reduce((a, l) => a + l.amount, 0);
+  const el = document.getElementById('inputTotal');
+  if (el && el.textContent !== rp(total)) {
+    el.textContent = rp(total);
+    if (el.animate && !_reduceMotion()) el.animate(
+      [{ transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' });
+  }
+  const bar = document.getElementById('cartMiniBar');
+  if (bar) {
+    bar.classList.toggle('show', inputCart.length > 0);
+    bar.querySelector('span').textContent = `${inputCart.length} item · ${rp(total)}`;
+  }
+}
+
+function _reduceMotion() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// Animasi "terbang ke keranjang": salinan chip melengkung ke panel keranjang
+// (atau ke bar mini di HP bila panelnya di luar layar).
+function flyToCart(el) {
+  if (!el || !el.animate || _reduceMotion()) return;
+  const cart = document.getElementById('cartPanel');
+  const bar = document.getElementById('cartMiniBar');
+  let target = cart && cart.getBoundingClientRect();
+  if (!target || target.top > window.innerHeight || target.bottom < 0) target = bar && bar.getBoundingClientRect();
+  if (!target) return;
+  const a = el.getBoundingClientRect();
+  const ghost = el.cloneNode(true);
+  ghost.classList.add('pos-fly');
+  Object.assign(ghost.style, { left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px' });
+  document.body.appendChild(ghost);
+  const dx = target.left + Math.min(target.width / 2, 120) - (a.left + a.width / 2);
+  const dy = target.top + 40 - (a.top + a.height / 2);
+  ghost.animate([
+    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+    { transform: `translate(${dx * 0.55}px, ${dy * 0.55 - 70}px) scale(.85)`, opacity: .95, offset: .55 },
+    { transform: `translate(${dx}px, ${dy}px) scale(.25)`, opacity: 0 },
+  ], { duration: 600, easing: 'cubic-bezier(.45,0,.25,1)' }).onfinish = () => {
+    ghost.remove();
+    const badge = document.getElementById('cartCount');
+    if (badge && badge.animate) badge.animate([{ transform: 'scale(1.5)' }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' });
+  };
 }
 
 // Gabungkan baris keranjang jadi item pembayaran (format lama submitPayment):
@@ -1134,14 +775,8 @@ async function submitPayment() {
 async function _submitPayment() {
   const nama = document.getElementById('inputNama').value;
   if (!nama) { toast('⚠️ Pilih nama santri terlebih dahulu!'); return; }
-  // Isi keranjang + pilihan yang masih tercentang di panel kanan (alur lama
-  // tanpa keranjang tetap jalan). Pilihan form dibaca sebelum data disegarkan,
-  // karena chip/nominal di layar menunjuk data yang sedang tampil.
-  const formSel = formLines(getStudent(nama));
-  if (!formSel) return;
-  if (cartConflict(formSel)) return;
-  const lines = [...inputCart, ...formSel];
-  if (!lines.length) { toast('⚠️ Centang minimal 1 item bayar!'); return; }
+  const lines = [...inputCart];
+  if (!lines.length) { toast('⚠️ Keranjang masih kosong — klik tagihan yang mau dibayar.'); return; }
 
   // Keranjang bisa berumur beberapa menit: pastikan tak ada yang sudah dibayar
   // dari perangkat lain sementara itu.

@@ -238,12 +238,13 @@ Pencatatan:
   menghitung angsuran. Saat **Promosi Kelas / Lulus**, angsuran yang belum lunas
   ikut diarsipkan ke `spp_history` sebagai tunggakan tahun lalu.
 
-**Keranjang pembayaran:** pilih item di panel kanan lalu klik **🛒 Tambah ke
-Keranjang** — bisa diulang (mis. SPP Sep–Okt lunas, lalu Nov mode Angsur).
-Nominal tiap baris keranjang bisa diubah (di bawah sisa → otomatis tercatat
-angsur) atau dihapus (✕). **Simpan Pembayaran** menyimpan isi keranjang plus
-pilihan yang masih tercentang sebagai **satu kuitansi**. Ganti santri
-mengosongkan keranjang (dengan konfirmasi).
+**Keranjang pembayaran (gaya kasir):** di halaman Input Pembayaran, klik chip bulan
+atau tombol **Lunas** pada kartu tagihan → langsung masuk keranjang (animasi
+terbang); klik lagi untuk mengeluarkan. **✎ Bayar sebagian** / ubah nominal baris
+di keranjang = angsuran (sisanya tetap menunggak). **⚡ Masukkan semua** memasukkan
+seluruh tunggakan. Keranjang, metode bayar & tombol **Bayar & Simpan** selalu
+terlihat di kanan (di HP: bar melayang di bawah). Satu kali simpan = satu kuitansi.
+Ganti santri mengosongkan keranjang (dengan konfirmasi).
 
 **Migrasi database:** jalankan `supabase_migration_spp_angsur.sql` (menambah kolom
 `spp_angsur jsonb` — aman). Tanpa kolom ini, mode angsur SPP tahun berjalan
