@@ -703,21 +703,18 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 /* ══ INPUT PEMBAYARAN — GAYA KASIR (POS) ══ */
 .pos-grid { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 20px; align-items: start; }
 .pos-left { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-/* Laptop: kolom kiri setinggi layar & menempel — kartu santri diam, hanya daftar
-   tagihan yang di-scroll (120px ≈ judul halaman di atasnya). */
+/* Laptop: kolom kiri setinggi layar & menempel — hanya kartu nama santri yang
+   diam; info santri + daftar tagihan di bawahnya punya scroll sendiri
+   (120px ≈ judul halaman di atasnya). */
 @media (min-width: 901px) {
-  .pos-left { position: sticky; top: 16px; height: calc(100vh - 120px); min-height: 420px; }
-  #itemBayarCard { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  /* Kartu santri ringkas: nama · kelas · NISN satu baris, ringkasan SPP satu baris. */
-  .pos-left > .card:first-child { padding: 16px 20px; flex-shrink: 0; }
+  .pos-left { position: sticky; top: 16px; height: calc(100vh - 120px); min-height: 360px; }
+  .pos-left > .card:first-child { flex-shrink: 0; padding: 16px 20px; }
   .pos-left > .card:first-child > div:first-child { margin-bottom: 10px !important; }
-  .pos-left .form-grid { grid-template-columns: minmax(0, 1fr) 80px 150px; gap: 0 12px; align-items: start; }
-  .pos-left #inputNamaField { grid-column: auto; margin-bottom: 0; }
-  .pos-left .form-grid .form-group { margin-bottom: 0; }
-  .pos-left .field-info { padding-top: 9px; padding-bottom: 9px; }
-  #studentSummary > div { grid-template-columns: auto auto auto auto !important; justify-content: start; gap: 4px 12px !important; margin-top: 10px !important; padding: 8px 12px !important; }
-  #itemBayarCard .payment-items { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-bottom: 0; padding: 2px 8px 8px 2px; margin-right: -8px; overscroll-behavior: contain; }
+  #itemBayarCard { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 }
+.pos-info { font-size: 12.5px; color: var(--text-muted); }
+.pos-info b { color: var(--text); }
+
 .pos-section-title { font-weight: 700; font-size: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
 .pos-section-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
 .pos-empty { padding: 28px 12px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); }
