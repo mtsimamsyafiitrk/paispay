@@ -31,25 +31,28 @@ sipay/
 │   ├── realtime.js         # Langganan Supabase Realtime (WebSocket)
 │   ├── sync.js             # Auto-sync lintas device (polling + on-focus)
 │   ├── init.js             # DOMContentLoaded & inisialisasi app
-│   └── app.js              # HASIL BUILD: gabungan semua file di atas (yang dimuat index.html)
-├── scripts/build.js        # Penggabung js/*.js -> js/app.js (tanpa dependensi)
-├── tests/                  # node tests/spp.test.js · node tests/build.test.js
+│   └── app.min.js (+ .map) # HASIL BUILD: gabungan + minify semua file di atas (dimuat index.html)
+├── scripts/build.js        # Penggabung + minify js/*.js -> js/app.min.js (terser)
+├── tests/                  # npm test (logika SPP + cek hasil build terbaru)
+├── package.json            # skrip build/test & dev-dependency terser
 └── README.md
 ```
 
 ### Mengubah kode JavaScript
 
-`index.html` hanya memuat **satu file**, `js/app.js` — gabungan seluruh file di
-`js/` (1 permintaan jaringan, bukan 27). Edit file sumbernya di `js/`, lalu
-buat ulang gabungannya sebelum commit:
+`index.html` hanya memuat **satu file**, `js/app.min.js` — gabungan seluruh
+file di `js/` yang sudah diperkecil (±79 KB terkompresi, bukan 27 permintaan).
+Edit file sumbernya di `js/`, lalu buat ulang hasil build sebelum commit:
 
 ```
-node scripts/build.js
+npm install        # sekali saja (memasang terser)
+npm run build      # menulis js/app.min.js + js/app.min.js.map
+npm test           # gagal bila hasil build belum dibuat ulang
 ```
 
-`node tests/build.test.js` gagal bila `js/app.js` belum dibuat ulang. Menambah
-file JS baru: daftarkan namanya di `FILES` pada `scripts/build.js` (urutan =
-urutan muat).
+Source map (`app.min.js.map`) membuat error di konsol browser tetap menunjuk ke
+file & baris asli di `js/`. Menambah file JS baru: daftarkan namanya di `FILES`
+pada `scripts/build.js` (urutan = urutan muat).
 
 ## Perubahan dari Versi Sebelumnya
 
@@ -345,7 +348,7 @@ belum dijalankan, aplikasi tetap berfungsi (detail pembayaran nonaktif otomatis)
 ```
 Branch        : main
 Folder        : / (root)
-Build command : (none — js/app.js sudah ikut di-commit; buat ulang dengan node scripts/build.js)
+Build command : (none — js/app.min.js sudah ikut di-commit; buat ulang dengan npm run build)
 URL hasil     : https://<username>.github.io/<repo-name>/
 ```
 
