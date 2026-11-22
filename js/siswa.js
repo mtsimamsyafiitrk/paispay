@@ -313,7 +313,7 @@ function onTunggakanSearch() {
   if (!q) { hideTunggakanDropdown(); return; }
 
   const matches = appState.students.filter(s =>
-    s.nama.toLowerCase().includes(q)
+    s.nama.toLowerCase().includes(q) || (s.nisn && s.nisn.includes(q))
   ).slice(0, 10);
 
   if (!matches.length) {
