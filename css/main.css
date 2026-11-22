@@ -145,15 +145,20 @@ body {
 /* ══ STAT GRID ══ */
 .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
 
-.stat-card { border-radius: var(--radius); padding: 18px 20px; position: relative; overflow: hidden; }
-.stat-card.green { background: linear-gradient(135deg, #1a4a2e, #2d7a4f); color: #fff; }
-.stat-card.gold  { background: linear-gradient(135deg, #7a5910, #c8a04a); color: #fff; }
-.stat-card.red   { background: linear-gradient(135deg, #8b2520, #c0392b); color: #fff; }
-.stat-card.blue  { background: linear-gradient(135deg, #1a3a5c, #2e6da4); color: #fff; }
+/* Kartu putih kalem; warna hanya pada garis aksen & angka (merah = tunggakan) */
+.stat-card { border-radius: var(--radius); padding: 18px 20px; position: relative; overflow: hidden; background: var(--card); box-shadow: var(--shadow); border-left: 5px solid var(--sc, var(--border)); }
+.stat-card.green { --sc: var(--primary-light); }
+.stat-card.gold  { --sc: var(--accent); }
+.stat-card.red   { --sc: var(--danger); }
+.stat-card.blue  { --sc: #2e6da4; }
+.stat-card.green .stat-value, .stat-card.gold .stat-value { color: var(--primary); }
+.stat-card.red .stat-value  { color: var(--danger); }
+.stat-card.blue .stat-value { color: #1a3a5c; }
+.stat-card.green .stat-icon, .stat-card.gold .stat-icon, .stat-card.red .stat-icon, .stat-card.blue .stat-icon { display: none; }
 
-.stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: .9px; opacity: .8; margin-bottom: 8px; font-weight: 600; }
-.stat-value { font-size: 24px; font-weight: 800; line-height: 1; }
-.stat-sub { font-size: 12px; opacity: .75; margin-top: 6px; }
+.stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+.stat-value { font-size: 24px; font-weight: 800; line-height: 1.1; }
+.stat-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 6px; }
 .stat-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 40px; opacity: .13; pointer-events: none; }
 
 /* ══ PAGES ══ */
@@ -194,7 +199,7 @@ tr:hover td { background: #fafaf8; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group.full { grid-column: 1 / -1; }
 
-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+label { font-size: 13px; font-weight: 700; color: var(--text-muted); }
 
 select, input[type="text"], input[type="password"], input[type="email"],
 input[type="number"], input[type="tel"], input[type="date"], textarea {
@@ -564,7 +569,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .login-mode-tab.active { background: #fff; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,.09); }
 
 .login-field { margin-bottom: 13px; text-align: left; }
-.login-field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+.login-field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px;  }
 .login-field input {
   width: 100%; padding: 10px 13px; border-radius: var(--radius-sm);
   border: 1.5px solid var(--border); font-size: 13.5px;
@@ -729,7 +734,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .pos-banner { border-radius: var(--radius-sm); padding: 12px 14px; background: linear-gradient(135deg, var(--danger-pale), #fff); border: 1.5px solid var(--danger); animation: posIn .35s ease both; }
 .pos-banner.ok { background: var(--primary-pale); border-color: var(--primary-light); color: var(--primary-light); font-weight: 700; font-size: 13px; }
 .pos-banner-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.pos-banner-label { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--danger); font-weight: 700; }
+.pos-banner-label { font-size: 13px; color: var(--danger); font-weight: 700; }
 .pos-banner-total { font-size: 22px; font-weight: 800; color: var(--danger); line-height: 1.1; }
 .pos-banner-rows { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12px; margin-top: 8px; color: var(--text-muted); }
 .pos-banner-rows b { color: var(--danger); text-align: right; }
@@ -744,7 +749,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .pos-card-meta .muted { font-size: 12px; }
 .pos-note { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
 .pos-note.ok { color: var(--primary-light); font-weight: 600; }
-.pos-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin: 10px 0 6px; }
+.pos-label { font-size: 13px; font-weight: 700; color: var(--text-muted); margin: 10px 0 6px; }
 .pos-label.danger { color: var(--danger); }
 .pos-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 20px; background: var(--accent-pale); color: #7a5c10; vertical-align: middle; }
 .pos-tag.ok { background: var(--primary-pale); color: var(--primary); }
@@ -752,7 +757,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .pos-progress { height: 5px; border-radius: 5px; background: var(--border); margin-top: 8px; overflow: hidden; }
 .pos-progress i { display: block; height: 100%; background: var(--primary-light); border-radius: 5px; }
 .pos-more { margin-top: 10px; }
-.pos-more summary { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); cursor: pointer; }
+.pos-more summary { font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
 .pos-more[open] .pos-chips { animation: posIn .25s ease both; }
 
 .pos-chips { display: flex; flex-wrap: wrap; gap: 6px; }

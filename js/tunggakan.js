@@ -14,7 +14,7 @@ function renderItemList() {
 
     if (editingItemIdx === idx) {
       return `<div style="background:var(--primary-pale);border-radius:12px;padding:14px;margin-bottom:8px;border:1.5px solid var(--primary-light);">
-        <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">✏️ Edit Item #${idx+1}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px;">✏️ Edit Item #${idx+1}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="form-group">
             <label>Nama Item</label>

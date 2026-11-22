@@ -237,7 +237,7 @@ function thCardHTML(y, i) {
       <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'belum')">❌ Semua belum bayar</button>
     </div>
 
-    <div style="display:grid;grid-template-columns:118px 1fr 1fr;gap:8px;font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+    <div style="display:grid;grid-template-columns:118px 1fr 1fr;gap:8px;font-size:12px;font-weight:700;color:var(--text-muted);padding-bottom:6px;border-bottom:1px solid var(--border);">
       <div>Bulan ditagih</div><div>Nominal (Rp)</div><div>Sudah dibayar (Rp)</div>
     </div>
     ${monthRows}

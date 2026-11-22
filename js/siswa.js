@@ -51,7 +51,7 @@ async function renderLogSiswa(resetPage = true) {
 
     const listHtml = Object.entries(grouped).map(([tgl, txns]) => `
       <div style="margin-bottom:20px;">
-        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
           📅 ${tgl}
         </div>
         ${txns.map(r => {
@@ -477,15 +477,15 @@ function renderTunggakanDetail(s) {
       ${totalBanner}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">SPP / Bulan</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">SPP / Bulan</div>
           <div style="font-size:18px;font-weight:800;color:var(--primary);">${rp(s.spp)}</div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Bulan Lunas</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Bulan Lunas</div>
           <div style="font-size:18px;font-weight:800;color:var(--primary-light);">${bulanLunas.length} <span style="font-size:12px;font-weight:500;">/ 12</span></div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Item Tagihan</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Item Tagihan</div>
           <div style="font-size:18px;font-weight:800;color:${itemT>0?'var(--danger)':'var(--primary-light)'};">${tagihanSiswa.length}</div>
         </div>
       </div>

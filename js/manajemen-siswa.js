@@ -66,7 +66,7 @@ function renderPromosiStudentList() {
   students.forEach((s, i) => {
     if (s.kelas !== lastKelas) {
       lastKelas = s.kelas;
-      html += `<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-pale);margin-top:${i>0?'8px':'0'};">
+      html += `<div style="font-size:12px;font-weight:700;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-pale);margin-top:${i>0?'8px':'0'};">
         Kelas ${esc(s.kelas)}
       </div>`;
     }
