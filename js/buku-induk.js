@@ -96,6 +96,7 @@ function renderBukuIndukPage() {
 
 // ── Modal: Input Manual ──
 function openBiManual() {
+  if (!isAdminPenuh()) return;
   biResetManualForm();
   // Saran nama dari data santri (termasuk alumni) & daftar TA mengikuti TA berjalan.
   document.getElementById('bi_nama_list').innerHTML = appState.students
@@ -120,6 +121,7 @@ function closeBiManual() {
 
 // ── Modal: Upload Massal ──
 function openBiMassal() {
+  if (!isAdminPenuh()) return;
   indukBuffer = [];
   const prev = document.getElementById('bi_preview_wrap'); if (prev) prev.innerHTML = '';
   const btn  = document.getElementById('bi_confirm_btn');  if (btn) btn.style.display = 'none';
