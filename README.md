@@ -30,9 +30,26 @@ sipay/
 │   ├── audit.js            # Periksa & pulihkan data dari buku besar kuitansi
 │   ├── realtime.js         # Langganan Supabase Realtime (WebSocket)
 │   ├── sync.js             # Auto-sync lintas device (polling + on-focus)
-│   └── init.js             # DOMContentLoaded & inisialisasi app
+│   ├── init.js             # DOMContentLoaded & inisialisasi app
+│   └── app.js              # HASIL BUILD: gabungan semua file di atas (yang dimuat index.html)
+├── scripts/build.js        # Penggabung js/*.js -> js/app.js (tanpa dependensi)
+├── tests/                  # node tests/spp.test.js · node tests/build.test.js
 └── README.md
 ```
+
+### Mengubah kode JavaScript
+
+`index.html` hanya memuat **satu file**, `js/app.js` — gabungan seluruh file di
+`js/` (1 permintaan jaringan, bukan 27). Edit file sumbernya di `js/`, lalu
+buat ulang gabungannya sebelum commit:
+
+```
+node scripts/build.js
+```
+
+`node tests/build.test.js` gagal bila `js/app.js` belum dibuat ulang. Menambah
+file JS baru: daftarkan namanya di `FILES` pada `scripts/build.js` (urutan =
+urutan muat).
 
 ## Perubahan dari Versi Sebelumnya
 
@@ -328,7 +345,7 @@ belum dijalankan, aplikasi tetap berfungsi (detail pembayaran nonaktif otomatis)
 ```
 Branch        : main
 Folder        : / (root)
-Build command : (none — file statis langsung)
+Build command : (none — js/app.js sudah ikut di-commit; buat ulang dengan node scripts/build.js)
 URL hasil     : https://<username>.github.io/<repo-name>/
 ```
 
