@@ -182,9 +182,9 @@ function _renderSiswaTable(resetPage) {
       </td>
       <td>${tunggak>0?`<span class="badge badge-red">Tunggak ${rp(tunggak)}</span>`:'<span class="badge badge-green">✓ Lunas</span>'}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-outline btn-sm" onclick="showDetail('${nama_safe}')" title="Detail">📋 Detail</button>
-        <button class="btn btn-accent btn-sm" onclick="openEditSiswa('${nama_safe}')" title="Edit data">✏️ Edit</button>
-        <button class="btn btn-danger btn-sm act-del" onclick="deleteSingle('${nama_safe}')" title="Hapus">🗑️ Hapus</button>
+        <button class="btn btn-outline btn-sm" onclick="showDetail('${nama_safe}')" title="Detail"><svg class="ic"><use href="#i-clip"/></svg> Detail</button>
+        <button class="btn btn-accent btn-sm" onclick="openEditSiswa('${nama_safe}')" title="Edit data"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
+        <button class="btn btn-danger btn-sm act-del" onclick="deleteSingle('${nama_safe}')" title="Hapus"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
       </td>
     </tr>`;
   }).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">Tidak ada data</td></tr>';
@@ -280,8 +280,8 @@ function _renderTunggakan() {
           <td>${nSpp ? nSpp + ' bulan' : '<span style="color:var(--text-muted);">—</span>'}</td>
           <td style="text-align:right;color:var(--danger);font-weight:700;">${rp(tk)}</td>
           <td style="text-align:right;white-space:nowrap;">
-            <button class="btn btn-outline btn-sm" onclick="selectTunggakanStudent('${n}');document.getElementById('tunggakanDetail').scrollIntoView({behavior:'smooth'})">🔍 Rincian</button>
-            <button class="btn btn-primary btn-sm" onclick="quickInput('${n}')">💳 Bayar</button>
+            <button class="btn btn-outline btn-sm" onclick="selectTunggakanStudent('${n}');document.getElementById('tunggakanDetail').scrollIntoView({behavior:'smooth'})"><svg class="ic"><use href="#i-search"/></svg> Rincian</button>
+            <button class="btn btn-primary btn-sm" onclick="quickInput('${n}')"><svg class="ic"><use href="#i-card"/></svg> Bayar</button>
           </td>
         </tr>`;
       }).join('')
@@ -374,10 +374,10 @@ function renderTunggakanDetail(s) {
         <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">${esc(kelasLabel(s))} &nbsp;•&nbsp; NISN: ${esc(s.nisn || '—')}</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary btn-sm" onclick="quickInput('${nameSafe}')">💳 Bayar Sekarang</button>
-        <button class="btn btn-outline btn-sm" onclick="openEditPembayaran('${nameSafe}')">✏️ Edit Pembayaran</button>
-        <button class="btn btn-outline btn-sm" onclick="openTunggakanLamaModal('${nameSafe}')">🗓️ Tunggakan TA Lama</button>
-        <button class="btn btn-outline btn-sm" onclick="showDetail('${nameSafe}')">📋 Detail Lengkap</button>
+        <button class="btn btn-primary btn-sm" onclick="quickInput('${nameSafe}')"><svg class="ic"><use href="#i-card"/></svg> Bayar Sekarang</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditPembayaran('${nameSafe}')"><svg class="ic"><use href="#i-edit"/></svg> Edit Pembayaran</button>
+        <button class="btn btn-outline btn-sm" onclick="openTunggakanLamaModal('${nameSafe}')"><svg class="ic"><use href="#i-cal"/></svg> Tunggakan TA Lama</button>
+        <button class="btn btn-outline btn-sm" onclick="showDetail('${nameSafe}')"><svg class="ic"><use href="#i-clip"/></svg> Detail Lengkap</button>
       </div>
     </div>`;
 

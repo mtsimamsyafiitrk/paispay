@@ -58,8 +58,8 @@ function showDetail(nama) {
     ${otherTAHtml}
     ${dupesHtml}
     <div style="margin-top:16px;display:flex;gap:8px;">
-      <button class="btn btn-primary" onclick="closeModal();quickInput('${escJs(s.nama)}')">💳 Bayar Sekarang</button>
-      <button class="btn btn-outline" onclick="closeModal();showCetakForStudent('${escJs(s.nama)}')">📄 Cetak Surat</button>
+      <button class="btn btn-primary" onclick="closeModal();quickInput('${escJs(s.nama)}')"><svg class="ic"><use href="#i-card"/></svg> Bayar Sekarang</button>
+      <button class="btn btn-outline" onclick="closeModal();showCetakForStudent('${escJs(s.nama)}')"><svg class="ic"><use href="#i-file"/></svg> Cetak Surat</button>
     </div>
   `;
   document.getElementById('detailModal').classList.add('open');

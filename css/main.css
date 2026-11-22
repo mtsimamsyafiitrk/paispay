@@ -906,3 +906,6 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .nama-sugg span { color: var(--text-muted); font-size: 12.5px; }
 .nama-sugg:hover, .nama-sugg.active { background: var(--primary-pale); }
 .nama-sugg-empty { padding: 14px 16px; font-size: 13px; color: var(--text-muted); }
+
+/* ══ Ikon garis di tombol (sprite di awal index.html) ══ */
+.ic { width: 1.15em; height: 1.15em; vertical-align: -.22em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }

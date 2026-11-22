@@ -649,7 +649,7 @@ async function confirmImportTunggakan() {
     toast('⚠️ Gagal menyimpan data tunggakan — cek koneksi lalu ulangi');
   } finally {
     resumeAutoSync();
-    if (btn) { btn.disabled = false; btn.textContent = '💾 Terapkan ke Aplikasi'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="ic"><use href="#i-save"/></svg> Terapkan ke Aplikasi'; }
   }
 }
 

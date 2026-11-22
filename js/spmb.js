@@ -125,9 +125,9 @@ function _renderSpmbTable(list) {
       <td>${pendaftaranBadge}</td>
       <td>${pangkalBadge}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-accent" onclick="confirmPromoteSingle('${nameSafe}')" title="Promosikan ke siswa aktif" style="font-size:12px;">🎓 Promosi</button>
-        <button class="btn btn-sm btn-outline" onclick="openEditCalonModal('${nameSafe}')" title="Edit data" style="font-size:12px;">✏️ Edit</button>
-        <button class="btn btn-sm btn-danger act-del" onclick="deleteCalonSantri('${nameSafe}')" title="Hapus" style="font-size:12px;">🗑️ Hapus</button>
+        <button class="btn btn-sm btn-accent" onclick="confirmPromoteSingle('${nameSafe}')" title="Promosikan ke siswa aktif" style="font-size:12px;"><svg class="ic"><use href="#i-grad"/></svg> Promosi</button>
+        <button class="btn btn-sm btn-outline" onclick="openEditCalonModal('${nameSafe}')" title="Edit data" style="font-size:12px;"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
+        <button class="btn btn-sm btn-danger act-del" onclick="deleteCalonSantri('${nameSafe}')" title="Hapus" style="font-size:12px;"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
       </td>
     </tr>`;
   }).join('');

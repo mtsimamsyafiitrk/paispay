@@ -103,7 +103,7 @@ function _renderDashboard() {
     ? top.map(({ s, tk }) => `<tr>
         <td><strong>${esc(s.nama)}</strong></td><td>${esc(kelasLabel(s))}</td>
         <td style="text-align:right;color:var(--danger);font-weight:700;">${rp(tk)}</td>
-        <td style="text-align:right;"><button class="btn btn-primary btn-sm" onclick="quickInput('${escJs(s.nama)}')">💳 Bayar</button></td>
+        <td style="text-align:right;"><button class="btn btn-primary btn-sm" onclick="quickInput('${escJs(s.nama)}')"><svg class="ic"><use href="#i-card"/></svg> Bayar</button></td>
       </tr>`).join('')
     : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">🎉 Tidak ada tunggakan</td></tr>';
 

@@ -42,7 +42,7 @@ function renderItemList() {
             </div>
           </div>
           <div class="form-group" style="justify-content:flex-end;flex-direction:row;align-items:flex-end;gap:8px;grid-column:1/-1;">
-            <button class="btn btn-primary btn-sm" onclick="saveEditItem(${idx})">💾 Simpan</button>
+            <button class="btn btn-primary btn-sm" onclick="saveEditItem(${idx})"><svg class="ic"><use href="#i-save"/></svg> Simpan</button>
             <button class="btn btn-outline btn-sm" onclick="cancelEditItem()">Batal</button>
           </div>
         </div>
@@ -67,10 +67,10 @@ function renderItemList() {
         <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">${kelasBadge}</div>
       </div>
       <span class="badge ${item.active?'badge-green':'badge-gray'}" style="white-space:nowrap;">${item.active?'Aktif':'Nonaktif'}</span>
-      <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item">✏️ Edit</button>
+      <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
       ${BAKU_ITEMS.includes(item.id)
         ? `<span title="Item baku — tidak bisa dihapus, hanya bisa diedit" style="color:var(--text-muted);font-size:15px;padding:0 6px;cursor:default;">🔒</span>`
-        : `<button class="btn btn-danger btn-sm act-del" onclick="confirmRemoveItem(${idx})" title="Hapus item">🗑️ Hapus</button>`}
+        : `<button class="btn btn-danger btn-sm act-del" onclick="confirmRemoveItem(${idx})" title="Hapus item"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>`}
     </div>`;
   }).join('');
 }

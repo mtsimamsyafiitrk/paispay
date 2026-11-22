@@ -490,7 +490,7 @@ function renderArrearsBanner(student, prevList) {
   return `<div class="pos-banner">
     <div class="pos-banner-top">
       <div><div class="pos-banner-label">Total tunggakan</div><div class="pos-banner-total">${rp(total)}</div></div>
-      <button type="button" class="btn btn-danger btn-sm" onclick="selectAllTunggakan(this)">⚡ Masukkan semua</button>
+      <button type="button" class="btn btn-danger btn-sm" onclick="selectAllTunggakan(this)"><svg class="ic"><use href="#i-zap"/></svg> Masukkan semua</button>
     </div>
     <div class="pos-banner-rows">${baris.map(r => `<span>${esc(r.label)}</span><b>${rp(r.amount)}</b>`).join('')}</div>
   </div>`;
@@ -887,7 +887,7 @@ async function _submitPayment() {
   // Render session table
   const tbody = document.querySelector('#sessionTable tbody');
   const row = document.createElement('tr');
-  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')">🖨️ Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
+  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')"><svg class="ic"><use href="#i-print"/></svg> Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
   if(tbody.firstChild?.tagName==='TR' && tbody.firstChild.querySelector('[colspan]')) tbody.innerHTML='';
   tbody.prepend(row);
 

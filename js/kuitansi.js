@@ -167,7 +167,7 @@ async function konfirmasiHapusKwt() {
     toast('⚠️ Gagal: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '🗑️ Ya, Hapus';
+    btn.innerHTML = '<svg class="ic"><use href="#i-trash"/></svg> Ya, Hapus';
   }
 }
 
@@ -291,10 +291,10 @@ async function loadRiwayatKuitansi(keepPage) {
                 <td style="text-align:right;font-weight:700;color:var(--primary-light);">Rp ${fmt(r.total)}</td>
                 <td>${statusBadge}${indukBadges}</td>
                 <td style="white-space:nowrap;">
-                  <button class="btn btn-outline btn-sm" onclick="openIndukDetail('${r.id}')" title="Lihat detail">🔍 Detail</button>
-                  <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang">🖨️ Cetak</button>
-                  ${(!r.dikoreksi_oleh && !r.is_koreksi) ? `<button class="btn btn-outline btn-sm" onclick="openKoreksiKwt('${r.id}')" title="Edit / koreksi kuitansi">✏️ Koreksi</button>` : ''}
-                  ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm act-del" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi">🗑️ Hapus</button>` : ''}
+                  <button class="btn btn-outline btn-sm" onclick="openIndukDetail('${r.id}')" title="Lihat detail"><svg class="ic"><use href="#i-search"/></svg> Detail</button>
+                  <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang"><svg class="ic"><use href="#i-print"/></svg> Cetak</button>
+                  ${(!r.dikoreksi_oleh && !r.is_koreksi) ? `<button class="btn btn-outline btn-sm" onclick="openKoreksiKwt('${r.id}')" title="Edit / koreksi kuitansi"><svg class="ic"><use href="#i-edit"/></svg> Koreksi</button>` : ''}
+                  ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm act-del" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>` : ''}
                 </td>
               </tr>`;
             }).join('')}
@@ -315,7 +315,7 @@ async function loadRiwayatKuitansi(keepPage) {
         <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 16px;font-size:12px;color:#856404;text-align:left;margin-bottom:16px;max-width:480px;margin-left:auto;margin-right:auto;">
           <strong>Detail error:</strong><br>${e.message || 'Koneksi ke Supabase gagal. Periksa koneksi internet Anda.'}
         </div>
-        <button class="btn btn-primary btn-sm" onclick="loadRiwayatKuitansi()">🔄 Coba Lagi</button>
+        <button class="btn btn-primary btn-sm" onclick="loadRiwayatKuitansi()"><svg class="ic"><use href="#i-refresh"/></svg> Coba Lagi</button>
       </div>`;
     if (statsEl) statsEl.innerHTML = '';
   }

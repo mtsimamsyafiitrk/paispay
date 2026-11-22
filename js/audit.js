@@ -230,7 +230,7 @@ async function runAudit() {
       `<div class="warn-box">⚠️ Gagal memeriksa: ${esc(e.message)}</div>`;
   } finally {
     resumeAutoSync();
-    if (btn) { btn.disabled = false; btn.textContent = '🔍 Periksa Ulang'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="ic"><use href="#i-search"/></svg> Periksa Ulang'; }
   }
 }
 
@@ -351,7 +351,7 @@ function renderAuditResult(r) {
   const applyBtn = document.getElementById('auditApplyBtn');
   applyBtn.style.display = '';
   applyBtn.disabled = false;
-  applyBtn.textContent = '💾 Terapkan Pemulihan';
+  applyBtn.innerHTML = '<svg class="ic"><use href="#i-save"/></svg> Terapkan Pemulihan';
 }
 
 async function applyAuditFix() {

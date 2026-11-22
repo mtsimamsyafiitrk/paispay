@@ -180,14 +180,14 @@ function thRender() {
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
           Belum ada riwayat tahun ajaran sebelumnya untuk santri ini.
         </div>
-        <button class="btn btn-primary btn-sm" onclick="thAddTA()">➕ Tambah Tahun Ajaran</button>
+        <button class="btn btn-primary btn-sm" onclick="thAddTA()"><svg class="ic"><use href="#i-plus"/></svg> Tambah Tahun Ajaran</button>
       </div>`;
     thRenderFooter();
     return;
   }
   body.innerHTML = thDraft.map((y, i) => `<div id="th_card_${i}">${thCardHTML(y, i)}</div>`).join('') + `
     <div style="text-align:center;margin-top:4px;">
-      <button class="btn btn-outline btn-sm" onclick="thAddTA()">➕ Tambah Tahun Ajaran</button>
+      <button class="btn btn-outline btn-sm" onclick="thAddTA()"><svg class="ic"><use href="#i-plus"/></svg> Tambah Tahun Ajaran</button>
     </div>`;
   thRenderFooter();
 }
@@ -227,14 +227,14 @@ function thCardHTML(y, i) {
         <label>SPP per Bulan (Rp)</label>
         <input type="number" min="0" step="1000" value="${y.rate || ''}" placeholder="0" oninput="thSetField(${i},'rate',this.value)">
       </div>
-      <button class="btn btn-danger btn-sm act-del" onclick="thRemoveTA(${i})" title="Hapus tahun ajaran ini">🗑️ Hapus</button>
+      <button class="btn btn-danger btn-sm act-del" onclick="thRemoveTA(${i})" title="Hapus tahun ajaran ini"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
     </div>
 
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-      <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'tagih12')" title="Centang 12 bulan & isi nominalnya dengan SPP per bulan">📌 Tagih 12 bulan</button>
-      <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'ratakan')" title="Samakan nominal semua bulan yang ditagih dengan SPP per bulan">🔄 Samakan nominal</button>
-      <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'lunas')">✅ Semua lunas</button>
-      <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'belum')">❌ Semua belum bayar</button>
+      <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'tagih12')" title="Centang 12 bulan & isi nominalnya dengan SPP per bulan"><svg class="ic"><use href="#i-pin"/></svg> Tagih 12 bulan</button>
+      <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'ratakan')" title="Samakan nominal semua bulan yang ditagih dengan SPP per bulan"><svg class="ic"><use href="#i-refresh"/></svg> Samakan nominal</button>
+      <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'lunas')"><svg class="ic"><use href="#i-check"/></svg> Semua lunas</button>
+      <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'belum')"><svg class="ic"><use href="#i-x"/></svg> Semua belum bayar</button>
     </div>
 
     <div style="display:grid;grid-template-columns:118px 1fr 1fr;gap:8px;font-size:12px;font-weight:700;color:var(--text-muted);padding-bottom:6px;border-bottom:1px solid var(--border);">

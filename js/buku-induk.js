@@ -231,7 +231,7 @@ async function biSubmitManual() {
     console.error('biSubmitManual:', e);
     toast('⚠️ Gagal menyimpan: ' + (e.message || e));
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '💾 Simpan ke Buku Induk'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="ic"><use href="#i-save"/></svg> Simpan ke Buku Induk'; }
   }
 }
 
@@ -371,7 +371,7 @@ function indukRenderPreview() {
           ? `<span title="${esc(r.reasons.join('; '))}" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">⚠️ ${esc(r.reasons.join('; '))}</span>`
           : '<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">✅ Lengkap</span>'}</td>
       </tr>`).join('')}</tbody></table></div>`;
-  if (btn) { btn.style.display = 'inline-flex'; btn.disabled = false; btn.innerHTML = `💾 Simpan ${indukBuffer.length} Entri ke Buku Induk`; }
+  if (btn) { btn.style.display = 'inline-flex'; btn.disabled = false; btn.innerHTML = `<svg class="ic"><use href="#i-save"/></svg> Simpan ${indukBuffer.length} Entri ke Buku Induk`; }
 }
 
 async function confirmImportInduk() {
@@ -412,7 +412,7 @@ async function confirmImportInduk() {
   } catch (e) {
     console.error('confirmImportInduk:', e);
     toast('⚠️ Gagal menyimpan: ' + (e.message || e));
-    if (btn) { btn.disabled = false; btn.innerHTML = `💾 Simpan ${indukBuffer.length} Entri ke Buku Induk`; }
+    if (btn) { btn.disabled = false; btn.innerHTML = `<svg class="ic"><use href="#i-save"/></svg> Simpan ${indukBuffer.length} Entri ke Buku Induk`; }
   }
 }
 
