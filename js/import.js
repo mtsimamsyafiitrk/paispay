@@ -151,11 +151,11 @@ function parseRows(rows) {
   const tbody = document.querySelector('#importPreviewTable tbody');
   tbody.innerHTML = importBuffer.map((s,i) => {
     const bulanLabel = s.spp_paid_months.length
-      ? `<span style="color:var(--primary);font-weight:600;">${s.spp_paid_months.length} bln</span> <span style="font-size:12px;color:var(--text-muted);">(${esc(s.spp_paid_months.join(', '))})</span>`
-      : '<span style="color:var(--text-muted);">—</span>';
+      ? `<span style="color:var(--primary);font-weight:600;">${s.spp_paid_months.length} bln</span> <span class="hint">(${esc(s.spp_paid_months.join(', '))})</span>`
+      : '<span class="text-muted">—</span>';
     const statusLabel = s.status_kelulusan
       ? `<span style="font-size:12px;font-weight:600;color:var(--accent);">${esc(STATUS_LABEL[s.status_kelulusan] || s.status_kelulusan)}</span>`
-      : '<span style="color:var(--text-muted);">Aktif</span>';
+      : '<span class="text-muted">Aktif</span>';
     return `<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${esc(s.ta||'—')}</td><td>${esc(s.kelas||'—')}</td><td>${statusLabel}</td><td>${esc(s.nisn||'—')}</td><td>${rp(s.spp)}</td><td>${bulanLabel}</td></tr>`;
   }).join('');
   document.getElementById('importPreviewLabel').textContent = `✅ ${importBuffer.length} data santri siap diimport`;

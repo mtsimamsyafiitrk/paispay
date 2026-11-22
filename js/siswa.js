@@ -58,10 +58,10 @@ async function renderLogSiswa(resetPage = true) {
           const jam = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : r.time?.split(' ')[1] || '—';
           return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:#fafafa;border:1px solid var(--border);margin-bottom:6px;">
             <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;min-width:40px;">${jam}</div>
-            <div style="flex:1;min-width:0;">
+            <div class="flex-1 minw-0">
               <div style="font-weight:700;font-size:13px;">${esc(r.nama)} <span style="font-weight:400;color:var(--text-muted);">— ${esc(r.kelas)}</span></div>
               <div style="font-size:12px;color:#555;margin-top:2px;">${esc(r.jenis)}</div>
-              ${r.catatan ? `<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">💬 ${esc(r.catatan)}</div>` : ''}
+              ${r.catatan ? `<div class="hint mt-2">💬 ${esc(r.catatan)}</div>` : ''}
             </div>
             <div style="text-align:right;white-space:nowrap;">
               <div style="font-weight:700;font-size:14px;color:var(--primary-light);">Rp ${fmt(r.nominal)}</div>
@@ -73,7 +73,7 @@ async function renderLogSiswa(resetPage = true) {
     const pagCtrl = totalPages > 1 ? `
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-size:13px;">
         <button class="btn btn-outline btn-sm" onclick="logGoPage(${logPage-1})" ${logPage<=1?'disabled':''}>← Prev</button>
-        <span style="color:var(--text-muted);">Hal ${logPage} / ${totalPages} &nbsp;(${total} transaksi)</span>
+        <span class="text-muted">Hal ${logPage} / ${totalPages} &nbsp;(${total} transaksi)</span>
         <button class="btn btn-outline btn-sm" onclick="logGoPage(${logPage+1})" ${logPage>=totalPages?'disabled':''}>Next →</button>
       </div>` : `<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">${total} transaksi</div>`;
 
@@ -181,7 +181,7 @@ function _renderSiswaTable(resetPage) {
         <div class="progress-wrap" style="margin-top:4px;"><div class="progress-bar ${pct(tagPaid,tagNominal)>=100?'green':'yellow'}" style="width:${pct(tagPaid,tagNominal)}%"></div></div>
       </td>
       <td>${tunggak>0?`<span class="badge badge-red">Tunggak ${rp(tunggak)}</span>`:'<span class="badge badge-green">✓ Lunas</span>'}</td>
-      <td style="white-space:nowrap;">
+      <td class="nowrap">
         <button class="btn btn-outline btn-sm" onclick="showDetail('${nama_safe}')" title="Detail"><svg class="ic"><use href="#i-clip"/></svg> Detail</button>
         <button class="btn btn-accent btn-sm" onclick="openEditSiswa('${nama_safe}')" title="Edit data"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
         <button class="btn btn-danger btn-sm act-del" onclick="deleteSingle('${nama_safe}')" title="Hapus"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
@@ -198,7 +198,7 @@ function _renderSiswaTable(resetPage) {
     pag.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 0;font-size:13px;';
     pag.innerHTML = `
       <button class="btn btn-outline btn-sm" onclick="siswaGoPage(${siswaPage-1})" ${siswaPage<=1?'disabled':''}>← Prev</button>
-      <span style="color:var(--text-muted);">Hal ${siswaPage} / ${totalPages} &nbsp;(${total} santri)</span>
+      <span class="text-muted">Hal ${siswaPage} / ${totalPages} &nbsp;(${total} santri)</span>
       <button class="btn btn-outline btn-sm" onclick="siswaGoPage(${siswaPage+1})" ${siswaPage>=totalPages?'disabled':''}>Next →</button>`;
     document.querySelector('#siswaTable').after(pag);
   }
@@ -238,7 +238,7 @@ function _renderTunggakan() {
   const itemCards = Object.values(itemStats).map(it => `
     <div class="stat-card blue">
       <div class="stat-label">Tunggakan ${esc(it.name)}</div>
-      <div class="stat-value" style="font-size:18px;">${rp(it.total)}</div>
+      <div class="stat-value fs-18">${rp(it.total)}</div>
       <div class="stat-sub">${it.count} santri</div>
       <div class="stat-icon">📋</div>
     </div>`).join('');
@@ -246,20 +246,20 @@ function _renderTunggakan() {
   el.innerHTML = `
     <div class="stat-card red">
       <div class="stat-label">Total Tunggakan</div>
-      <div class="stat-value" style="font-size:18px;">${rp(totalTk)}</div>
+      <div class="stat-value fs-18">${rp(totalTk)}</div>
       <div class="stat-sub">${withTk.length} santri belum lunas</div>
       <div class="stat-icon">⚠️</div>
     </div>
     <div class="stat-card gold">
       <div class="stat-label">Tunggakan SPP</div>
-      <div class="stat-value" style="font-size:18px;">${rp(sppTk)}</div>
+      <div class="stat-value fs-18">${rp(sppTk)}</div>
       <div class="stat-sub">${ss.filter(s=>sppTunggakan(s)>0).length} santri${sppDueMonthLabel() ? ' · s/d ' + esc(sppDueMonthLabel()) : ''}</div>
       <div class="stat-icon">📅</div>
     </div>
     ${sppPrevTk > 0 ? `
     <div class="stat-card red">
       <div class="stat-label">Tunggakan SPP Th. Lalu</div>
-      <div class="stat-value" style="font-size:18px;">${rp(sppPrevTk)}</div>
+      <div class="stat-value fs-18">${rp(sppPrevTk)}</div>
       <div class="stat-sub">${ss.filter(s=>sppTunggakanPrev(s)>0).length} santri</div>
       <div class="stat-icon">🗓️</div>
     </div>` : ''}
@@ -277,7 +277,7 @@ function _renderTunggakan() {
           <td>${i + 1}</td>
           <td><strong>${esc(s.nama)}</strong></td>
           <td>${esc(kelasLabel(s))}</td>
-          <td>${nSpp ? nSpp + ' bulan' : '<span style="color:var(--text-muted);">—</span>'}</td>
+          <td>${nSpp ? nSpp + ' bulan' : '<span class="text-muted">—</span>'}</td>
           <td style="text-align:right;color:var(--danger);font-weight:700;">${rp(tk)}</td>
           <td style="text-align:right;white-space:nowrap;">
             <button class="btn btn-outline btn-sm" onclick="selectTunggakanStudent('${n}');document.getElementById('tunggakanDetail').scrollIntoView({behavior:'smooth'})"><svg class="ic"><use href="#i-search"/></svg> Rincian</button>
@@ -285,7 +285,7 @@ function _renderTunggakan() {
           </td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">🎉 Semua santri aktif sudah lunas</td></tr>';
+    : '<tr><td class="empty-row" colspan="6">🎉 Semua santri aktif sudah lunas</td></tr>';
   const inp = document.getElementById('searchTunggakan');
   if (inp) inp.value = '';
   hideTunggakanDropdown();
@@ -448,7 +448,7 @@ function renderTunggakanDetail(s) {
           <span>Tagihan</span><strong>${rp(t.nominal)}</strong>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
-          <span>Dibayar</span><strong style="color:var(--primary-light);">${rp(t.paid_amount)}</strong>
+          <span>Dibayar</span><strong class="text-primary-light">${rp(t.paid_amount)}</strong>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;">
           <span>Sisa</span><strong style="color:${lunas?'var(--primary-light)':'var(--danger)'};">${lunas?'✅ Lunas':rp(sisa)}</strong>
@@ -476,16 +476,16 @@ function renderTunggakanDetail(s) {
       ${headerBar}
       ${totalBanner}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
-        <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">SPP / Bulan</div>
+        <div class="stat-box stat-box-lg">
+          <div class="hint mb-4">SPP / Bulan</div>
           <div style="font-size:18px;font-weight:800;color:var(--primary);">${rp(s.spp)}</div>
         </div>
-        <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Bulan Lunas</div>
+        <div class="stat-box stat-box-lg">
+          <div class="hint mb-4">Bulan Lunas</div>
           <div style="font-size:18px;font-weight:800;color:var(--primary-light);">${bulanLunas.length} <span style="font-size:12px;font-weight:500;">/ 12</span></div>
         </div>
-        <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Item Tagihan</div>
+        <div class="stat-box stat-box-lg">
+          <div class="hint mb-4">Item Tagihan</div>
           <div style="font-size:18px;font-weight:800;color:${itemT>0?'var(--danger)':'var(--primary-light)'};">${tagihanSiswa.length}</div>
         </div>
       </div>

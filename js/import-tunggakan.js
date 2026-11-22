@@ -405,8 +405,8 @@ function tgRenderPreview() {
     const isCur = ta === curTA;
     return `<tr${isCur ? ' style="background:var(--primary-pale);"' : ''}>
       <td>${esc(ta)}${isCur ? ' <span style="font-size:12px;font-weight:700;color:var(--primary);">TA BERJALAN</span>' : ''}</td>
-      <td style="text-align:right;">${a.santri}</td>
-      <td style="text-align:right;">${a.bulan}</td>
+      <td class="text-right">${a.santri}</td>
+      <td class="text-right">${a.bulan}</td>
       <td style="text-align:right;font-weight:700;color:${a.sisa > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${rp(a.sisa)}</td>
     </tr>`;
   }).join('');
@@ -417,9 +417,9 @@ function tgRenderPreview() {
     <td>${esc(r.namaFinal)}</td>
     <td>${esc(r.kelas || '—')}</td>
     <td>${esc(r.status_kelulusan || 'aktif')}</td>
-    <td style="text-align:right;">${rp(r.totalSPP)}</td>
-    <td style="text-align:right;">${rp(tgItemSum(r))}</td>
-    <td style="text-align:right;font-weight:700;">${rp(r.totalSPP + tgItemSum(r))}</td>
+    <td class="text-right">${rp(r.totalSPP)}</td>
+    <td class="text-right">${rp(tgItemSum(r))}</td>
+    <td class="text-right fw-700">${rp(r.totalSPP + tgItemSum(r))}</td>
   </tr>`).join('');
 
   const warnBlocks = [];
@@ -438,41 +438,41 @@ function tgRenderPreview() {
     </label>
     ${pisah ? '' : '<div style="margin-top:6px;color:var(--danger);font-weight:600;">Tanpa dipisah, tunggakan kedua santri akan digabung menjadi satu data.</div>'}
   </div>`);
-  if (mirip.length) warnBlocks.push(`<div style="background:#fef9c3;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6;">
+  if (mirip.length) warnBlocks.push(`<div class="note-yellow">
     ⚠️ <strong>${mirip.length} nama dicocokkan berdasarkan kemiripan</strong> (bukan tulisan persis sama).
     Periksa daftar berikut — bila ternyata orang yang berbeda, perbaiki ejaan nama di file lalu import ulang.
     <div style="margin-top:6px;color:var(--text-muted);">
       ${mirip.slice(0, 6).map(r => esc(r.namaFinal) + ' → ' + esc(appState.students[targets.get(r).idx].nama) + ' (' + targets.get(r).skor + '%)').join('<br>')}${mirip.length > 6 ? '<br>…' : ''}
     </div>
   </div>`);
-  if (sebagianCurTA.length) warnBlocks.push(`<div style="background:#fef9c3;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6;">
+  if (sebagianCurTA.length) warnBlocks.push(`<div class="note-yellow">
     ⚠️ <strong>${sebagianCurTA.length} bulan pada TA berjalan terbayar sebagian.</strong>
     Alur SPP tahun berjalan hanya mengenal status lunas/belum per bulan, jadi bulan ini akan
     tercatat <em>belum lunas</em> (nominal penuh). Sesuaikan lewat menu Koreksi bila perlu.
     <div style="margin-top:6px;color:var(--text-muted);">${sebagianCurTA.slice(0, 5).map(esc).join('<br>')}${sebagianCurTA.length > 5 ? '<br>…' : ''}</div>
   </div>`);
-  if (S.warnNegatif.length) warnBlocks.push(`<div style="background:#fef9c3;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6;">
+  if (S.warnNegatif.length) warnBlocks.push(`<div class="note-yellow">
     ⚠️ <strong>${S.warnNegatif.length} nilai tunggakan negatif</strong> (kelebihan bayar) — dianggap <strong>0</strong>.
     <div style="margin-top:6px;color:var(--text-muted);">${S.warnNegatif.slice(0, 5).map(esc).join('<br>')}${S.warnNegatif.length > 5 ? '<br>…' : ''}</div>
   </div>`);
 
   document.getElementById('tgPreview').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
-      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:12px;color:var(--text-muted);">Santri di file</div>
+      <div class="stat-box">
+        <div class="hint">Santri di file</div>
         <div style="font-size:18px;font-weight:800;color:var(--primary);">${tgBuffer.length}</div>
-        <div style="font-size:12px;color:var(--text-muted);">${cocok} cocok · ${baru} baru</div>
+        <div class="hint">${cocok} cocok · ${baru} baru</div>
       </div>
-      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP TA lalu</div>
+      <div class="stat-box">
+        <div class="hint">Tunggakan SPP TA lalu</div>
         <div style="font-size:18px;font-weight:800;color:var(--danger);">${rp(sppPrev)}</div>
       </div>
-      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:12px;color:var(--text-muted);">SPP TA berjalan belum lunas</div>
+      <div class="stat-box">
+        <div class="hint">SPP TA berjalan belum lunas</div>
         <div style="font-size:18px;font-weight:800;color:var(--accent);">${rp(sppCur)}</div>
       </div>
-      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:12px;color:var(--text-muted);">Tunggakan item lain</div>
+      <div class="stat-box">
+        <div class="hint">Tunggakan item lain</div>
         <div style="font-size:18px;font-weight:800;color:var(--danger);">${rp(Object.values(S.itemTotal).reduce((a, b) => a + b, 0))}</div>
       </div>
     </div>
@@ -506,14 +506,14 @@ function tgRenderPreview() {
 
     <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;">
       <div>
-        <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:6px;">📅 Tunggakan SPP per Tahun Ajaran</div>
-        <div class="table-wrap"><table><thead><tr><th>TA</th><th style="text-align:right;">Santri</th><th style="text-align:right;">Bulan</th><th style="text-align:right;">Tunggakan</th></tr></thead>
+        <div class="sub-title mb-6">📅 Tunggakan SPP per Tahun Ajaran</div>
+        <div class="table-wrap"><table><thead><tr><th>TA</th><th class="text-right">Santri</th><th class="text-right">Bulan</th><th class="text-right">Tunggakan</th></tr></thead>
         <tbody>${taRows}</tbody></table></div>
       </div>
       <div>
-        <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:6px;">📋 Tunggakan Item Lain</div>
-        <div class="table-wrap"><table><thead><tr><th>Item</th><th style="text-align:right;">Total</th></tr></thead>
-        <tbody>${itemRows || '<tr><td colspan="2" style="color:var(--text-muted);">Tidak ada</td></tr>'}</tbody></table></div>
+        <div class="sub-title mb-6">📋 Tunggakan Item Lain</div>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th class="text-right">Total</th></tr></thead>
+        <tbody>${itemRows || '<tr><td class="text-muted" colspan="2">Tidak ada</td></tr>'}</tbody></table></div>
       </div>
     </div>
 
@@ -522,7 +522,7 @@ function tgRenderPreview() {
     <div style="font-weight:700;font-size:13px;color:var(--primary);margin:16px 0 6px;">👥 25 Tunggakan Terbesar</div>
     <div class="table-wrap" style="max-height:280px;overflow-y:auto;">
       <table><thead><tr><th>#</th><th>Nama</th><th>Kelas</th><th>Status</th>
-        <th style="text-align:right;">SPP</th><th style="text-align:right;">Item lain</th><th style="text-align:right;">Total</th></tr></thead>
+        <th class="text-right">SPP</th><th class="text-right">Item lain</th><th class="text-right">Total</th></tr></thead>
       <tbody>${sampleRows}</tbody></table>
     </div>`;
 }

@@ -243,16 +243,16 @@ function biRenderSession() {
     return;
   }
   wrap.innerHTML = `<div class="table-wrap"><table class="data-table">
-    <thead><tr><th>No. Induk</th><th>Nama</th><th>Kelas</th><th>TA</th><th style="text-align:right;">Total</th><th>Status</th></tr></thead>
+    <thead><tr><th>No. Induk</th><th>Nama</th><th>Kelas</th><th>TA</th><th class="text-right">Total</th><th>Status</th></tr></thead>
     <tbody>${indukSession.map(s => `<tr>
       <td style="font-weight:700;font-size:12px;color:var(--primary);">${esc(s.no_kuitansi)}</td>
       <td><strong>${esc(s.nama)}</strong></td>
       <td>${esc(s.kelas || '—')}</td>
       <td>${esc(s.ta_label || '—')}</td>
-      <td style="text-align:right;font-weight:700;">${rp(s.total)}</td>
+      <td class="text-right fw-700">${rp(s.total)}</td>
       <td>${s.incomplete
-        ? `<span title="${esc(s.masalah)}" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">⚠️ Tidak lengkap</span>`
-        : '<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">✅ Lengkap</span>'}</td>
+        ? `<span class="pill pill-warn" title="${esc(s.masalah)}">⚠️ Tidak lengkap</span>`
+        : '<span class="pill pill-ok">✅ Lengkap</span>'}</td>
     </tr>`).join('')}</tbody></table></div>`;
 }
 
@@ -358,18 +358,18 @@ function indukRenderPreview() {
       ${tidakLengkap ? `<span style="background:#fef3c7;color:#b45309;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;">⚠️ ${tidakLengkap} baris tidak lengkap</span>` : '<span style="background:#dcfce7;color:#166534;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;">✅ Semua lengkap</span>'}
     </div>
     <div class="table-wrap" style="max-height:340px;overflow:auto;"><table class="data-table">
-      <thead><tr><th>#</th><th>TA</th><th>Nama</th><th>Kelas</th><th>Item</th><th style="text-align:right;">Nominal</th><th>Bulan</th><th>Status</th></tr></thead>
+      <thead><tr><th>#</th><th>TA</th><th>Nama</th><th>Kelas</th><th>Item</th><th class="text-right">Nominal</th><th>Bulan</th><th>Status</th></tr></thead>
       <tbody>${indukBuffer.map((r, i) => `<tr>
         <td>${i + 1}</td>
         <td>${esc(r.ta || '—')}</td>
         <td><strong>${esc(r.nama || '—')}</strong></td>
         <td>${esc(r.kelas || '—')}</td>
         <td>${esc(r.item || '—')}</td>
-        <td style="text-align:right;">${r.nominal ? rp(r.nominal) : '—'}</td>
+        <td class="text-right">${r.nominal ? rp(r.nominal) : '—'}</td>
         <td>${esc(r.bulan ? (MONTH_FULL[r.bulan] || r.bulan) : '—')}</td>
         <td>${r.reasons.length
-          ? `<span title="${esc(r.reasons.join('; '))}" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">⚠️ ${esc(r.reasons.join('; '))}</span>`
-          : '<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">✅ Lengkap</span>'}</td>
+          ? `<span class="pill pill-warn" title="${esc(r.reasons.join('; '))}">⚠️ ${esc(r.reasons.join('; '))}</span>`
+          : '<span class="pill pill-ok">✅ Lengkap</span>'}</td>
       </tr>`).join('')}</tbody></table></div>`;
   if (btn) { btn.style.display = 'inline-flex'; btn.disabled = false; btn.innerHTML = `<svg class="ic"><use href="#i-save"/></svg> Simpan ${indukBuffer.length} Entri ke Buku Induk`; }
 }
@@ -489,30 +489,30 @@ function renderIndukDetail(r) {
     </div>` : '';
 
   const badges = `
-    ${induk ? '<span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;">📖 Buku Induk</span>' : ''}
+    ${induk ? '<span class="tag-primary">📖 Buku Induk</span>' : ''}
     ${incomplete ? '<span style="background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;">⚠️ Tidak lengkap</span>' : ''}`;
 
   const rowsHtml = items.length ? items.map(it => `<tr>
-      <td>${esc(it.name || '—')}${it.bulan ? ` <span style="color:var(--text-muted);font-size:12px;">(${esc(MONTH_FULL[it.bulan] || it.bulan)})</span>` : ''}</td>
-      <td style="text-align:right;">${it.amount ? rp(it.amount) : '<span style="color:var(--danger);">— tidak tercatat</span>'}</td>
-    </tr>`).join('') : '<tr><td colspan="2" style="color:var(--text-muted);">Tidak ada rincian.</td></tr>';
+      <td>${esc(it.name || '—')}${it.bulan ? ` <span class="hint">(${esc(MONTH_FULL[it.bulan] || it.bulan)})</span>` : ''}</td>
+      <td class="text-right">${it.amount ? rp(it.amount) : '<span class="text-danger">— tidak tercatat</span>'}</td>
+    </tr>`).join('') : '<tr><td class="text-muted" colspan="2">Tidak ada rincian.</td></tr>';
 
   return `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">${badges}</div>
     ${warning}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-      <div><div style="font-size:12px;color:var(--text-muted);">Nama</div><div style="font-weight:700;">${esc(r.nama || '—')}</div></div>
-      <div><div style="font-size:12px;color:var(--text-muted);">Kelas</div><div style="font-weight:700;">${esc(r.kelas || '—')}</div></div>
-      <div><div style="font-size:12px;color:var(--text-muted);">Tahun Ajaran</div><div style="font-weight:700;">${esc(r.ta_label || '—')}</div></div>
-      <div><div style="font-size:12px;color:var(--text-muted);">Tanggal</div><div style="font-weight:700;">${tgl}</div></div>
-      <div><div style="font-size:12px;color:var(--text-muted);">No.</div><div style="font-weight:700;">${esc(r.no_kuitansi || '—')}</div></div>
-      <div><div style="font-size:12px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${esc(r.nisn || '—')}</div></div>
-      ${metodeLabel ? `<div><div style="font-size:12px;color:var(--text-muted);">Metode</div><div style="font-weight:700;">${metodeLabel}</div></div>` : ''}
-      ${r.dibayar_oleh ? `<div><div style="font-size:12px;color:var(--text-muted);">Dibayar oleh</div><div style="font-weight:700;">${esc(r.dibayar_oleh)}</div></div>` : ''}
+      <div><div class="hint">Nama</div><div class="fw-700">${esc(r.nama || '—')}</div></div>
+      <div><div class="hint">Kelas</div><div class="fw-700">${esc(r.kelas || '—')}</div></div>
+      <div><div class="hint">Tahun Ajaran</div><div class="fw-700">${esc(r.ta_label || '—')}</div></div>
+      <div><div class="hint">Tanggal</div><div class="fw-700">${tgl}</div></div>
+      <div><div class="hint">No.</div><div class="fw-700">${esc(r.no_kuitansi || '—')}</div></div>
+      <div><div class="hint">NISN</div><div class="fw-700">${esc(r.nisn || '—')}</div></div>
+      ${metodeLabel ? `<div><div class="hint">Metode</div><div class="fw-700">${metodeLabel}</div></div>` : ''}
+      ${r.dibayar_oleh ? `<div><div class="hint">Dibayar oleh</div><div class="fw-700">${esc(r.dibayar_oleh)}</div></div>` : ''}
     </div>
-    <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:6px;">📋 Rincian Pembayaran</div>
+    <div class="sub-title mb-6">📋 Rincian Pembayaran</div>
     <div class="table-wrap" style="margin-bottom:12px;"><table class="data-table">
-      <thead><tr><th>Item</th><th style="text-align:right;">Nominal</th></tr></thead>
+      <thead><tr><th>Item</th><th class="text-right">Nominal</th></tr></thead>
       <tbody>${rowsHtml}</tbody>
       <tfoot><tr><td style="font-weight:800;">Total</td><td style="text-align:right;font-weight:800;color:var(--primary-light);">${rp(r.total)}</td></tr></tfoot>
     </table></div>

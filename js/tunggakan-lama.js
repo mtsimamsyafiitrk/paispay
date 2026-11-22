@@ -215,15 +215,15 @@ function thCardHTML(y, i) {
   return `<div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;background:var(--card);">
     <div id="th_warn_${i}">${thWarnHTML(y)}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;">
-      <div class="form-group" style="margin:0;">
-        <label>Tahun Ajaran <span style="color:var(--danger)">*</span></label>
+      <div class="form-group m-0">
+        <label>Tahun Ajaran <span class="text-danger">*</span></label>
         <input type="text" value="${esc(y.ta)}" placeholder="2024/2025" oninput="thSetField(${i},'ta',this.value)">
       </div>
-      <div class="form-group" style="margin:0;">
+      <div class="form-group m-0">
         <label>Kelas saat itu</label>
         <input type="text" value="${esc(y.kelas)}" placeholder="mis. 8" oninput="thSetField(${i},'kelas',this.value)">
       </div>
-      <div class="form-group" style="margin:0;">
+      <div class="form-group m-0">
         <label>SPP per Bulan (Rp)</label>
         <input type="number" min="0" step="1000" value="${y.rate || ''}" placeholder="0" oninput="thSetField(${i},'rate',this.value)">
       </div>
@@ -255,7 +255,7 @@ function thSummaryHTML(t) {
   return `<div style="background:var(--bg);border-radius:9px;padding:8px 12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;">
     <span>Ditagih: <strong>${t.bulan} bln</strong></span>
     <span>Tagihan: <strong>${rp(t.tagihan)}</strong></span>
-    <span>Terbayar: <strong style="color:var(--primary-light);">${rp(t.dibayar)}</strong></span>
+    <span>Terbayar: <strong class="text-primary-light">${rp(t.dibayar)}</strong></span>
     <span>Sisa: <strong style="color:${t.sisa > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${t.sisa > 0 ? rp(t.sisa) + ` (${t.menunggak} bln)` : '✅ Lunas'}</strong></span>
   </div>`;
 }

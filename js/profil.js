@@ -85,7 +85,7 @@ function applyLogoPreview(dataUrl) {
   const removeBtn = document.getElementById('pf_logo_remove');
   if (!prev) return;
   if (dataUrl) {
-    prev.innerHTML = `<img src="${safeUrl(dataUrl)}" style="width:100%;height:100%;object-fit:cover;">`;
+    prev.innerHTML = `<img class="img-cover" src="${safeUrl(dataUrl)}">`;
     prev.style.borderStyle = 'solid';
     prev.style.borderColor = 'var(--primary-light)';
     if (removeBtn) removeBtn.style.display = 'inline-block';
@@ -102,14 +102,14 @@ function applyLogoEverywhere(dataUrl) {
   const bannerLogo = document.getElementById('bannerLogoWrap');
   if (bannerLogo) {
     bannerLogo.innerHTML = dataUrl
-      ? `<img src="${safeUrl(dataUrl)}" style="width:100%;height:100%;object-fit:cover;">`
+      ? `<img class="img-cover" src="${safeUrl(dataUrl)}">`
       : '🕌';
   }
   // Sidebar
   const sidebarLogo = document.getElementById('sidebarLogoWrap');
   if (sidebarLogo) {
     sidebarLogo.innerHTML = dataUrl
-      ? `<img src="${safeUrl(dataUrl)}" style="width:100%;height:100%;object-fit:cover;">`
+      ? `<img class="img-cover" src="${safeUrl(dataUrl)}">`
       : '🕌';
   }
 }

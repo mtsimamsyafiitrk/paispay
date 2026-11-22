@@ -61,12 +61,12 @@ function renderItemList() {
       style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);border-radius:8px;">
       <span title="Seret untuk mengubah urutan" style="cursor:grab;color:var(--text-muted);font-size:18px;line-height:1;user-select:none;flex-shrink:0;">⠿</span>
       <label class="toggle"><input type="checkbox" ${item.active?'checked':''} onchange="toggleItem(${idx})"><span class="toggle-slider"></span></label>
-      <div style="flex:1;min-width:0;">
+      <div class="flex-1 minw-0">
         <div style="font-weight:600;font-size:13.5px;">${esc(item.name)}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${typeLabel} • ${rp(item.amount)}${isDefault?' • <span style="color:var(--accent);">Default</span>':''}</div>
+        <div class="hint mt-2">${typeLabel} • ${rp(item.amount)}${isDefault?' • <span class="text-accent">Default</span>':''}</div>
         <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">${kelasBadge}</div>
       </div>
-      <span class="badge ${item.active?'badge-green':'badge-gray'}" style="white-space:nowrap;">${item.active?'Aktif':'Nonaktif'}</span>
+      <span class="badge ${item.active?'badge-green':'badge-gray'} nowrap">${item.active?'Aktif':'Nonaktif'}</span>
       <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
       ${BAKU_ITEMS.includes(item.id)
         ? `<span title="Item baku — tidak bisa dihapus, hanya bisa diedit" style="color:var(--text-muted);font-size:15px;padding:0 6px;cursor:default;">🔒</span>`

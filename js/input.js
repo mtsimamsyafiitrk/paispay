@@ -65,10 +65,10 @@ function setMetode(m) {
   const lbl = document.getElementById('dibayarOlehLabel');
   const inp = document.getElementById('inputDibayarOleh');
   if (m === 'transfer') {
-    if (lbl) lbl.innerHTML = 'Dibayar oleh <span style="color:var(--text-muted);font-weight:400;">(pengirim transfer)</span>';
+    if (lbl) lbl.innerHTML = 'Dibayar oleh <span class="text-muted fw-400">(pengirim transfer)</span>';
     if (inp) inp.placeholder = 'Nama pengirim transfer...';
   } else {
-    if (lbl) lbl.innerHTML = 'Dibayar oleh <span style="color:var(--text-muted);font-weight:400;">(opsional)</span>';
+    if (lbl) lbl.innerHTML = 'Dibayar oleh <span class="text-muted fw-400">(opsional)</span>';
     if (inp) inp.placeholder = 'Nama pembayar / penyetor...';
   }
 }
@@ -161,7 +161,7 @@ function onInputNamaSearch() {
       style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">
       <div>
         <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span style="font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">${esc(kelasLabel(s))}</span>` : ''}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
+        <div class="hint mt-2">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
       </div>
       ${tunggakBadge(s)}
     </div>`).join('');
@@ -267,9 +267,9 @@ function onStudentSelect() {
   const bulanDitagih  = sppBillableMonths(s).length;
   document.getElementById('studentSummary').innerHTML = `
     <div style="margin-top:14px;padding:12px 14px;background:var(--primary-pale);border-radius:12px;display:grid;grid-template-columns:1fr auto;gap:7px 14px;align-items:baseline;">
-      <div style="font-size:12px;color:var(--text-muted);">SPP per bulan</div>
-      <div style="font-size:12.5px;font-weight:700;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);font-weight:400;">Belum diisi</span>'}</div>
-      <div style="font-size:12px;color:var(--text-muted);">Bulan SPP terbayar</div>
+      <div class="hint">SPP per bulan</div>
+      <div style="font-size:12.5px;font-weight:700;">${s.spp > 0 ? rp(s.spp) : '<span class="text-muted fw-400">Belum diisi</span>'}</div>
+      <div class="hint">Bulan SPP terbayar</div>
       <div style="font-size:12.5px;font-weight:700;">${bulanTerbayar} <span style="font-weight:400;color:var(--text-muted);">dari ${bulanDitagih} bulan${sppMulaiLabel(s) ? ' (mulai ' + esc(sppMulaiLabel(s)) + ')' : ''}</span></div>
     </div>
   `;
@@ -887,7 +887,7 @@ async function _submitPayment() {
   // Render session table
   const tbody = document.querySelector('#sessionTable tbody');
   const row = document.createElement('tr');
-  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')"><svg class="ic"><use href="#i-print"/></svg> Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
+  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td class="nowrap"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')"><svg class="ic"><use href="#i-print"/></svg> Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
   if(tbody.firstChild?.tagName==='TR' && tbody.firstChild.querySelector('[colspan]')) tbody.innerHTML='';
   tbody.prepend(row);
 

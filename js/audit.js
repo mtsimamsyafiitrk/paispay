@@ -254,8 +254,8 @@ function renderAuditResult(r) {
   }
 
   if (totalBulan) {
-    html += `<div style="font-weight:700;font-size:14px;margin:16px 0 8px;">
-      🗓️ Bulan SPP berkuitansi tapi belum tercatat lunas — <span style="color:var(--danger);">${totalBulan} bulan</span>
+    html += `<div class="group-title">
+      🗓️ Bulan SPP berkuitansi tapi belum tercatat lunas — <span class="text-danger">${totalBulan} bulan</span>
     </div>
     <div style="max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:8px;">
     <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
@@ -275,8 +275,8 @@ function renderAuditResult(r) {
   }
 
   if (r.temuanTagihan.length) {
-    html += `<div style="font-weight:700;font-size:14px;margin:16px 0 8px;">
-      💳 Tagihan item: kuitansi mencatat lebih besar dari yang tersimpan — <span style="color:var(--danger);">${rp(totalRupiah)}</span>
+    html += `<div class="group-title">
+      💳 Tagihan item: kuitansi mencatat lebih besar dari yang tersimpan — <span class="text-danger">${rp(totalRupiah)}</span>
     </div>
     <div class="warn-box" style="margin-bottom:8px;">
       ⚠️ Periksa bagian ini dulu sebelum diterapkan. Bila Anda pernah memakai
@@ -306,7 +306,7 @@ function renderAuditResult(r) {
   }
 
   if (r.histTanpaRecord.length) {
-    html += `<div style="font-weight:700;font-size:14px;margin:16px 0 8px;">📌 Perlu diperiksa sendiri</div>
+    html += `<div class="group-title">📌 Perlu diperiksa sendiri</div>
     <div class="warn-box">
     Ada ${r.histTanpaRecord.length} bulan SPP berkuitansi yang <strong>tidak bisa dipastikan</strong>
     milik tahun ajaran mana, dan santrinya belum punya entri riwayat SPP untuk tahun tersebut.
@@ -339,7 +339,7 @@ function renderAuditResult(r) {
     </label>
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
       <input type="checkbox" id="auditFixTagihan" ${r.temuanTagihan.length ? '' : 'disabled'} style="accent-color:var(--primary);">
-      Tambahkan ${rp(totalRupiah)} ke nominal terbayar tagihan item <span style="color:var(--text-muted);">(baca peringatan di atas)</span>
+      Tambahkan ${rp(totalRupiah)} ke nominal terbayar tagihan item <span class="text-muted">(baca peringatan di atas)</span>
     </label>
     <div style="font-size:12px;color:var(--text-muted);margin-top:10px;">
       Pemulihan hanya <strong>menambah</strong>: tidak ada bulan yang dibatalkan dan

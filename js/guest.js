@@ -27,18 +27,18 @@ async function doLogout() {
 async function testGasConnection() {
   const url = document.getElementById('gasUrlInput').value.trim();
   const res = document.getElementById('gasTestResult');
-  if (!url) { res.innerHTML = '<span style="color:var(--danger)">⚠️ Isi URL dulu</span>'; return; }
+  if (!url) { res.innerHTML = '<span class="text-danger">⚠️ Isi URL dulu</span>'; return; }
   res.innerHTML = '⏳ Testing...';
   try {
     const r = await fetch(url + '?action=ping');
     const data = await r.json();
     if (data.ok) {
-      res.innerHTML = `<span style="color:var(--primary-light)">✅ Koneksi berhasil! Server time: ${data.time}</span>`;
+      res.innerHTML = `<span class="text-primary-light">✅ Koneksi berhasil! Server time: ${data.time}</span>`;
     } else {
-      res.innerHTML = `<span style="color:var(--danger)">❌ Respons tidak valid: ${JSON.stringify(data)}</span>`;
+      res.innerHTML = `<span class="text-danger">❌ Respons tidak valid: ${JSON.stringify(data)}</span>`;
     }
   } catch(e) {
-    res.innerHTML = `<span style="color:var(--danger)">❌ Gagal: ${e.message}</span>`;
+    res.innerHTML = `<span class="text-danger">❌ Gagal: ${e.message}</span>`;
   }
 }
 

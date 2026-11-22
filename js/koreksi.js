@@ -43,8 +43,8 @@ function onKoreksiNamaSearch() {
       onmousedown="selectKoreksiNama('${escJs(s.nama)}')"
       onmouseenter="this.style.background='var(--primary-pale)'" onmouseleave="this.style.background=''"
       style="padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;">
-      <div style="font-weight:600;">${esc(s.nama)}</div>
-      <div style="font-size:12px;color:var(--text-muted);">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn?' · NISN '+esc(s.nisn):''}</div>
+      <div class="fw-600">${esc(s.nama)}</div>
+      <div class="hint">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn?' · NISN '+esc(s.nisn):''}</div>
     </div>`).join('');
   dd.style.display = 'block';
 }
@@ -89,9 +89,9 @@ async function loadKoreksiKwtList(nama) {
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
             <div style="font-weight:700;font-size:13px;color:var(--primary);">${esc(r.no_kuitansi||'—')}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${tgl} · TA ${esc(r.ta_label||'—')}</div>
+            <div class="hint mt-2">${tgl} · TA ${esc(r.ta_label||'—')}</div>
           </div>
-          <div style="text-align:right;">
+          <div class="text-right">
             <div style="font-weight:700;font-size:14px;">Rp ${fmt(r.total)}</div>
             ${sudahDikoreksi
               ? `<div style="font-size:12px;color:#6b7280;background:#f3f4f6;padding:2px 8px;border-radius:10px;margin-top:2px;">Sudah dikoreksi</div>`
@@ -131,8 +131,8 @@ async function selectKoreksiKwt(id) {
         <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
           <input type="checkbox" id="koreksiChk_${i}" data-idx="${i}" style="margin-top:3px;width:16px;height:16px;accent-color:var(--primary);cursor:pointer;" onchange="toggleKoreksiItem(${i})">
           <div style="flex:1;">
-            <div style="font-weight:600;font-size:13px;">${esc(item.name)}${item.bulan?' ('+esc(MONTH_FULL[item.bulan]||item.bulan)+')':''}</div>
-            <div style="font-size:12px;color:var(--text-muted);">Nilai tercatat di kuitansi: <strong>Rp ${fmt(item.amount)}</strong></div>
+            <div class="fw-600 fs-13">${esc(item.name)}${item.bulan?' ('+esc(MONTH_FULL[item.bulan]||item.bulan)+')':''}</div>
+            <div class="hint">Nilai tercatat di kuitansi: <strong>Rp ${fmt(item.amount)}</strong></div>
             ${isPangkal ? `<div style="font-size:12px;color:#888;margin-top:2px;">Total pangkal dibayar saat ini: Rp ${fmt(pangkalPaidSekarang)} dari Rp ${fmt(student?.pangkal||0)}</div>` : ''}
           </div>
         </label>
