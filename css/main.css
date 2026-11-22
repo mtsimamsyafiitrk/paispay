@@ -1242,9 +1242,9 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .promosi-opt { display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; padding: 4px 9px; border-radius: 6px; color: var(--text-muted); }
 .promosi-opt.is-naik { background: var(--primary-pale); color: var(--primary); font-weight: 600; }
 .promosi-opt.is-tinggal { background: #fee2e2; color: var(--danger); font-weight: 600; }
-.ta-chip { font-size: 12px; padding: 2px 7px; border-radius: 5px; margin: 1px; }
-.ta-chip.is-ok { background: var(--primary-pale); color: var(--primary); }
-.ta-chip.is-due { background: var(--accent-pale); color: #7a5c10; }
+/* Tanda tunggakan SPP tahun ajaran sebelumnya (di bawah chip bulan) */
+.ta-lalu { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ta-lalu-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 5px; background: var(--danger-pale); color: var(--danger); border: 1px solid rgba(192,57,43,.25); }
 /* Chip bulan SPP di tabel Data Santri */
 .mchip { display: inline-block; width: 28px; text-align: center; padding: 1px 0; border-radius: 4px; font-size: 12px; margin: 1px; }
 .mchip.is-paid { background: var(--primary); color: #fff; }
