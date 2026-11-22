@@ -65,7 +65,7 @@
     </a>
     <a class="nav-item" onclick="showPage('rekap-siswa')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Data Siswa
+      Data Santri
     </a>
     <a class="nav-item" onclick="showPage('spmb')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
@@ -75,9 +75,13 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       Tunggakan
     </a>
+    <a class="nav-item" onclick="showPage('cetak')" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Cetak / PDF
+    </a>
   </div>
-  <div class="nav-section">
-    <div class="nav-label">Pengaturan</div>
+  <div class="nav-section nav-collapsible collapsed" id="navPengaturan">
+    <button type="button" class="nav-label nav-toggle" onclick="this.parentElement.classList.toggle('collapsed')" aria-controls="navPengaturan">Pengaturan <span class="nav-caret">▾</span></button>
     <a class="nav-item" onclick="showPage('akun')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       Akun Admin
@@ -90,10 +94,6 @@
     <a class="nav-item" onclick="showPage('template-kuitansi')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
       Template Kuitansi
-    </a>
-    <a class="nav-item" onclick="showPage('cetak')" href="#">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      Cetak / PDF
     </a>
   </div>
   <div style="flex:1"></div>
@@ -133,14 +133,15 @@
   <div class="page active" id="page-dashboard">
     <!-- Profil Madrasah Banner -->
     <div class="profil-banner" id="profilBanner">
-      <button class="profil-edit-btn" onclick="openProfilModal()">✏️ Edit Profil</button>
-      <div id="profilDisplay" style="display:flex;align-items:center;gap:18px;">
-        <div id="bannerLogoWrap" style="width:64px;height:64px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;overflow:hidden;">🕌</div>
-        <div>
+      <div id="profilDisplay" style="display:flex;align-items:center;gap:14px;">
+        <div id="bannerLogoWrap" style="width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden;">🕌</div>
+        <div style="flex:1;min-width:0;">
           <h2 id="profilNama">Madrasah Terpadu</h2>
-          <p id="profilAlamat">Jl. Pendidikan Islam No. 1, Tarakan, Kalimantan Utara</p>
-          <p id="profilKontak">Telp: (0551) 123456 &nbsp;|&nbsp; Email: <a href="#">admin@sipay.com</a> &nbsp;|&nbsp; TA 2025/2026</p>
+          <p id="profilKontak"></p>
+          <p id="profilAlamat" hidden></p>
         </div>
+        <button class="profil-edit-btn" onclick="openProfilModal()">✏️ Edit Profil</button>
+        <button class="btn dash-cta" onclick="showPage('input')">＋ Input Pembayaran</button>
       </div>
     </div>
     <div class="stat-grid" id="statGrid"></div>
@@ -163,15 +164,27 @@
       </div>
     </div>
 
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);">⚡ Transaksi Terbaru</div>
+    <div class="dash-grid-2">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="font-weight:700;font-size:15px;color:var(--primary);">⚠️ Tunggakan Terbesar</div>
+          <button class="btn btn-outline btn-sm" onclick="showPage('tunggakan')">Lihat semua →</button>
+        </div>
+        <div class="table-wrap">
+          <table id="dashTopTunggak">
+            <thead><tr><th>Nama</th><th>Kelas</th><th style="text-align:right;">Tunggakan</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table id="recentTable">
-          <thead><tr><th>Waktu</th><th>Nama</th><th>Kelas</th><th>Jenis</th><th>Nominal</th><th>Status</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <div class="card">
+        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:16px;">⚡ Transaksi Terbaru</div>
+        <div class="table-wrap">
+          <table id="recentTable">
+            <thead><tr><th>Waktu</th><th>Nama</th><th>Jenis</th><th style="text-align:right;">Nominal</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -422,20 +435,6 @@
 
   <!-- ═════════ TUNGGAKAN ═════════ -->
   <div class="page" id="page-tunggakan">
-    <!-- Import tunggakan lama (lintas tahun ajaran) -->
-    <div class="card" style="margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:240px;">
-        <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:4px;">📥 Import Data Tunggakan</div>
-        <div style="font-size:12.5px;color:var(--text-muted);line-height:1.6;">
-          Masukkan tunggakan lama (SPP per bulan lintas tahun ajaran, uang pangkal, pembangunan, dll)
-          dari file rekap <strong>.json</strong>, <strong>.csv</strong>, atau <strong>.xlsx</strong>.
-          Setelah diimport, seluruh tunggakan santri langsung muncul saat namanya dipilih di
-          <strong>Input Pembayaran</strong>.
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="openImportTunggakanModal()">📥 Import Tunggakan</button>
-    </div>
-
     <!-- Stat cards ringkasan -->
     <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;" id="tunggakanStats"></div>
 
@@ -457,6 +456,20 @@
 
     <!-- Detail tunggakan santri terpilih -->
     <div id="tunggakanDetail"></div>
+
+    <!-- Daftar santri menunggak, terbesar di atas -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:15px;color:var(--primary);">📋 Daftar Santri Menunggak</div>
+        <button class="btn btn-outline btn-sm" onclick="openImportTunggakanModal()" title="Masukkan tunggakan lama dari file .json / .csv / .xlsx">📥 Import Tunggakan Lama</button>
+      </div>
+      <div class="table-wrap">
+        <table id="tunggakanTable">
+          <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>SPP Menunggak</th><th style="text-align:right;">Total Tunggakan</th><th style="text-align:right;">Aksi</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- ═════════ PENGATURAN ITEM ═════════ -->
@@ -559,9 +572,15 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Nama Santri</label>
-            <select id="cetakNama" onchange="onCetakStudentSelect()">
+            <!-- Select tersembunyi tetap jadi penyimpan nilai (dipakai cetak.js & sync) -->
+            <select id="cetakNama" onchange="onCetakStudentSelect()" hidden>
               <option value="">-- Pilih Nama --</option>
             </select>
+            <div style="position:relative;" id="cetakSearchWrap">
+              <input type="text" id="cetakNamaSearch" placeholder="Ketik nama santri..." autocomplete="off"
+                oninput="onCetakNamaSearch()" onfocus="onCetakNamaSearch()" onkeydown="onCetakNamaKeydown(event)">
+              <div id="cetakNamaDropdown" class="nama-dropdown" style="display:none;"></div>
+            </div>
           </div>
           <div class="form-group">
             <label>Kelas</label>

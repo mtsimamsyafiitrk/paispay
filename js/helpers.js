@@ -59,6 +59,8 @@ function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(n => {
     if(n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
   });
+  // Grup Pengaturan dilipat secara default; buka otomatis bila halamannya aktif
+  if (document.querySelector('#navPengaturan .nav-item.active')) document.getElementById('navPengaturan').classList.remove('collapsed');
   const titles = {dashboard:['Dashboard','Ringkasan pembayaran santri'],input:['Input Pembayaran','Catat pembayaran santri'],
     'rekap-siswa':['Data Santri','Seluruh data siswa & status bayar'],tunggakan:['Tunggakan','Daftar santri yang belum melunasi'],
     spmb:['SPMB','Sistem Penerimaan Murid Baru — kelola calon santri'],

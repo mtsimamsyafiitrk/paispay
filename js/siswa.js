@@ -266,6 +266,26 @@ function _renderTunggakan() {
     ${itemCards}
   `;
   document.getElementById('tunggakanDetail').innerHTML = '';
+  // Daftar santri aktif yang menunggak, terbesar di atas — tidak perlu ketik nama dulu
+  const daftar = ss.filter(isSantriAktif).map(s => ({ s, tk: totalTunggakan(s) }))
+    .filter(x => x.tk > 0).sort((a, b) => b.tk - a.tk);
+  document.querySelector('#tunggakanTable tbody').innerHTML = daftar.length
+    ? daftar.map(({ s, tk }, i) => {
+        const nSpp = sppUnpaidDueMonths(s).length;
+        const n = escJs(s.nama);
+        return `<tr>
+          <td>${i + 1}</td>
+          <td><strong>${esc(s.nama)}</strong></td>
+          <td>${esc(kelasLabel(s))}</td>
+          <td>${nSpp ? nSpp + ' bulan' : '<span style="color:var(--text-muted);">—</span>'}</td>
+          <td style="text-align:right;color:var(--danger);font-weight:700;">${rp(tk)}</td>
+          <td style="text-align:right;white-space:nowrap;">
+            <button class="btn btn-outline btn-sm" onclick="selectTunggakanStudent('${n}');document.getElementById('tunggakanDetail').scrollIntoView({behavior:'smooth'})">🔍 Rincian</button>
+            <button class="btn btn-primary btn-sm" onclick="quickInput('${n}')">💳 Bayar</button>
+          </td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">🎉 Semua santri aktif sudah lunas</td></tr>';
   const inp = document.getElementById('searchTunggakan');
   if (inp) inp.value = '';
   hideTunggakanDropdown();

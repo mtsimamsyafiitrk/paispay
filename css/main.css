@@ -494,11 +494,16 @@ textarea { resize: vertical; min-height: 80px; }
   color: #fff; margin-bottom: 22px;
   position: relative; overflow: hidden;
 }
-.profil-banner::after { content: '🕌'; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 60px; opacity: .13; pointer-events: none; }
 .profil-banner h2 { font-family: 'Amiri', serif; font-size: 19px; font-weight: 700; color: var(--accent); }
 .profil-banner p { font-size: 12px; opacity: .82; margin-top: 3px; line-height: 1.6; }
-.profil-edit-btn { position: absolute; top: 14px; right: 20px; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.28); color: #fff; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; backdrop-filter: blur(4px); transition: background .18s; font-family: inherit; }
+.profil-edit-btn { flex-shrink: 0; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.28); color: #fff; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; backdrop-filter: blur(4px); transition: background .18s; font-family: inherit; }
 .profil-edit-btn:hover { background: rgba(255,255,255,.25); }
+/* Tombol utama di dashboard: aksi yang paling sering dilakukan */
+.dash-cta { flex-shrink: 0; background: var(--accent); color: var(--primary); font-weight: 800; font-size: 14px; padding: 11px 20px; }
+.dash-cta:hover { filter: brightness(1.05); }
+.dash-grid-2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; }
+@media (max-width: 960px) { .dash-grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { #profilDisplay { flex-wrap: wrap; } .dash-cta { width: 100%; } }
 
 /* ══ CHECKBOX TABLE ══ */
 .chk-col { width: 36px; text-align: center; }
@@ -882,3 +887,17 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
   #kwtTable td:nth-child(7)::before { content: 'Total'; }
   #kwtTable td:nth-child(8)::before { content: 'Status'; }
 }
+
+/* ══ Grup menu Pengaturan yang bisa dilipat ══ */
+.nav-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; background: none; border: none; cursor: pointer; font-family: inherit; text-align: left; }
+.nav-toggle:hover { color: rgba(255,255,255,.7); }
+.nav-caret { transition: transform .2s; }
+.nav-collapsible.collapsed .nav-caret { transform: rotate(-90deg); }
+.nav-collapsible.collapsed .nav-item { display: none; }
+
+/* ══ Dropdown pencarian nama santri ══ */
+.nama-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1.5px solid var(--primary-light); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.12); z-index: 100; max-height: 280px; overflow-y: auto; }
+.nama-sugg { display: flex; justify-content: space-between; gap: 12px; padding: 11px 16px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.nama-sugg span { color: var(--text-muted); font-size: 12.5px; }
+.nama-sugg:hover, .nama-sugg.active { background: var(--primary-pale); }
+.nama-sugg-empty { padding: 14px 16px; font-size: 13px; color: var(--text-muted); }

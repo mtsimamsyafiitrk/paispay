@@ -3,15 +3,52 @@ function renderCetakPage() {
   const sel = document.getElementById('cetakNama');
   sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
     appState.students.map(s=>`<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
+  document.getElementById('cetakNamaSearch').value = sel.value;
   document.getElementById('cetakTanggal').value = new Date().toISOString().split('T')[0];
   document.getElementById('cetakTanggalTotal').value = new Date().toISOString().split('T')[0];
 }
 
+// ── Pencarian nama (gaya sama dengan Input Pembayaran & Tunggakan) ──
+let cetakSuggIdx = -1;
+function onCetakNamaSearch() {
+  cetakSuggIdx = -1;
+  const q = document.getElementById('cetakNamaSearch').value.trim().toLowerCase();
+  const dd = document.getElementById('cetakNamaDropdown');
+  const matches = appState.students.filter(s => s.nama.toLowerCase().includes(q)).slice(0, 10);
+  dd.innerHTML = matches.length
+    ? matches.map(s => `<div class="nama-sugg" data-nama="${esc(s.nama)}" onmousedown="pickCetakNama(this.dataset.nama)">
+        <b>${esc(s.nama)}</b><span>${esc(kelasLabel(s))}</span></div>`).join('')
+    : '<div class="nama-sugg-empty">Tidak ditemukan</div>';
+  dd.style.display = 'block';
+}
+function onCetakNamaKeydown(e) {
+  const items = [...document.querySelectorAll('#cetakNamaDropdown .nama-sugg')];
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    cetakSuggIdx = Math.max(0, Math.min(items.length - 1, cetakSuggIdx + (e.key === 'ArrowDown' ? 1 : -1)));
+    items.forEach((el, i) => el.classList.toggle('active', i === cetakSuggIdx));
+    items[cetakSuggIdx]?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && items[cetakSuggIdx]) {
+    pickCetakNama(items[cetakSuggIdx].dataset.nama);
+  } else if (e.key === 'Escape') {
+    document.getElementById('cetakNamaDropdown').style.display = 'none';
+  }
+}
+function pickCetakNama(nama) {
+  document.getElementById('cetakNama').value = nama;
+  document.getElementById('cetakNamaSearch').value = nama;
+  document.getElementById('cetakNamaDropdown').style.display = 'none';
+  onCetakStudentSelect();
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('cetakSearchWrap');
+  if (wrap && !wrap.contains(e.target)) document.getElementById('cetakNamaDropdown').style.display = 'none';
+});
+
 function showCetakForStudent(nama) {
   showPage('cetak');
   setTimeout(() => {
-    document.getElementById('cetakNama').value = nama;
-    onCetakStudentSelect();
+    pickCetakNama(nama);
   }, 100);
 }
 

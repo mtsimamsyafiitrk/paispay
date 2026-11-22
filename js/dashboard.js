@@ -39,7 +39,7 @@ function _renderDashboard() {
     <div class="stat-card green" title="${esc(judulSantri)}"><div class="stat-label">Total Santri</div><div class="stat-value">${ss.length}</div><div class="stat-sub">${subSantri}</div><div class="stat-icon">🎓</div></div>
     <div class="stat-card gold"><div class="stat-label">Total Terkumpul</div><div class="stat-value" style="font-size:18px;">${rp(totalBayarSPP+totalBayarTagihan)}</div><div class="stat-sub">SPP + Semua Pembayaran</div><div class="stat-icon">💰</div></div>
     <div class="stat-card red"><div class="stat-label">Total Tunggakan</div><div class="stat-value" style="font-size:18px;">${rp(totalTunggak)}</div><div class="stat-sub">${belumLunas} dari ${ss.length} santri aktif belum lunas${tunggakNonAktif > 0 ? ` &nbsp;·&nbsp; ${rp(tunggakNonAktif)} non-aktif` : ''}</div><div class="stat-icon">⚠️</div></div>
-    <div class="stat-card blue"><div class="stat-label">Tagihan Aktif</div><div class="stat-value">${appState.tagihan.filter(t=>t.paid_amount>=t.nominal).length}</div><div class="stat-sub">dari ${appState.tagihan.length} total tagihan</div><div class="stat-icon">✅</div></div>
+    <div class="stat-card blue"><div class="stat-label">Santri Lunas</div><div class="stat-value">${ss.length - belumLunas}</div><div class="stat-sub">dari ${ss.length} santri aktif tanpa tunggakan</div><div class="stat-icon">✅</div></div>
   `;
 
   // Kelas table
@@ -96,17 +96,27 @@ function _renderDashboard() {
     </div>`;
   }).join('');
 
+  // Tunggakan terbesar — santri aktif, 5 teratas, langsung bisa dibayar
+  const top = ss.map(s => ({ s, tk: totalTunggakan(s) })).filter(x => x.tk > 0)
+    .sort((a, b) => b.tk - a.tk).slice(0, 5);
+  document.querySelector('#dashTopTunggak tbody').innerHTML = top.length
+    ? top.map(({ s, tk }) => `<tr>
+        <td><strong>${esc(s.nama)}</strong></td><td>${esc(kelasLabel(s))}</td>
+        <td style="text-align:right;color:var(--danger);font-weight:700;">${rp(tk)}</td>
+        <td style="text-align:right;"><button class="btn btn-primary btn-sm" onclick="quickInput('${escJs(s.nama)}')">💳 Bayar</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">🎉 Tidak ada tunggakan</td></tr>';
+
   // Recent transactions
   const tbody2 = document.querySelector('#recentTable tbody');
-  const recent = appState.transactions.slice(-10).reverse();
+  const recent = appState.transactions.slice(-6).reverse();
   if (!recent.length) {
-    tbody2.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Belum ada transaksi tercatat</td></tr>';
+    tbody2.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Belum ada transaksi tercatat</td></tr>';
   } else {
     tbody2.innerHTML = recent.map(t => `<tr>
       <td style="font-size:12px;color:var(--text-muted);">${esc(t.time)}</td>
-      <td><strong>${esc(t.nama)}</strong></td><td>${esc(t.kelas)}</td>
-      <td>${esc(t.jenis)}</td><td>${rp(t.nominal)}</td>
-      <td><span class="badge badge-green">Lunas</span></td>
+      <td><strong>${esc(t.nama)}</strong></td>
+      <td>${esc(t.jenis)}</td><td style="text-align:right;">${rp(t.nominal)}</td>
     </tr>`).join('');
   }
 }
