@@ -251,8 +251,8 @@ function biRenderSession() {
       <td>${esc(s.ta_label || '—')}</td>
       <td style="text-align:right;font-weight:700;">${rp(s.total)}</td>
       <td>${s.incomplete
-        ? `<span title="${esc(s.masalah)}" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">⚠️ Tidak lengkap</span>`
-        : '<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">✅ Lengkap</span>'}</td>
+        ? `<span title="${esc(s.masalah)}" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">⚠️ Tidak lengkap</span>`
+        : '<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">✅ Lengkap</span>'}</td>
     </tr>`).join('')}</tbody></table></div>`;
 }
 
@@ -368,8 +368,8 @@ function indukRenderPreview() {
         <td style="text-align:right;">${r.nominal ? rp(r.nominal) : '—'}</td>
         <td>${esc(r.bulan ? (MONTH_FULL[r.bulan] || r.bulan) : '—')}</td>
         <td>${r.reasons.length
-          ? `<span title="${esc(r.reasons.join('; '))}" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">⚠️ ${esc(r.reasons.join('; '))}</span>`
-          : '<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">✅ Lengkap</span>'}</td>
+          ? `<span title="${esc(r.reasons.join('; '))}" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">⚠️ ${esc(r.reasons.join('; '))}</span>`
+          : '<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">✅ Lengkap</span>'}</td>
       </tr>`).join('')}</tbody></table></div>`;
   if (btn) { btn.style.display = 'inline-flex'; btn.disabled = false; btn.innerHTML = `💾 Simpan ${indukBuffer.length} Entri ke Buku Induk`; }
 }
@@ -489,11 +489,11 @@ function renderIndukDetail(r) {
     </div>` : '';
 
   const badges = `
-    ${induk ? '<span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">📖 Buku Induk</span>' : ''}
-    ${incomplete ? '<span style="background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">⚠️ Tidak lengkap</span>' : ''}`;
+    ${induk ? '<span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;">📖 Buku Induk</span>' : ''}
+    ${incomplete ? '<span style="background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;">⚠️ Tidak lengkap</span>' : ''}`;
 
   const rowsHtml = items.length ? items.map(it => `<tr>
-      <td>${esc(it.name || '—')}${it.bulan ? ` <span style="color:var(--text-muted);font-size:11px;">(${esc(MONTH_FULL[it.bulan] || it.bulan)})</span>` : ''}</td>
+      <td>${esc(it.name || '—')}${it.bulan ? ` <span style="color:var(--text-muted);font-size:12px;">(${esc(MONTH_FULL[it.bulan] || it.bulan)})</span>` : ''}</td>
       <td style="text-align:right;">${it.amount ? rp(it.amount) : '<span style="color:var(--danger);">— tidak tercatat</span>'}</td>
     </tr>`).join('') : '<tr><td colspan="2" style="color:var(--text-muted);">Tidak ada rincian.</td></tr>';
 
@@ -501,14 +501,14 @@ function renderIndukDetail(r) {
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">${badges}</div>
     ${warning}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-      <div><div style="font-size:11px;color:var(--text-muted);">Nama</div><div style="font-weight:700;">${esc(r.nama || '—')}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">Kelas</div><div style="font-weight:700;">${esc(r.kelas || '—')}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">Tahun Ajaran</div><div style="font-weight:700;">${esc(r.ta_label || '—')}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">Tanggal</div><div style="font-weight:700;">${tgl}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">No.</div><div style="font-weight:700;">${esc(r.no_kuitansi || '—')}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${esc(r.nisn || '—')}</div></div>
-      ${metodeLabel ? `<div><div style="font-size:11px;color:var(--text-muted);">Metode</div><div style="font-weight:700;">${metodeLabel}</div></div>` : ''}
-      ${r.dibayar_oleh ? `<div><div style="font-size:11px;color:var(--text-muted);">Dibayar oleh</div><div style="font-weight:700;">${esc(r.dibayar_oleh)}</div></div>` : ''}
+      <div><div style="font-size:12px;color:var(--text-muted);">Nama</div><div style="font-weight:700;">${esc(r.nama || '—')}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">Kelas</div><div style="font-weight:700;">${esc(r.kelas || '—')}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">Tahun Ajaran</div><div style="font-weight:700;">${esc(r.ta_label || '—')}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">Tanggal</div><div style="font-weight:700;">${tgl}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">No.</div><div style="font-weight:700;">${esc(r.no_kuitansi || '—')}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${esc(r.nisn || '—')}</div></div>
+      ${metodeLabel ? `<div><div style="font-size:12px;color:var(--text-muted);">Metode</div><div style="font-weight:700;">${metodeLabel}</div></div>` : ''}
+      ${r.dibayar_oleh ? `<div><div style="font-size:12px;color:var(--text-muted);">Dibayar oleh</div><div style="font-weight:700;">${esc(r.dibayar_oleh)}</div></div>` : ''}
     </div>
     <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:6px;">📋 Rincian Pembayaran</div>
     <div class="table-wrap" style="margin-bottom:12px;"><table class="data-table">

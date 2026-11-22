@@ -79,7 +79,7 @@ async function hapusKuitansi(id) {
       document.getElementById('modalHapusKwtNama').textContent = r.nama || '—';
       document.getElementById('modalHapusKwtDetail').innerHTML =
         `${esc(r.no_kuitansi || '—')} &nbsp;·&nbsp; Rp ${fmt(r.total)} &nbsp;·&nbsp; TA ${esc(r.ta_label || '—')}<br>
-         <span style="font-size:11px;color:#999;">${tgl}</span>`;
+         <span style="font-size:12px;color:#999;">${tgl}</span>`;
     } else {
       document.getElementById('modalHapusKwtNama').textContent = 'Data Kuitansi';
       document.getElementById('modalHapusKwtDetail').textContent = '—';
@@ -246,7 +246,7 @@ async function loadRiwayatKuitansi(keepPage) {
     const fmt = n => Number(n||0).toLocaleString('id-ID');
     el.innerHTML = `
       <div class="table-wrap">
-        <table class="data-table">
+        <table class="data-table" id="kwtTable">
           <thead><tr>
             <th>No. Kuitansi</th>
             <th>Tanggal</th>
@@ -273,28 +273,28 @@ async function loadRiwayatKuitansi(keepPage) {
               const items = Array.isArray(r.items) ? r.items.map(i => i.name + (i.bulan?' ('+( MONTH_FULL[i.bulan]||i.bulan)+')':'')).join(', ') : '—';
               const isInduk = typeof isIndukKwt === 'function' && isIndukKwt(r);
               const isIncomplete = typeof indukIncomplete === 'function' && indukIncomplete(r);
-              const indukBadges = `${isInduk?'<br><span style="background:var(--primary-pale);color:var(--primary);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;">📖 Buku Induk</span>':''}${isIncomplete?`<br><span title="Data tidak lengkap" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;">⚠️ Tidak lengkap</span>`:''}`;
+              const indukBadges = `${isInduk?'<br><span style="background:var(--primary-pale);color:var(--primary);border-radius:20px;padding:2px 8px;font-size:12px;font-weight:700;">📖 Buku Induk</span>':''}${isIncomplete?`<br><span title="Data tidak lengkap" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 8px;font-size:12px;font-weight:700;">⚠️ Tidak lengkap</span>`:''}`;
               const statusBadge = r.dikoreksi_oleh
-                ? `<span style="background:#fef9c3;color:#92400e;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">🔄 Dikoreksi</span><br><span style="font-size:10px;color:#999;">${esc(r.dikoreksi_oleh)}</span>`
+                ? `<span style="background:#fef9c3;color:#92400e;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">🔄 Dikoreksi</span><br><span style="font-size:12px;color:#999;">${esc(r.dikoreksi_oleh)}</span>`
                 : r.is_koreksi
-                ? `<span style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">📋 Kuitansi Koreksi</span><br><span style="font-size:10px;color:#999;">Ref: ${esc(r.ref_no_kuitansi||'—')}</span>`
+                ? `<span style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">📋 Kuitansi Koreksi</span><br><span style="font-size:12px;color:#999;">Ref: ${esc(r.ref_no_kuitansi||'—')}</span>`
                 : r.dicetak
-                ? `<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">✅ Dicetak</span>`
-                : `<span style="background:#fef9c3;color:#854d0e;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">⏳ Belum</span>`;
+                ? `<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">✅ Dicetak</span>`
+                : `<span style="background:#fef9c3;color:#854d0e;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;">⏳ Belum</span>`;
               return `<tr>
                 <td style="font-weight:700;font-size:12px;color:var(--primary);">${esc(r.no_kuitansi||'—')}</td>
-                <td style="font-size:12px;">${tgl}<br><span style="color:var(--text-muted);font-size:11px;">${jam}</span></td>
+                <td style="font-size:12px;">${tgl}<br><span style="color:var(--text-muted);font-size:12px;">${jam}</span></td>
                 <td><strong>${esc(r.nama)}</strong></td>
                 <td>${esc(r.kelas||'—')}</td>
-                <td><span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${esc(r.ta_label||'—')}</span></td>
+                <td><span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;">${esc(r.ta_label||'—')}</span></td>
                 <td style="font-size:12px;max-width:180px;white-space:normal;">${esc(items)}</td>
                 <td style="text-align:right;font-weight:700;color:var(--primary-light);">Rp ${fmt(r.total)}</td>
                 <td>${statusBadge}${indukBadges}</td>
                 <td style="white-space:nowrap;">
-                  <button class="btn btn-outline btn-sm" onclick="openIndukDetail('${r.id}')" title="Lihat detail">🔍</button>
-                  <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang">🖨️</button>
-                  ${(!r.dikoreksi_oleh && !r.is_koreksi) ? `<button class="btn btn-outline btn-sm" onclick="openKoreksiKwt('${r.id}')" title="Edit / koreksi kuitansi">✏️</button>` : ''}
-                  ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi">🗑️</button>` : ''}
+                  <button class="btn btn-outline btn-sm" onclick="openIndukDetail('${r.id}')" title="Lihat detail">🔍 Detail</button>
+                  <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang">🖨️ Cetak</button>
+                  ${(!r.dikoreksi_oleh && !r.is_koreksi) ? `<button class="btn btn-outline btn-sm" onclick="openKoreksiKwt('${r.id}')" title="Edit / koreksi kuitansi">✏️ Koreksi</button>` : ''}
+                  ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm act-del" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi">🗑️ Hapus</button>` : ''}
                 </td>
               </tr>`;
             }).join('')}

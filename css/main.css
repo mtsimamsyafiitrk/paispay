@@ -67,7 +67,7 @@ body {
 }
 
 .sidebar-logo .app-sub {
-  font-size: 10px;
+  font-size: 12px;
   color: rgba(255,255,255,.55);
   margin-top: 3px;
   letter-spacing: .6px;
@@ -77,7 +77,7 @@ body {
 .nav-section { padding: 14px 10px 6px; }
 
 .nav-label {
-  font-size: 9.5px;
+  font-size: 12px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
   color: rgba(255,255,255,.35);
@@ -151,9 +151,9 @@ body {
 .stat-card.red   { background: linear-gradient(135deg, #8b2520, #c0392b); color: #fff; }
 .stat-card.blue  { background: linear-gradient(135deg, #1a3a5c, #2e6da4); color: #fff; }
 
-.stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .9px; opacity: .8; margin-bottom: 8px; font-weight: 600; }
+.stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: .9px; opacity: .8; margin-bottom: 8px; font-weight: 600; }
 .stat-value { font-size: 24px; font-weight: 800; line-height: 1; }
-.stat-sub { font-size: 11.5px; opacity: .75; margin-top: 6px; }
+.stat-sub { font-size: 12px; opacity: .75; margin-top: 6px; }
 .stat-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 40px; opacity: .13; pointer-events: none; }
 
 /* ══ PAGES ══ */
@@ -168,7 +168,7 @@ table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480p
 th {
   background: var(--primary); color: #fff;
   padding: 11px 13px; text-align: left;
-  font-weight: 600; font-size: 11.5px; white-space: nowrap;
+  font-weight: 600; font-size: 12px; white-space: nowrap;
 }
 
 th:first-child { border-radius: 12px 0 0 0; }
@@ -182,7 +182,7 @@ tr:hover td { background: #fafaf8; }
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 9px; border-radius: 20px;
-  font-size: 11px; font-weight: 600; white-space: nowrap;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
 }
 .badge-green  { background: var(--primary-pale); color: var(--primary-light); }
 .badge-red    { background: var(--danger-pale); color: var(--danger); }
@@ -194,7 +194,7 @@ tr:hover td { background: #fafaf8; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group.full { grid-column: 1 / -1; }
 
-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
 
 select, input[type="text"], input[type="password"], input[type="email"],
 input[type="number"], input[type="tel"], input[type="date"], textarea {
@@ -254,7 +254,7 @@ textarea { resize: vertical; min-height: 80px; }
 .btn-danger { background: var(--danger-pale); color: var(--danger); border: 1.5px solid var(--danger); }
 .btn-danger:hover { background: var(--danger); color: #fff; }
 
-.btn-sm { padding: 5px 11px; font-size: 11.5px; }
+.btn-sm { padding: 5px 11px; font-size: 12px; }
 
 /* Segmented toggle (metode bayar, mode tanggal) */
 .seg-btn { padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--card); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--text); transition: .15s; }
@@ -283,7 +283,7 @@ textarea { resize: vertical; min-height: 80px; }
 .pay-item input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary-light); cursor: pointer; flex-shrink: 0; margin-top: 1px; }
 .pay-item-info { flex: 1; min-width: 0; }
 .pay-item-name { font-weight: 600; font-size: 13px; }
-.pay-item-amount { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+.pay-item-amount { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
 .pay-item-custom input { width: 130px; }
 
 /* Item yang tak perlu tindakan (lunas / nominal belum diatur): satu baris tipis
@@ -309,7 +309,7 @@ textarea { resize: vertical; min-height: 80px; }
 .month-btn {
   padding: 6px 2px; border-radius: 7px;
   border: 1.5px solid var(--border);
-  font-size: 10.5px; font-weight: 600;
+  font-size: 12px; font-weight: 600;
   cursor: pointer; text-align: center;
   background: var(--card); color: var(--text);
   transition: all .13s;
@@ -452,6 +452,8 @@ textarea { resize: vertical; min-height: 80px; }
   .form-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .topbar-title { font-size: 17px; }
+  /* HP: status cukup ikon 🟢/🔴 supaya tombol menu ☰ tidak terdorong keluar layar */
+  #syncIndicator, #gasLabel, #lastSyncTime, #adminLabel, .topbar-sub { display: none; }
   .month-grid { grid-template-columns: repeat(4, 1fr); }
   .ttd-section { grid-template-columns: 1fr; }
   .filter-row select, .filter-row input { max-width: 100%; flex: 1; }
@@ -557,7 +559,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .login-mode-tab.active { background: #fff; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,.09); }
 
 .login-field { margin-bottom: 13px; text-align: left; }
-.login-field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+.login-field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
 .login-field input {
   width: 100%; padding: 10px 13px; border-radius: var(--radius-sm);
   border: 1.5px solid var(--border); font-size: 13.5px;
@@ -659,11 +661,11 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .ta-dropdown-item { padding: 10px 14px; font-size: 13px; color: var(--text); cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: background .13s; }
 .ta-dropdown-item:hover { background: var(--primary-pale); }
 .ta-dropdown-item.active { color: var(--primary); font-weight: 700; }
-.ta-badge { font-size: 10px; background: var(--primary); color: #fff; border-radius: 4px; padding: 1px 5px; }
+.ta-badge { font-size: 12px; background: var(--primary); color: #fff; border-radius: 4px; padding: 1px 5px; }
 
 /* ══ WIZARD PINDAH TA ══ */
 .wizard-steps { display: flex; gap: 0; margin-bottom: 22px; }
-.wizard-step { flex: 1; padding: 10px; text-align: center; font-size: 11.5px; font-weight: 700; background: var(--border); color: var(--text-muted); }
+.wizard-step { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: 700; background: var(--border); color: var(--text-muted); }
 .wizard-step:first-child { border-radius: 10px 0 0 10px; }
 .wizard-step:last-child  { border-radius: 0 10px 10px 0; }
 .wizard-step.active { background: var(--primary); color: #fff; }
@@ -676,7 +678,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 /* ══ GAS STATUS ══ */
 #gasBtn {
   display: flex; align-items: center; gap: 4px;
-  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
   background: var(--bg); border: 1px solid var(--border);
   border-radius: 20px; padding: 4px 10px; white-space: nowrap;
 }
@@ -722,7 +724,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .pos-banner { border-radius: var(--radius-sm); padding: 12px 14px; background: linear-gradient(135deg, var(--danger-pale), #fff); border: 1.5px solid var(--danger); animation: posIn .35s ease both; }
 .pos-banner.ok { background: var(--primary-pale); border-color: var(--primary-light); color: var(--primary-light); font-weight: 700; font-size: 13px; }
 .pos-banner-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.pos-banner-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--danger); font-weight: 700; }
+.pos-banner-label { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--danger); font-weight: 700; }
 .pos-banner-total { font-size: 22px; font-weight: 800; color: var(--danger); line-height: 1.1; }
 .pos-banner-rows { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12px; margin-top: 8px; color: var(--text-muted); }
 .pos-banner-rows b { color: var(--danger); text-align: right; }
@@ -734,18 +736,18 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .pos-card-name { font-weight: 700; font-size: 13.5px; }
 .pos-card-meta { font-size: 12px; color: var(--text-muted); }
 .pos-card-meta .danger, .pos-card-name.danger { color: var(--danger); }
-.pos-card-meta .muted { font-size: 10.5px; }
-.pos-note { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; }
+.pos-card-meta .muted { font-size: 12px; }
+.pos-note { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
 .pos-note.ok { color: var(--primary-light); font-weight: 600; }
-.pos-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin: 10px 0 6px; }
+.pos-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin: 10px 0 6px; }
 .pos-label.danger { color: var(--danger); }
-.pos-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px; background: var(--accent-pale); color: #7a5c10; vertical-align: middle; }
+.pos-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 20px; background: var(--accent-pale); color: #7a5c10; vertical-align: middle; }
 .pos-tag.ok { background: var(--primary-pale); color: var(--primary); }
 .pos-tag.danger { background: var(--danger-pale); color: var(--danger); }
 .pos-progress { height: 5px; border-radius: 5px; background: var(--border); margin-top: 8px; overflow: hidden; }
 .pos-progress i { display: block; height: 100%; background: var(--primary-light); border-radius: 5px; }
 .pos-more { margin-top: 10px; }
-.pos-more summary { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); cursor: pointer; }
+.pos-more summary { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); cursor: pointer; }
 .pos-more[open] .pos-chips { animation: posIn .25s ease both; }
 
 .pos-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -757,7 +759,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
   border: 1.5px solid var(--border); color: var(--text-muted);
   transition: transform .15s ease, background .2s, color .2s, border-color .2s, box-shadow .2s;
 }
-.pos-chip small { font-size: 10px; font-weight: 500; opacity: .8; margin-top: 1px; }
+.pos-chip small { font-size: 12px; font-weight: 500; opacity: .8; margin-top: 1px; }
 .pos-chip.due { border-color: var(--danger); color: var(--danger); }
 .pos-chip.partial { border-style: dashed; }
 .pos-chip.wide { min-width: 0; padding: 9px 16px; }
@@ -767,7 +769,7 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .pos-chip.in-cart { background: var(--primary); border-color: var(--primary); color: #fff; animation: posPop .3s ease; }
 .pos-chip.in-cart::after {
   content: '✓'; position: absolute; top: -7px; right: -7px; width: 18px; height: 18px; border-radius: 50%;
-  background: var(--accent); color: #fff; font-size: 11px; line-height: 18px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  background: var(--accent); color: #fff; font-size: 12px; line-height: 18px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.2);
 }
 .pos-ghost-btn { padding: 9px 14px; border-radius: 10px; border: 1.5px dashed var(--primary-light); background: transparent; color: var(--primary); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .2s, transform .15s; }
 .pos-ghost-btn:hover { background: var(--primary-pale); transform: translateY(-1px); }
@@ -780,13 +782,13 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .cart-count.show { transform: scale(1); }
 .cart-list { overflow-y: auto; min-height: 90px; flex: 1 1 auto; margin: 0 -6px; padding: 0 6px; }
 .cart-empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 22px 8px; }
-.cart-empty small { font-size: 11.5px; }
+.cart-empty small { font-size: 12px; }
 .cart-empty-icon { font-size: 30px; margin-bottom: 6px; opacity: .5; animation: posFloat 2.4s ease-in-out infinite; }
 .cart-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px dashed var(--border); }
 .cart-row.is-new { animation: cartIn .45s cubic-bezier(.3,1.4,.5,1) both; }
 .cart-row-info { flex: 1; min-width: 0; }
 .cart-row-name { font-size: 12.5px; }
-.cart-row-sub { font-size: 11px; color: var(--danger); margin-top: 2px; }
+.cart-row-sub { font-size: 12px; color: var(--danger); margin-top: 2px; }
 .cart-amount { display: flex; align-items: center; gap: 4px; color: var(--text-muted); font-size: 12px; cursor: text; }
 .cart-amount input { width: 104px; padding: 5px 8px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 12.5px; font-family: inherit; text-align: right; transition: border-color .2s, box-shadow .2s; }
 .cart-amount input:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-pale); outline: none; }
@@ -819,4 +821,64 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 @media (prefers-reduced-motion: reduce) {
   .pos-card, .pos-banner, .cart-row.is-new, .pos-chip.in-cart, .cart-empty-icon, .cart-minibar.show, .pos-more[open] .pos-chips { animation: none !important; }
   .pos-chip, .pos-chip:hover, .cart-del:hover { transition: none; transform: none; }
+}
+
+/* Tombol Hapus diberi jarak dari tombol lain supaya tidak salah klik */
+.act-del { margin-left: 10px; }
+
+/* ══ HP: tabel daftar jadi kartu (tanpa geser ke samping) ══
+   Label tiap baris diambil dari urutan kolom; ubah juga di sini bila kolom tabel berubah. */
+@media (max-width: 768px) {
+  #siswaTable, #spmbTable, #kwtTable { min-width: 0; }
+  #siswaTable thead, #spmbTable thead, #kwtTable thead { display: none; }
+  #siswaTable tbody, #spmbTable tbody, #kwtTable tbody { display: block; }
+  #siswaTable tr, #spmbTable tr, #kwtTable tr {
+    display: block; position: relative; padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  #siswaTable tr:last-child, #spmbTable tr:last-child, #kwtTable tr:last-child { border-bottom: none; }
+  #siswaTable td, #spmbTable td, #kwtTable td {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 4px 0; border: none; text-align: right; background: none !important;
+  }
+  #siswaTable td::before, #spmbTable td::before, #kwtTable td::before {
+    color: var(--text-muted); font-size: 12.5px; font-weight: 600; text-align: left; flex-shrink: 0; margin-right: auto;
+  }
+  #siswaTable td[colspan], #spmbTable td[colspan] { justify-content: center; }
+  /* Kotak centang di pojok kanan atas, nomor urut disembunyikan, nama jadi judul kartu */
+  #siswaTable td:nth-child(1), #spmbTable td:nth-child(1) { position: absolute; top: 12px; right: 14px; padding: 0; }
+  #siswaTable td:nth-child(2), #spmbTable td:nth-child(2) { display: none; }
+  #siswaTable td:nth-child(3), #spmbTable td:nth-child(3), #kwtTable td:nth-child(3) {
+    display: block; text-align: left; font-size: 15px; padding-right: 36px; margin-bottom: 4px;
+  }
+  /* Tombol aksi selebar kartu, mudah ditekan jari */
+  #siswaTable td:last-child, #spmbTable td:last-child, #kwtTable td:last-child {
+    justify-content: flex-start; flex-wrap: wrap; white-space: normal !important; margin-top: 8px; gap: 8px;
+  }
+  #siswaTable td:last-child .btn, #spmbTable td:last-child .btn, #kwtTable td:last-child .btn { flex: 1; padding: 9px 10px; font-size: 13px; }
+  #siswaTable td:last-child .act-del, #spmbTable td:last-child .act-del, #kwtTable td:last-child .act-del { margin-left: 12px; }
+  /* Bulan dibayar: label di atas, chip bulan di bawah */
+  #siswaTable td:nth-child(6) { display: block; text-align: left; }
+
+  #siswaTable td:nth-child(4)::before { content: 'Kelas'; }
+  #siswaTable td:nth-child(5)::before { content: 'SPP / bulan'; }
+  #siswaTable td:nth-child(6)::before { content: 'Bulan dibayar'; display: block; margin-bottom: 4px; }
+  #siswaTable td:nth-child(7)::before { content: 'Item tagihan'; }
+  #siswaTable td:nth-child(8)::before { content: 'Status'; }
+
+  #spmbTable td:nth-child(4)::before { content: 'Kelas target'; }
+  #spmbTable td:nth-child(5)::before { content: 'SPP / bulan'; }
+  #spmbTable td:nth-child(6)::before { content: 'Pendaftaran'; }
+  #spmbTable td:nth-child(7)::before { content: 'Pangkal'; }
+
+  #kwtTable td:nth-child(1)::before { content: 'No. kuitansi'; }
+  #kwtTable td:nth-child(2)::before { content: 'Tanggal'; }
+  #kwtTable tr { display: flex; flex-direction: column; }
+  #kwtTable td:nth-child(3) { order: -1; }
+  #kwtTable td:nth-child(4)::before { content: 'Kelas'; }
+  #kwtTable td:nth-child(5)::before { content: 'Tahun ajaran'; }
+  #kwtTable td:nth-child(6)::before { content: 'Rincian'; }
+  #kwtTable td:nth-child(6) { max-width: none !important; }
+  #kwtTable td:nth-child(7)::before { content: 'Total'; }
+  #kwtTable td:nth-child(8)::before { content: 'Status'; }
 }

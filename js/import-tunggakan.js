@@ -404,7 +404,7 @@ function tgRenderPreview() {
     const a = S.taStat.get(ta);
     const isCur = ta === curTA;
     return `<tr${isCur ? ' style="background:var(--primary-pale);"' : ''}>
-      <td>${esc(ta)}${isCur ? ' <span style="font-size:10px;font-weight:700;color:var(--primary);">TA BERJALAN</span>' : ''}</td>
+      <td>${esc(ta)}${isCur ? ' <span style="font-size:12px;font-weight:700;color:var(--primary);">TA BERJALAN</span>' : ''}</td>
       <td style="text-align:right;">${a.santri}</td>
       <td style="text-align:right;">${a.bulan}</td>
       <td style="text-align:right;font-weight:700;color:${a.sisa > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${rp(a.sisa)}</td>
@@ -459,20 +459,20 @@ function tgRenderPreview() {
   document.getElementById('tgPreview').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
       <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:11px;color:var(--text-muted);">Santri di file</div>
+        <div style="font-size:12px;color:var(--text-muted);">Santri di file</div>
         <div style="font-size:18px;font-weight:800;color:var(--primary);">${tgBuffer.length}</div>
-        <div style="font-size:10px;color:var(--text-muted);">${cocok} cocok · ${baru} baru</div>
+        <div style="font-size:12px;color:var(--text-muted);">${cocok} cocok · ${baru} baru</div>
       </div>
       <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:11px;color:var(--text-muted);">Tunggakan SPP TA lalu</div>
+        <div style="font-size:12px;color:var(--text-muted);">Tunggakan SPP TA lalu</div>
         <div style="font-size:18px;font-weight:800;color:var(--danger);">${rp(sppPrev)}</div>
       </div>
       <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:11px;color:var(--text-muted);">SPP TA berjalan belum lunas</div>
+        <div style="font-size:12px;color:var(--text-muted);">SPP TA berjalan belum lunas</div>
         <div style="font-size:18px;font-weight:800;color:var(--accent);">${rp(sppCur)}</div>
       </div>
       <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:11px;color:var(--text-muted);">Tunggakan item lain</div>
+        <div style="font-size:12px;color:var(--text-muted);">Tunggakan item lain</div>
         <div style="font-size:18px;font-weight:800;color:var(--danger);">${rp(Object.values(S.itemTotal).reduce((a, b) => a + b, 0))}</div>
       </div>
     </div>
@@ -482,7 +482,7 @@ function tgRenderPreview() {
       <select id="tgCurrentTA" onchange="tgRenderPreview()">
         ${S.taList.map(ta => `<option value="${esc(ta)}"${ta === curTA ? ' selected' : ''}>${esc(ta)}</option>`).join('')}
       </select>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;line-height:1.5;">
+      <div style="font-size:12px;color:var(--text-muted);margin-top:5px;line-height:1.5;">
         TA ini masuk ke alur SPP normal (kolom SPP &amp; bulan dibayar).
         Semua tahun ajaran lain disimpan sebagai <strong>tunggakan SPP tahun ajaran sebelumnya</strong>.
       </div>
@@ -498,7 +498,7 @@ function tgRenderPreview() {
     <label style="display:flex;align-items:flex-start;gap:7px;font-size:12.5px;margin-bottom:14px;cursor:pointer;">
       <input type="checkbox" id="tgTimpaItem"${keepTimpa ? ' checked' : ''} style="accent-color:var(--primary);width:15px;height:15px;margin-top:2px;">
       <span>Timpa nominal tagihan item yang <strong>sudah ada</strong> (pangkal, pembangunan, dll)
-        <span style="display:block;color:var(--text-muted);font-size:11px;line-height:1.5;">
+        <span style="display:block;color:var(--text-muted);font-size:12px;line-height:1.5;">
           Biarkan mati bila ini import ulang: file hanya memuat sisa saat file dibuat, sehingga
           menimpanya akan memunculkan kembali tunggakan yang sudah dilunasi lewat aplikasi.
           Tagihan yang belum ada tetap dibuat.</span></span>

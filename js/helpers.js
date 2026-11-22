@@ -385,7 +385,7 @@ function renderSppMulaiWarn(elId) {
   const ada = (typeof sppMulaiKolomAda !== 'function') || sppMulaiKolomAda();
   el.style.display = ada ? 'none' : 'block';
   el.innerHTML = ada ? '' : `
-    <div style="background:var(--danger-pale);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:11px;line-height:1.5;color:var(--danger);">
+    <div style="background:var(--danger-pale);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px;line-height:1.5;color:var(--danger);">
       ⚠️ ${esc(typeof SPP_MULAI_MIGRASI_MSG === 'string' ? SPP_MULAI_MIGRASI_MSG : '')}
     </div>`;
 }

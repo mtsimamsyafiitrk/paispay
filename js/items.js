@@ -25,10 +25,10 @@ function showDetail(nama) {
 
   document.getElementById('modalBody').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-      <div><div style="font-size:11px;color:var(--text-muted);">Kelas</div><div style="font-weight:700;">${esc(s.kelas)}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${esc(s.nisn||'—')}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">SPP/bulan</div><div style="font-weight:700;">${rp(s.spp)}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">Item Tagihan</div><div style="font-weight:700;">${rp(tagPaid)} / ${rp(tagNominal)}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">Kelas</div><div style="font-weight:700;">${esc(s.kelas)}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${esc(s.nisn||'—')}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">SPP/bulan</div><div style="font-weight:700;">${rp(s.spp)}</div></div>
+      <div><div style="font-size:12px;color:var(--text-muted);">Item Tagihan</div><div style="font-weight:700;">${rp(tagPaid)} / ${rp(tagNominal)}</div></div>
     </div>
     <div style="margin-bottom:16px;">
       <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--primary);">Status SPP TA Ini</div>
@@ -42,16 +42,16 @@ function showDetail(nama) {
           : sebelum ? `Sebelum masuk — tidak ditagih (SPP mulai ${esc(sppMulaiLabel(s))})`
           : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo')
           + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
-        return `<div class="month-btn ${cls}" title="${ttl}"${ang > 0 ? ' style="outline:1.5px dashed var(--accent);"' : ''}>${m}${ang > 0 ? `<div style="font-size:9px;font-weight:500;">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
+        return `<div class="month-btn ${cls}" title="${ttl}"${ang > 0 ? ' style="outline:1.5px dashed var(--accent);"' : ''}>${m}${ang > 0 ? `<div style="font-size:12px;font-weight:500;">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
       }).join('')}</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">
+      <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">
         Tunggakan SPP dihitung ${sppMulaiLabel(s) ? 'mulai <strong>' + esc(sppMulaiLabel(s)) + '</strong> (bulan santri masuk) ' : ''}s/d bulan berjalan${sppDueMonthLabel() ? ' (' + esc(sppDueMonthLabel()) + ')' : ''}.
       </div>
     </div>
     <div style="background:${totalT>0?'var(--danger-pale)':'var(--primary-pale)'};border-radius:10px;padding:14px;">
       ${sppT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan SPP:</strong> ${rp(sppT)}</div>` : ''}
       ${prevT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan SPP Tahun Lalu:</strong> ${rp(prevT)}
-        <span style="font-size:11px;color:var(--text-muted);">(${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</span></div>` : ''}
+        <span style="font-size:12px;color:var(--text-muted);">(${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</span></div>` : ''}
       ${itemT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan Item Tagihan:</strong> ${rp(itemT)}</div>` : ''}
       ${totalT===0 ? '<div style="color:var(--primary-light);font-weight:700;">✓ Semua pembayaran lunas!</div>' : `<div style="font-weight:700;margin-top:4px;">Total: ${rp(totalT)}</div>`}
     </div>

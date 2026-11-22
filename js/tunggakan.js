@@ -14,7 +14,7 @@ function renderItemList() {
 
     if (editingItemIdx === idx) {
       return `<div style="background:var(--primary-pale);border-radius:12px;padding:14px;margin-bottom:8px;border:1.5px solid var(--primary-light);">
-        <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">✏️ Edit Item #${idx+1}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">✏️ Edit Item #${idx+1}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="form-group">
             <label>Nama Item</label>
@@ -52,8 +52,8 @@ function renderItemList() {
     // Badge kelas
     const _klsLabel = k => k === 'calon' ? 'Kls Calon' : 'Kls ' + k;
     const kelasBadge = itemKelas.length
-      ? itemKelas.map(k => `<span style="background:${k==='calon'?'var(--accent-pale)':'var(--primary-pale)'};color:${k==='calon'?'var(--accent)':'var(--primary)'};border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">${_klsLabel(k)}</span>`).join(' ')
-      : `<span style="background:#fee2e2;color:#dc2626;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;">Tidak ada kelas</span>`;
+      ? itemKelas.map(k => `<span style="background:${k==='calon'?'var(--accent-pale)':'var(--primary-pale)'};color:${k==='calon'?'var(--accent)':'var(--primary)'};border-radius:5px;padding:1px 7px;font-size:12px;font-weight:700;">${_klsLabel(k)}</span>`).join(' ')
+      : `<span style="background:#fee2e2;color:#dc2626;border-radius:5px;padding:1px 7px;font-size:12px;font-weight:700;">Tidak ada kelas</span>`;
 
     return `<div draggable="true" data-idx="${idx}"
       ondragstart="onItemDragStart(event, ${idx})" ondragover="onItemDragOver(event)"
@@ -63,14 +63,14 @@ function renderItemList() {
       <label class="toggle"><input type="checkbox" ${item.active?'checked':''} onchange="toggleItem(${idx})"><span class="toggle-slider"></span></label>
       <div style="flex:1;min-width:0;">
         <div style="font-weight:600;font-size:13.5px;">${esc(item.name)}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${typeLabel} • ${rp(item.amount)}${isDefault?' • <span style="color:var(--accent);">Default</span>':''}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${typeLabel} • ${rp(item.amount)}${isDefault?' • <span style="color:var(--accent);">Default</span>':''}</div>
         <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">${kelasBadge}</div>
       </div>
       <span class="badge ${item.active?'badge-green':'badge-gray'}" style="white-space:nowrap;">${item.active?'Aktif':'Nonaktif'}</span>
-      <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item">✏️</button>
+      <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item">✏️ Edit</button>
       ${BAKU_ITEMS.includes(item.id)
         ? `<span title="Item baku — tidak bisa dihapus, hanya bisa diedit" style="color:var(--text-muted);font-size:15px;padding:0 6px;cursor:default;">🔒</span>`
-        : `<button class="btn btn-danger btn-sm" onclick="confirmRemoveItem(${idx})" title="Hapus item">🗑️</button>`}
+        : `<button class="btn btn-danger btn-sm act-del" onclick="confirmRemoveItem(${idx})" title="Hapus item">🗑️ Hapus</button>`}
     </div>`;
   }).join('');
 }

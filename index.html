@@ -32,7 +32,7 @@
       <button class="login-btn" onclick="doLogin()">Masuk</button>
     </div>
 
-    <div style="margin-top:18px;font-size:11px;color:var(--text-muted);" id="loginTaLabel">SiPay v1.0</div>
+    <div style="margin-top:18px;font-size:12px;color:var(--text-muted);" id="loginTaLabel">SiPay v1.0</div>
   </div>
 </div>
 
@@ -103,7 +103,7 @@
       Keluar
     </a>
   </div>
-  <div style="padding:10px 20px 16px; font-size:11px; color:rgba(255,255,255,.35); text-align:center;">
+  <div style="padding:10px 20px 16px; font-size:12px; color:rgba(255,255,255,.35); text-align:center;">
     TA 2025/2026 • v1.0
   </div>
 </aside>
@@ -117,10 +117,10 @@
       <div class="topbar-sub" id="pageSubtitle">Ringkasan pembayaran santri</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <span id="syncIndicator" style="font-size:11px;color:var(--text-muted);transition:opacity .4s;opacity:0;white-space:nowrap;"></span>
-<div id="gasBtn" style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--primary-light);font-weight:600;" title="Status koneksi Supabase">
+      <span id="syncIndicator" style="font-size:12px;color:var(--text-muted);transition:opacity .4s;opacity:0;white-space:nowrap;"></span>
+<div id="gasBtn" style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--primary-light);font-weight:600;" title="Status koneksi Supabase">
         <span id="gasIcon">🟡</span><span id="gasLabel">Connecting...</span>
-        <span id="lastSyncTime" style="font-size:10px;color:rgba(255,255,255,.5);margin-left:4px;"></span>
+        <span id="lastSyncTime" style="font-size:12px;color:rgba(255,255,255,.5);margin-left:4px;"></span>
       </div>
       <button id="syncNowBtn" onclick="manualSync()" title="Ambil data terbaru dari server (semua device dibuat sama)"
         style="background:none;border:none;color:var(--primary-light);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;">🔄</button>
@@ -205,7 +205,7 @@
                 </div>
               </div>
               <div style="margin-top:6px;">
-                <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;">
+                <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-muted);cursor:pointer;user-select:none;">
                   <input type="checkbox" id="inputShowNonAktif" onchange="onToggleShowNonAktif()"
                     style="accent-color:var(--primary);width:13px;height:13px;">
                   Tampilkan santri non-aktif (lulus / pindah / keluar)
@@ -332,7 +332,7 @@
           Tambah Santri
         </button>
       </div>
-      <div style="margin-top:8px;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+      <div style="margin-top:8px;font-size:12px;color:var(--text-muted);line-height:1.5;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Santri lulus/pindah/keluar disembunyikan secara default — centang baris untuk <strong>hapus massal</strong> atau <strong>ubah status</strong>
       </div>
@@ -385,7 +385,7 @@
           </button>
         </div>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;line-height:1.5;">
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted);line-height:1.5;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         Catat pembayaran Uang Pendaftaran & Pangkal via menu <strong>Input Pembayaran</strong>. Klik <strong>Promosikan</strong> ketika tahun ajaran baru dimulai untuk memindahkan ke Data Siswa aktif.
       </div>
@@ -657,7 +657,7 @@
         <div class="card" style="margin-bottom:16px;">
           <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:14px;">🏫 Identitas Kuitansi</div>
           <div class="form-group" style="margin-bottom:10px;">
-            <label>Nama Lembaga <span style="font-size:10px;color:var(--text-muted);">(kosongkan = pakai profil madrasah)</span></label>
+            <label>Nama Lembaga <span style="font-size:12px;color:var(--text-muted);">(kosongkan = pakai profil madrasah)</span></label>
             <input type="text" id="kt_nama" placeholder="Nama madrasah / lembaga">
           </div>
           <div class="form-group" style="margin-bottom:10px;">
@@ -703,7 +703,7 @@
               <input type="text" id="kt_judul" value="KUITANSI PEMBAYARAN" placeholder="KUITANSI PEMBAYARAN">
             </div>
             <div class="form-group" style="margin-bottom:0;">
-              <label>Kode Prefix No. Kuitansi <span style="font-size:10px;color:var(--text-muted);">mis: KWT → KWT-032026-0001</span></label>
+              <label>Kode Prefix No. Kuitansi <span style="font-size:12px;color:var(--text-muted);">mis: KWT → KWT-032026-0001</span></label>
               <input type="text" id="kt_prefix" value="KWT" placeholder="KWT" maxlength="8" style="text-transform:uppercase;">
             </div>
           </div>
@@ -745,11 +745,11 @@
           <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:14px;">✍️ Kolom Tanda Tangan</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
             <div class="form-group" style="margin-bottom:0;">
-              <label>Label Kiri <span style="font-size:10px;color:var(--text-muted);">(kosong = sembunyikan)</span></label>
+              <label>Label Kiri <span style="font-size:12px;color:var(--text-muted);">(kosong = sembunyikan)</span></label>
               <input type="text" id="kt_ttd_kiri" placeholder="Bendahara / Admin">
             </div>
             <div class="form-group" style="margin-bottom:0;">
-              <label>Label Kanan <span style="font-size:10px;color:var(--text-muted);">(kosong = sembunyikan)</span></label>
+              <label>Label Kanan <span style="font-size:12px;color:var(--text-muted);">(kosong = sembunyikan)</span></label>
               <input type="text" id="kt_ttd_kanan" placeholder="Orang Tua / Wali">
             </div>
           </div>
@@ -758,7 +758,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
               <div>
                 <div style="font-size:13px;font-weight:600;">Tanda Tangan Online (Label Kiri)</div>
-                <div style="font-size:11px;color:var(--text-muted);">Upload gambar TTD untuk ditampilkan otomatis di kuitansi</div>
+                <div style="font-size:12px;color:var(--text-muted);">Upload gambar TTD untuk ditampilkan otomatis di kuitansi</div>
               </div>
               <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
                 <input type="checkbox" id="kt_use_ttd_online" onchange="toggleTTDOnline()" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;">
@@ -807,7 +807,7 @@
         <div style="background:#f0f0f0;border-radius:12px;padding:12px;overflow:auto;max-height:85vh;">
           <div id="kt_preview" style="transform-origin:top left;"></div>
         </div>
-        <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:center;">Preview menggunakan data contoh. Kuitansi asli memakai data transaksi nyata.</div>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-muted);text-align:center;">Preview menggunakan data contoh. Kuitansi asli memakai data transaksi nyata.</div>
       </div>
 
     </div>
@@ -826,21 +826,21 @@
     <div class="card" style="margin-bottom:16px;">
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
         <div style="flex:1;min-width:180px;">
-          <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Cari Nama</label>
+          <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Cari Nama</label>
           <input type="text" id="kwt_search" placeholder="Nama santri / No. Kuitansi..." style="width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;" oninput="loadRiwayatKuitansi()">
         </div>
         <div>
-          <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Tahun Ajaran</label>
+          <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Tahun Ajaran</label>
           <select id="kwt_ta" style="padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;outline:none;" onchange="loadRiwayatKuitansi()">
             <option value="">Semua TA</option>
           </select>
         </div>
         <div>
-          <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Dari Tanggal</label>
+          <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Dari Tanggal</label>
           <input type="date" id="kwt_dari" style="padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;outline:none;" onchange="loadRiwayatKuitansi()">
         </div>
         <div>
-          <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Sampai Tanggal</label>
+          <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Sampai Tanggal</label>
           <input type="date" id="kwt_sampai" style="padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;outline:none;" onchange="loadRiwayatKuitansi()">
         </div>
         <button class="btn btn-outline" onclick="loadRiwayatKuitansi()" style="padding:9px 16px;">🔄 Refresh</button>
@@ -1080,10 +1080,10 @@
             <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('pf_logo_input').click()" style="margin-bottom:6px;">
               📁 Pilih Gambar Logo
             </button>
-            <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">
               Format: JPG, PNG, SVG<br>Ukuran disarankan: 200×200px atau persegi
             </div>
-            <button type="button" id="pf_logo_remove" onclick="removeLogo()" style="display:none;margin-top:6px;font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer;padding:0;">
+            <button type="button" id="pf_logo_remove" onclick="removeLogo()" style="display:none;margin-top:6px;font-size:12px;color:var(--danger);background:none;border:none;cursor:pointer;padding:0;">
               🗑️ Hapus logo
             </button>
           </div>
@@ -1290,9 +1290,9 @@
         <input type="number" id="ed_pendaftaran" placeholder="0">
       </div>
       <div class="form-group full">
-        <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— untuk santri yang masuk di tengah tahun ajaran</span></label>
+        <label>SPP mulai bulan <span style="font-size:12px;color:var(--text-muted);">— untuk santri yang masuk di tengah tahun ajaran</span></label>
         <select id="ed_spp_mulai"></select>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum pilihan ini tidak dihitung sebagai tunggakan SPP tahun berjalan.</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Bulan sebelum pilihan ini tidak dihitung sebagai tunggakan SPP tahun berjalan.</div>
         <div id="edSppMulaiWarn" style="display:none;"></div>
       </div>
     </div>
@@ -1302,7 +1302,7 @@
     </div>
     <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-outline btn-sm" onclick="openTunggakanLamaFromEdit()">🗓️ Atur Tunggakan TA Sebelumnya</button>
-      <span style="font-size:11px;color:var(--text-muted);">Mengubah SPP di sini tidak mengubah tagihan tahun ajaran yang lalu.</span>
+      <span style="font-size:12px;color:var(--text-muted);">Mengubah SPP di sini tidak mengubah tagihan tahun ajaran yang lalu.</span>
     </div>
     <input type="hidden" id="ed_original_nama">
     <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
@@ -1413,26 +1413,26 @@
         <div style="background:#fff;border-radius:8px;padding:12px;font-size:12px;margin-bottom:12px;">
           <div style="font-weight:700;margin-bottom:6px;color:var(--primary);">Kolom yang tersedia:</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">
-            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>NAMA</strong><br><span style="color:var(--text-muted);font-size:11px;">Nama lengkap santri *</span></div>
-            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>KELAS</strong><br><span style="color:var(--text-muted);font-size:11px;">7/8/9 *</span></div>
-            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>TAHUN_AJARAN</strong><br><span style="color:var(--text-muted);font-size:11px;">Misal: 2024/2025</span></div>
-            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>NISN</strong><br><span style="color:var(--text-muted);font-size:11px;">10 digit NISN</span></div>
-            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>SPP</strong><br><span style="color:var(--text-muted);font-size:11px;">Nominal SPP/bulan</span></div>
+            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>NAMA</strong><br><span style="color:var(--text-muted);font-size:12px;">Nama lengkap santri *</span></div>
+            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>KELAS</strong><br><span style="color:var(--text-muted);font-size:12px;">7/8/9 *</span></div>
+            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>TAHUN_AJARAN</strong><br><span style="color:var(--text-muted);font-size:12px;">Misal: 2024/2025</span></div>
+            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>NISN</strong><br><span style="color:var(--text-muted);font-size:12px;">10 digit NISN</span></div>
+            <div style="padding:6px 10px;background:var(--primary-pale);border-radius:6px;"><strong>SPP</strong><br><span style="color:var(--text-muted);font-size:12px;">Nominal SPP/bulan</span></div>
           </div>
           <div style="font-weight:700;margin-bottom:6px;color:var(--primary);">Kolom SPP per bulan <span style="font-weight:400;color:var(--text-muted);">(isi 1 = sudah bayar, kosong = belum)</span>:</div>
           <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Jul</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Agt</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Sep</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Okt</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Nov</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Des</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Jan</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Feb</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Mar</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Apr</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Mei</strong></div>
-            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:11px;"><strong>SPP_Jun</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Jul</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Agt</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Sep</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Okt</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Nov</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Des</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Jan</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Feb</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Mar</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Apr</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Mei</strong></div>
+            <div style="padding:5px 8px;background:#e8f5ee;border-radius:6px;text-align:center;font-size:12px;"><strong>SPP_Jun</strong></div>
           </div>
         </div>
         <button class="btn btn-accent" onclick="downloadTemplate()" style="width:100%;justify-content:center;">
@@ -1545,7 +1545,7 @@
         <input type="text" id="akun_user" placeholder="admin">
       </div>
       <div class="form-group full">
-        <label>Email <span style="color:var(--text-muted);font-size:11px;">(dipakai untuk verifikasi ganti password)</span></label>
+        <label>Email <span style="color:var(--text-muted);font-size:12px;">(dipakai untuk verifikasi ganti password)</span></label>
         <input type="email" id="akun_email" placeholder="email@gmail.com">
       </div>
       <div class="form-group full">
@@ -1617,7 +1617,7 @@
     </div>
     <!-- Bulk select by kelas -->
     <div style="padding:8px 20px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-shrink:0;">
-      <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;">Pilih semua:</span>
+      <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;">Pilih semua:</span>
       <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('7')">Kelas 7</button>
       <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('8')">Kelas 8</button>
       <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('9')">Kelas 9</button>
@@ -1820,14 +1820,14 @@
       <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">akan dipindahkan ke <strong>Kelas <span id="promosiCalonKelas">—</span></strong> sebagai santri aktif</div>
     </div>
     <div class="form-group" style="margin-bottom:18px;">
-      <label>SPP/bulan (Rp) <span style="font-size:11px;color:var(--text-muted);">— sesuai nominal yang didaftarkan, bisa diubah</span></label>
+      <label>SPP/bulan (Rp) <span style="font-size:12px;color:var(--text-muted);">— sesuai nominal yang didaftarkan, bisa diubah</span></label>
       <input type="number" id="promosiCalonSppInput" placeholder="0" min="0">
-      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="promosiCalonSppHint"></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;" id="promosiCalonSppHint"></div>
     </div>
     <div class="form-group" style="margin-bottom:18px;">
-      <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— bulan santri ini mulai aktif</span></label>
+      <label>SPP mulai bulan <span style="font-size:12px;color:var(--text-muted);">— bulan santri ini mulai aktif</span></label>
       <select id="promosiCalonMulaiInput"></select>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
       <div id="promosiCalonMulaiWarn" style="display:none;"></div>
     </div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
@@ -1852,13 +1852,13 @@
       <div style="font-size:12px;color:var(--text-muted);" id="promosiMassalNames">—</div>
     </div>
     <div class="form-group" style="margin-bottom:16px;">
-      <label>Override SPP/bulan (Rp) <span style="font-size:11px;color:var(--text-muted);">— kosongkan untuk pakai nominal SPP masing-masing calon</span></label>
+      <label>Override SPP/bulan (Rp) <span style="font-size:12px;color:var(--text-muted);">— kosongkan untuk pakai nominal SPP masing-masing calon</span></label>
       <input type="number" id="promosiMassalSppInput" placeholder="Kosongkan = pakai SPP per-calon" min="0">
     </div>
     <div class="form-group" style="margin-bottom:16px;">
-      <label>SPP mulai bulan <span style="font-size:11px;color:var(--text-muted);">— berlaku untuk semua calon terpilih</span></label>
+      <label>SPP mulai bulan <span style="font-size:12px;color:var(--text-muted);">— berlaku untuk semua calon terpilih</span></label>
       <select id="promosiMassalMulaiInput"></select>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
       <div id="promosiMassalMulaiWarn" style="display:none;"></div>
     </div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">

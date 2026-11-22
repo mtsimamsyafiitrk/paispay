@@ -57,7 +57,7 @@ function _renderSpmbStats(list) {
       <div class="stat-info">
         <div class="stat-label">Terkumpul Pendaftaran</div>
         <div class="stat-value" style="font-size:15px;">${rp(totalPendaftaran)}</div>
-        ${totalSisaPendaftaran > 0 ? `<div style="font-size:11px;color:var(--danger);margin-top:2px;">Sisa: ${rp(totalSisaPendaftaran)}</div>` : ''}
+        ${totalSisaPendaftaran > 0 ? `<div style="font-size:12px;color:var(--danger);margin-top:2px;">Sisa: ${rp(totalSisaPendaftaran)}</div>` : ''}
       </div>
     </div>
     <div class="stat-card">
@@ -95,16 +95,16 @@ function _renderSpmbTable(list) {
 
     const pendaftaranBadge = _pd.nominal > 0
       ? (pendaftaranOk
-        ? `<span style="font-size:11px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
+        ? `<span style="font-size:12px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
         : `<div style="font-size:12px;">${rp(_pd.paid)} / ${rp(_pd.nominal)}</div>
-           <div style="font-size:11px;color:var(--danger);">Sisa ${rp(sisaPendaftaran)}</div>`)
+           <div style="font-size:12px;color:var(--danger);">Sisa ${rp(sisaPendaftaran)}</div>`)
       : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
 
     const pangkalBadge = _pk.nominal > 0
       ? (pangkalOk
-        ? `<span style="font-size:11px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
+        ? `<span style="font-size:12px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
         : `<div style="font-size:12px;">${rp(_pk.paid)} / ${rp(_pk.nominal)}</div>
-           <div style="font-size:11px;color:var(--danger);">Sisa ${rp(sisaPangkal)}</div>`)
+           <div style="font-size:12px;color:var(--danger);">Sisa ${rp(sisaPangkal)}</div>`)
       : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
 
     const sppLabel = s.spp > 0
@@ -118,16 +118,16 @@ function _renderSpmbTable(list) {
       <td>${i + 1}</td>
       <td>
         <div style="font-weight:600;font-size:13px;">${esc(s.nama)}</div>
-        ${s.nisn ? `<div style="font-size:11px;color:var(--text-muted);">NISN: ${esc(s.nisn)}</div>` : ''}
+        ${s.nisn ? `<div style="font-size:12px;color:var(--text-muted);">NISN: ${esc(s.nisn)}</div>` : ''}
       </td>
       <td><span style="font-weight:700;font-size:14px;">Kelas ${esc(s.kelas)}</span></td>
       <td>${sppLabel}</td>
       <td>${pendaftaranBadge}</td>
       <td>${pangkalBadge}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-accent" onclick="confirmPromoteSingle('${nameSafe}')" title="Promosikan ke siswa aktif" style="font-size:11px;">🎓 Promosi</button>
-        <button class="btn btn-sm btn-outline" onclick="openEditCalonModal('${nameSafe}')" title="Edit data" style="font-size:11px;">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteCalonSantri('${nameSafe}')" title="Hapus" style="font-size:11px;">🗑️</button>
+        <button class="btn btn-sm btn-accent" onclick="confirmPromoteSingle('${nameSafe}')" title="Promosikan ke siswa aktif" style="font-size:12px;">🎓 Promosi</button>
+        <button class="btn btn-sm btn-outline" onclick="openEditCalonModal('${nameSafe}')" title="Edit data" style="font-size:12px;">✏️ Edit</button>
+        <button class="btn btn-sm btn-danger act-del" onclick="deleteCalonSantri('${nameSafe}')" title="Hapus" style="font-size:12px;">🗑️ Hapus</button>
       </td>
     </tr>`;
   }).join('');

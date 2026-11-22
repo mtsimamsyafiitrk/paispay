@@ -51,7 +51,7 @@ async function renderLogSiswa(resetPage = true) {
 
     const listHtml = Object.entries(grouped).map(([tgl, txns]) => `
       <div style="margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
           📅 ${tgl}
         </div>
         ${txns.map(r => {
@@ -61,7 +61,7 @@ async function renderLogSiswa(resetPage = true) {
             <div style="flex:1;min-width:0;">
               <div style="font-weight:700;font-size:13px;">${esc(r.nama)} <span style="font-weight:400;color:var(--text-muted);">— ${esc(r.kelas)}</span></div>
               <div style="font-size:12px;color:#555;margin-top:2px;">${esc(r.jenis)}</div>
-              ${r.catatan ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">💬 ${esc(r.catatan)}</div>` : ''}
+              ${r.catatan ? `<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">💬 ${esc(r.catatan)}</div>` : ''}
             </div>
             <div style="text-align:right;white-space:nowrap;">
               <div style="font-weight:700;font-size:14px;color:var(--primary-light);">Rp ${fmt(r.nominal)}</div>
@@ -75,7 +75,7 @@ async function renderLogSiswa(resetPage = true) {
         <button class="btn btn-outline btn-sm" onclick="logGoPage(${logPage-1})" ${logPage<=1?'disabled':''}>← Prev</button>
         <span style="color:var(--text-muted);">Hal ${logPage} / ${totalPages} &nbsp;(${total} transaksi)</span>
         <button class="btn btn-outline btn-sm" onclick="logGoPage(${logPage+1})" ${logPage>=totalPages?'disabled':''}>Next →</button>
-      </div>` : `<div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px;">${total} transaksi</div>`;
+      </div>` : `<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">${total} transaksi</div>`;
 
     wrap.innerHTML = listHtml + pagCtrl;
 
@@ -143,7 +143,7 @@ function _renderSiswaTable(resetPage) {
         // santri masuk di tengah tahun) tidak keliru dianggap menunggak.
         const lunas = !sppHistMonths(history[ta]).some(x => x.sisa > 0);
         const short = ta.replace(/20(\d\d)\/20(\d\d)/, '$1/$2');
-        return `<span style="font-size:11px;padding:2px 7px;border-radius:5px;margin:1px;background:${lunas?'var(--primary-pale)':'var(--accent-pale)'};color:${lunas?'var(--primary)':'#7a5c10'};">${short}: ${lunas?'✅':'⚠️'}</span>`;
+        return `<span style="font-size:12px;padding:2px 7px;border-radius:5px;margin:1px;background:${lunas?'var(--primary-pale)':'var(--accent-pale)'};color:${lunas?'var(--primary)':'#7a5c10'};">${short}: ${lunas?'✅':'⚠️'}</span>`;
       }).join('');
     } else {
       // Lunas = hijau, menunggak (sudah jatuh tempo) = merah,
@@ -159,7 +159,7 @@ function _renderSiswaTable(resetPage) {
         const ang  = paid ? 0 : sppBulanDibayar(s, m);
         const ttl  = (paid ? 'Lunas' : sebelum ? mulaiTtl : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo')
           + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
-        return `<span title="${esc(ttl)}" style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:10px;margin:1px;background:${ang > 0 ? 'var(--accent-pale)' : bg};color:${fg};${ang > 0 ? 'outline:1px dashed var(--accent);' : ''}${sebelum?'opacity:.45;':''}">${m}</span>`;
+        return `<span title="${esc(ttl)}" style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:12px;margin:1px;background:${ang > 0 ? 'var(--accent-pale)' : bg};color:${fg};${ang > 0 ? 'outline:1px dashed var(--accent);' : ''}${sebelum?'opacity:.45;':''}">${m}</span>`;
       }).join('');
     }
     const nama_safe = escJs(s.nama);
@@ -182,9 +182,9 @@ function _renderSiswaTable(resetPage) {
       </td>
       <td>${tunggak>0?`<span class="badge badge-red">Tunggak ${rp(tunggak)}</span>`:'<span class="badge badge-green">✓ Lunas</span>'}</td>
       <td style="white-space:nowrap;">
-        <button class="btn btn-outline btn-sm" onclick="showDetail('${nama_safe}')" title="Detail">📋</button>
-        <button class="btn btn-accent btn-sm" onclick="openEditSiswa('${nama_safe}')" title="Edit data">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteSingle('${nama_safe}')" title="Hapus">🗑️</button>
+        <button class="btn btn-outline btn-sm" onclick="showDetail('${nama_safe}')" title="Detail">📋 Detail</button>
+        <button class="btn btn-accent btn-sm" onclick="openEditSiswa('${nama_safe}')" title="Edit data">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm act-del" onclick="deleteSingle('${nama_safe}')" title="Hapus">🗑️ Hapus</button>
       </td>
     </tr>`;
   }).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">Tidak ada data</td></tr>';
@@ -290,15 +290,15 @@ function onTunggakanSearch() {
   dd.innerHTML = matches.map((s, i) => {
     const tk = totalTunggakan(s);
     const badge = tk > 0
-      ? `<span style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;">Tunggak ${rp(tk)}</span>`
-      : `<span style="font-size:11px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
+      ? `<span style="font-size:12px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;">Tunggak ${rp(tk)}</span>`
+      : `<span style="font-size:12px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
     return `<div class="tk-sugg-item" data-idx="${i}" data-nama="${esc(s.nama)}"
       onmousedown="selectTunggakanStudent('${escJs(s.nama)}')"
       onmouseenter="hoverTunggakanItem(${i})"
       style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;">
       <div>
         <div style="font-weight:600;font-size:13.5px;">${esc(s.nama)}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${esc(kelasLabel(s))}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:1px;">${esc(kelasLabel(s))}</div>
       </div>
       ${badge}
     </div>`;
@@ -387,7 +387,7 @@ function renderTunggakanDetail(s) {
     return `<div title="${esc(ttl)}"
       style="padding:5px 2px;border-radius:8px;border:1.5px solid ${border};
       background:${ang > 0 ? 'var(--accent-pale)' : bg};color:${fg};${paid || due ? '' : 'border-style:dashed;'}${sebelum ? 'opacity:.45;' : ''}
-      font-size:11px;font-weight:600;text-align:center;">${m}${ang > 0 ? `<div style="font-size:9px;font-weight:500;">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
+      font-size:12px;font-weight:600;text-align:center;">${m}${ang > 0 ? `<div style="font-size:12px;font-weight:500;">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
   }).join('');
 
   // Riwayat berlabel TA berjalan tidak ikut dihitung (lihat sppTunggakanPrevList)
@@ -410,7 +410,7 @@ function renderTunggakanDetail(s) {
           <div style="font-size:13px;font-weight:800;color:var(--danger);">${y.unpaid.length} bln · ${rp(y.amount)}</div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;">
-          ${y.detail.map(d => `<span style="font-size:11px;font-weight:600;background:#fff;border:1.5px solid var(--danger);color:var(--danger);border-radius:7px;padding:3px 8px;">
+          ${y.detail.map(d => `<span style="font-size:12px;font-weight:600;background:#fff;border:1.5px solid var(--danger);color:var(--danger);border-radius:7px;padding:3px 8px;">
             ${MONTH_FULL[d.m]} · ${rp(d.sisa)}${d.dibayar > 0 ? ' <span style="font-weight:400;">(angsuran ' + rp(d.dibayar) + ')</span>' : ''}</span>`).join('')}
         </div>
       </div>`).join('')}` : '');
@@ -457,21 +457,21 @@ function renderTunggakanDetail(s) {
       ${totalBanner}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">SPP / Bulan</div>
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">SPP / Bulan</div>
           <div style="font-size:18px;font-weight:800;color:var(--primary);">${rp(s.spp)}</div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Bulan Lunas</div>
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Bulan Lunas</div>
           <div style="font-size:18px;font-weight:800;color:var(--primary-light);">${bulanLunas.length} <span style="font-size:12px;font-weight:500;">/ 12</span></div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Item Tagihan</div>
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Item Tagihan</div>
           <div style="font-size:18px;font-weight:800;color:${itemT>0?'var(--danger)':'var(--primary-light)'};">${tagihanSiswa.length}</div>
         </div>
       </div>
       <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">📅 Status SPP per Bulan (TA berjalan)</div>
       <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px;">${monthGrid}</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;">
         Tunggakan dihitung sampai bulan berjalan${sppDueMonthLabel() ? ' (<strong>' + esc(sppDueMonthLabel()) + '</strong>)' : ''} —
         bulan bergaris putus-putus belum jatuh tempo &amp; tidak dihitung menunggak.
       </div>

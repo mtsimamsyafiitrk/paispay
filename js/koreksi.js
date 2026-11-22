@@ -44,7 +44,7 @@ function onKoreksiNamaSearch() {
       onmouseenter="this.style.background='var(--primary-pale)'" onmouseleave="this.style.background=''"
       style="padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;">
       <div style="font-weight:600;">${esc(s.nama)}</div>
-      <div style="font-size:11px;color:var(--text-muted);">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn?' · NISN '+esc(s.nisn):''}</div>
+      <div style="font-size:12px;color:var(--text-muted);">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn?' · NISN '+esc(s.nisn):''}</div>
     </div>`).join('');
   dd.style.display = 'block';
 }
@@ -94,11 +94,11 @@ async function loadKoreksiKwtList(nama) {
           <div style="text-align:right;">
             <div style="font-weight:700;font-size:14px;">Rp ${fmt(r.total)}</div>
             ${sudahDikoreksi
-              ? `<div style="font-size:11px;color:#6b7280;background:#f3f4f6;padding:2px 8px;border-radius:10px;margin-top:2px;">Sudah dikoreksi</div>`
-              : `<div style="font-size:11px;color:var(--primary-light);">Klik untuk pilih →</div>`}
+              ? `<div style="font-size:12px;color:#6b7280;background:#f3f4f6;padding:2px 8px;border-radius:10px;margin-top:2px;">Sudah dikoreksi</div>`
+              : `<div style="font-size:12px;color:var(--primary-light);">Klik untuk pilih →</div>`}
           </div>
         </div>
-        ${r.catatan ? `<div style="font-size:11px;color:#666;margin-top:6px;">💬 ${esc(r.catatan)}</div>` : ''}
+        ${r.catatan ? `<div style="font-size:12px;color:#666;margin-top:6px;">💬 ${esc(r.catatan)}</div>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
@@ -133,7 +133,7 @@ async function selectKoreksiKwt(id) {
           <div style="flex:1;">
             <div style="font-weight:600;font-size:13px;">${esc(item.name)}${item.bulan?' ('+esc(MONTH_FULL[item.bulan]||item.bulan)+')':''}</div>
             <div style="font-size:12px;color:var(--text-muted);">Nilai tercatat di kuitansi: <strong>Rp ${fmt(item.amount)}</strong></div>
-            ${isPangkal ? `<div style="font-size:11px;color:#888;margin-top:2px;">Total pangkal dibayar saat ini: Rp ${fmt(pangkalPaidSekarang)} dari Rp ${fmt(student?.pangkal||0)}</div>` : ''}
+            ${isPangkal ? `<div style="font-size:12px;color:#888;margin-top:2px;">Total pangkal dibayar saat ini: Rp ${fmt(pangkalPaidSekarang)} dari Rp ${fmt(student?.pangkal||0)}</div>` : ''}
           </div>
         </label>
         <!-- Input nilai koreksi (muncul saat dicentang) -->
@@ -146,7 +146,7 @@ async function selectKoreksiKwt(id) {
           <input type="number" id="koreksiVal_${i}" placeholder="Nilai yang benar (Rp)..." value="${item.amount}"
             style="width:100%;padding:8px 12px;border:2px solid var(--primary-light);border-radius:8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;display:none;"
             oninput="updateKoreksiTotal()">
-          ${isPangkal ? `<div id="koreksiPangkalInfo_${i}" style="display:none;margin-top:6px;font-size:11px;color:#888;"></div>` : ''}
+          ${isPangkal ? `<div id="koreksiPangkalInfo_${i}" style="display:none;margin-top:6px;font-size:12px;color:#888;"></div>` : ''}
         </div>
       </div>`;
     }).join('');

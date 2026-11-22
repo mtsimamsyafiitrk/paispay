@@ -140,8 +140,8 @@ function onInputNamaSearch() {
   const tunggakBadge = s => {
     const tk = totalTunggakan(s);
     return tk > 0
-      ? `<span style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;">⚠️ ${rp(tk)}</span>`
-      : `<span style="font-size:11px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
+      ? `<span style="font-size:12px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;">⚠️ ${rp(tk)}</span>`
+      : `<span style="font-size:12px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
   };
 
   // Highlight karakter yang cocok (tiap potongan di-escape agar aman dari XSS)
@@ -160,8 +160,8 @@ function onInputNamaSearch() {
       onmouseenter="hoverInputNamaItem(${i})"
       style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">
       <div>
-        <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span style="font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">${esc(kelasLabel(s))}</span>` : ''}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
+        <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span style="font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">${esc(kelasLabel(s))}</span>` : ''}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
       </div>
       ${tunggakBadge(s)}
     </div>`).join('');

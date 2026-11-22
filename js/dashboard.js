@@ -61,7 +61,7 @@ function _renderDashboard() {
     return `<tr>
       <td><strong>${k==='?'?'Kelas Belum Diset':esc(k)}</strong></td>
       <td>${ks.length}</td>
-      <td>${lunas} / ${ks.length} <span style="color:var(--text-muted);font-size:11px;">(${pct_}%)</span></td>
+      <td>${lunas} / ${ks.length} <span style="color:var(--text-muted);font-size:12px;">(${pct_}%)</span></td>
       <td>${rp(tkItems)}</td>
       <td>${pct_===100?'<span class="badge badge-green">✓ Lunas</span>':pct_>50?'<span class="badge badge-yellow">~Sebagian</span>':'<span class="badge badge-red">Banyak Tunggak</span>'}</td>
     </tr>`;
@@ -90,7 +90,7 @@ function _renderDashboard() {
     const due = isSppDue(m);
     return `<div style="margin-bottom:10px;${due?'':'opacity:.6;'}">
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
-        <span style="font-weight:600;">${MONTH_FULL[m]}${due?'':' <span style="font-weight:400;font-size:10px;color:var(--text-muted);">(belum jatuh tempo)</span>'}</span><span style="color:var(--text-muted);">${paid}/${total}</span>
+        <span style="font-weight:600;">${MONTH_FULL[m]}${due?'':' <span style="font-weight:400;font-size:12px;color:var(--text-muted);">(belum jatuh tempo)</span>'}</span><span style="color:var(--text-muted);">${paid}/${total}</span>
       </div>
       <div class="progress-wrap"><div class="progress-bar ${!due?'yellow':p>80?'green':p>40?'yellow':'red'}" style="width:${p}%"></div></div>
     </div>`;
@@ -103,7 +103,7 @@ function _renderDashboard() {
     tbody2.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Belum ada transaksi tercatat</td></tr>';
   } else {
     tbody2.innerHTML = recent.map(t => `<tr>
-      <td style="font-size:11px;color:var(--text-muted);">${esc(t.time)}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${esc(t.time)}</td>
       <td><strong>${esc(t.nama)}</strong></td><td>${esc(t.kelas)}</td>
       <td>${esc(t.jenis)}</td><td>${rp(t.nominal)}</td>
       <td><span class="badge badge-green">Lunas</span></td>

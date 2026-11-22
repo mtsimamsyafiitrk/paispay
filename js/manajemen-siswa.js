@@ -66,7 +66,7 @@ function renderPromosiStudentList() {
   students.forEach((s, i) => {
     if (s.kelas !== lastKelas) {
       lastKelas = s.kelas;
-      html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-pale);margin-top:${i>0?'8px':'0'};">
+      html += `<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-pale);margin-top:${i>0?'8px':'0'};">
         Kelas ${esc(s.kelas)}
       </div>`;
     }
@@ -84,7 +84,7 @@ function renderPromosiStudentList() {
         style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
       <div style="flex:1;min-width:0;">
         <div style="font-weight:600;font-size:13px;">${esc(s.nama)}</div>
-        <div style="font-size:11px;color:var(--text-muted);">Kelas ${esc(s.kelas)}</div>
+        <div style="font-size:12px;color:var(--text-muted);">Kelas ${esc(s.kelas)}</div>
       </div>
       ${sel ? `
         <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 9px;border-radius:6px;
@@ -100,7 +100,7 @@ function renderPromosiStudentList() {
         <div style="font-size:12px;min-width:90px;text-align:right;">
           ${action==='naik' ? nextLabel : `<span style="color:var(--text-muted);">Tetap Kls ${esc(s.kelas)}</span>`}
         </div>
-      ` : `<div style="font-size:11px;color:var(--border);min-width:200px;text-align:right;">—</div>`}
+      ` : `<div style="font-size:12px;color:var(--border);min-width:200px;text-align:right;">—</div>`}
     </div>`;
   });
 

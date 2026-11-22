@@ -227,7 +227,7 @@ function thCardHTML(y, i) {
         <label>SPP per Bulan (Rp)</label>
         <input type="number" min="0" step="1000" value="${y.rate || ''}" placeholder="0" oninput="thSetField(${i},'rate',this.value)">
       </div>
-      <button class="btn btn-danger btn-sm" onclick="thRemoveTA(${i})" title="Hapus tahun ajaran ini">🗑️</button>
+      <button class="btn btn-danger btn-sm act-del" onclick="thRemoveTA(${i})" title="Hapus tahun ajaran ini">🗑️ Hapus</button>
     </div>
 
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
@@ -237,7 +237,7 @@ function thCardHTML(y, i) {
       <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'belum')">❌ Semua belum bayar</button>
     </div>
 
-    <div style="display:grid;grid-template-columns:118px 1fr 1fr;gap:8px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+    <div style="display:grid;grid-template-columns:118px 1fr 1fr;gap:8px;font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:1px solid var(--border);">
       <div>Bulan ditagih</div><div>Nominal (Rp)</div><div>Sudah dibayar (Rp)</div>
     </div>
     ${monthRows}
