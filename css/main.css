@@ -543,6 +543,14 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 #loginScreen.hidden { display: none; }
+/* Saat aplikasi dibuka dalam keadaan sudah login: Dashboard tampil dulu, redup
+   & belum bisa diklik, sampai data pertama selesai dimuat. */
+.main-content.app-loading .page { opacity: .45; pointer-events: none; }
+.main-content.app-loading::before {
+  content: 'Memuat data…'; position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 50;
+  background: var(--primary); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow-lg);
+}
 
 .login-card {
   background: #fff; border-radius: 24px;
