@@ -935,6 +935,7 @@ async function cetakKuitansi(data) {
     .kuitansi-wrap { display:flex; flex-direction:column; gap:10px; max-width:190mm; margin:0 auto; }
     hr.sep { border:none; border-top:2px dashed #aaa; margin:4px 0; }
     .print-btn { display:block; margin:0 auto 14px; padding:10px 32px; background:#1e5631; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; }
+    ${KWT_CSS}
   </style></head><body>
   <button class="print-btn no-print" onclick="window.print()">🖨️ Cetak Kuitansi</button>
   <div class="kuitansi-wrap">

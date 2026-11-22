@@ -90,7 +90,7 @@ function isiFormKT() {
   toggleTTDOnline();
   if (ktData.ttd_online_img) {
     const prev = document.getElementById('kt_ttd_preview');
-    if (prev) prev.innerHTML = `<img src="${ktData.ttd_online_img}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+    if (prev) prev.innerHTML = `<img src="${ktData.ttd_online_img}" class="img-fit">`;
     const hapusBtn = document.getElementById('kt_ttd_hapus');
     if (hapusBtn) hapusBtn.style.display = 'inline-flex';
   }
@@ -175,7 +175,7 @@ function previewTTDOnline(input) {
     ktData.ttd_online_img = e.target.result;
     const prev = document.getElementById('kt_ttd_preview');
     if (prev) {
-      prev.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+      prev.innerHTML = `<img src="${e.target.result}" class="img-fit">`;
       prev.style.borderStyle = 'solid';
       prev.style.borderColor = 'var(--primary-light)';
     }
@@ -190,7 +190,7 @@ function hapusTTDOnline() {
   ktData.ttd_online_img = '';
   const prev = document.getElementById('kt_ttd_preview');
   if (prev) {
-    prev.innerHTML = '<span style="font-size:12px;color:var(--text-muted);text-align:center;">✍️ Klik upload<br>gambar TTD</span>';
+    prev.innerHTML = '<span class="hint text-center">✍️ Klik upload<br>gambar TTD</span>';
     prev.style.borderStyle = 'dashed';
     prev.style.borderColor = 'var(--border)';
   }
@@ -252,8 +252,8 @@ function renderKTPreview() {
     dibayar_oleh: 'Orang Tua Santri',
     no_kuitansi: noContoh,
   };
-  el.innerHTML = buildKuitansiHTML(contoh, kt, 'Lembar Pembayar')
-    + '<div style="border-top:2px dashed #aaa;margin:10px 0;"></div>'
+  el.innerHTML = `<style>${KWT_CSS}</style>` + buildKuitansiHTML(contoh, kt, 'Lembar Pembayar')
+    + '<div class="kwt-sep"></div>'
     + buildKuitansiHTML(contoh, kt, 'Lembar Arsip');
 }
 
@@ -289,26 +289,24 @@ function buildKuitansiHTML(data, kt, label) {
 
   // Lembar arsip diberi kotak kosong 2 cm x 0,5 cm tepat di atas label
   // "LEMBAR ARSIP" (jarak 0,2 cm) untuk catatan tulis tangan petugas.
-  const ruangArsipHtml = isArsip
-    ? `<div style="width:2cm;height:0.5cm;margin:0 0 0.2cm auto;border:1px solid #bbb;box-sizing:border-box;"></div>`
-    : '';
+  const ruangArsipHtml = isArsip ? `<div class="k-arsip-box"></div>` : '';
 
   const logoHtml = (kt.show_logo && logoB64)
-    ? `<img src="${safeUrl(logoB64)}" style="width:52px;height:52px;object-fit:contain;">`
-    : (kt.show_logo ? `<div style="width:52px;height:52px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🕌</div>` : '');
+    ? `<img class="k-logo" src="${safeUrl(logoB64)}">`
+    : (kt.show_logo ? `<div class="k-logo-ph">🕌</div>` : '');
 
   const itemRows = data.items.map(i => {
     const dibatalkan = i._dibatalkan || (i._tipe === 'batalkan');
     const dikoreksi  = i._koreksi || i._tipe === 'koreksi_nilai';
-    const rowStyle   = dibatalkan ? 'color:#dc2626;' : dikoreksi ? 'color:#b45309;font-weight:600;' : '';
+    const rowCls     = dibatalkan ? ' class="k-row-batal"' : dikoreksi ? ' class="k-row-koreksi"' : '';
     const badge      = dibatalkan
-      ? ' <span style="font-size:9px;background:#fef2f2;color:#dc2626;padding:1px 5px;border-radius:3px;font-family:sans-serif;">DIBATALKAN</span>'
+      ? ' <span class="k-badge k-badge-batal">DIBATALKAN</span>'
       : dikoreksi
-      ? ' <span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:3px;font-family:sans-serif;">KOREKSI</span>' : '';
+      ? ' <span class="k-badge k-badge-koreksi">KOREKSI</span>' : '';
     const namaItem = i.name + (i.bulan && !i.name.includes('(') ? ' (' + (MONTH_FULL[i.bulan]||i.bulan) + ')' : '');
-    return `<tr style="${rowStyle}">
-      <td style="padding:4px 8px;border:1px solid #ddd;font-size:${fs}px;">${esc(namaItem)}${badge}</td>
-      <td style="padding:4px 8px;border:1px solid #ddd;text-align:right;font-size:${fs}px;">${dibatalkan ? '<s>Rp '+fmt(i.amount)+'</s>' : 'Rp '+fmt(i.amount)}</td>
+    return `<tr${rowCls}>
+      <td class="k-cell">${esc(namaItem)}${badge}</td>
+      <td class="k-cell k-num">${dibatalkan ? '<s>Rp '+fmt(i.amount)+'</s>' : 'Rp '+fmt(i.amount)}</td>
     </tr>`;
   }).join('');
 
@@ -318,82 +316,128 @@ function buildKuitansiHTML(data, kt, label) {
     const kiri  = kt.ttd_kiri  || 'Bendahara / Admin';
     const kanan = kt.ttd_kanan || '';
     const ttdImgHtml = (kt.use_ttd_online && kt.ttd_online_img)
-      ? `<img src="${safeUrl(kt.ttd_online_img)}" style="height:40px;max-width:130px;object-fit:contain;display:block;margin:0 auto;">`
-      : `<div style="height:40px;"></div>`;
-
-    const blokKiri = `<div style="min-width:130px;text-align:center;">
-      <div style="margin-bottom:4px;">${esc(kiri)}</div>
-      ${ttdImgHtml}
-      <div style="border-bottom:1.5px solid #333;width:130px;margin:0 auto;"></div>
-      <div style="margin-top:4px;font-size:${fs-1}px;color:#555;">(Tanda Tangan)</div>
+      ? `<img class="k-ttd-img" src="${safeUrl(kt.ttd_online_img)}">`
+      : `<div class="k-ttd-space"></div>`;
+    const blok = (role, img) => `<div class="k-ttd-blok">
+      <div class="k-ttd-role">${esc(role)}</div>
+      ${img}
+      <div class="k-ttd-line"></div>
+      <div class="k-ttd-cap">(Tanda Tangan)</div>
     </div>`;
+    const blokKiri  = blok(kiri, ttdImgHtml);
+    const blokKanan = kanan ? blok(kanan, `<div class="k-ttd-space"></div>`) : '';
 
-    const blokKanan = kanan ? `<div style="min-width:130px;text-align:center;">
-      <div style="margin-bottom:4px;">${esc(kanan)}</div>
-      <div style="height:40px;"></div>
-      <div style="border-bottom:1.5px solid #333;width:130px;margin:0 auto;"></div>
-      <div style="margin-top:4px;font-size:${fs-1}px;color:#555;">(Tanda Tangan)</div>
-    </div>` : '';
-
-    ttdHtml = `<div style="display:flex;justify-content:${kanan ? 'space-between' : 'flex-end'};font-size:${fs}px;margin-top:10px;">
+    ttdHtml = `<div class="k-ttd${kanan ? ' split' : ''}">
       ${kanan ? blokKiri : ''}
       ${kanan ? blokKanan : blokKiri}
     </div>`;
   }
 
+  // Warna & ukuran huruf dari template dikirim lewat variabel CSS (lihat KWT_CSS)
   return `
-  <div style="width:100%;border:2px solid ${warnaBorder};border-radius:8px;padding:12px 16px;font-family:'Times New Roman',serif;box-sizing:border-box;background:${bgLembar};-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+  <div class="kwt" style="--kw:${warnaBorder};--kfs:${fs}px;--kbg:${bgLembar};--kbgt:${bgTotal};">
     <!-- Header -->
-    <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid ${warnaBorder};padding-bottom:8px;margin-bottom:8px;">
+    <div class="k-head">
       ${logoHtml}
-      <div style="flex:1;text-align:center;">
-        <div style="font-size:${fs+4}px;font-weight:700;color:${warnaBorder};">${esc(namaLbg)}</div>
-        ${alamatLbg ? `<div style="font-size:${fs-1}px;color:#555;">${esc(alamatLbg)}</div>` : ''}
-        ${kontakLbg ? `<div style="font-size:${fs-1}px;color:#555;">${esc(kontakLbg)}</div>` : ''}
+      <div class="k-head-mid">
+        <div class="k-nama">${esc(namaLbg)}</div>
+        ${alamatLbg ? `<div class="k-sub">${esc(alamatLbg)}</div>` : ''}
+        ${kontakLbg ? `<div class="k-sub">${esc(kontakLbg)}</div>` : ''}
       </div>
-      <div style="text-align:right;min-width:80px;">
+      <div class="k-head-right">
         ${ruangArsipHtml}
-        <span style="background:${warnaBorder};color:#fff;padding:3px 8px;border-radius:4px;font-size:${fs-1}px;font-weight:700;">${label}</span>
+        <span class="k-label">${label}</span>
       </div>
     </div>
 
     <!-- Judul -->
-    <div style="text-align:center;margin-bottom:8px;">
-      <div style="font-size:${fs+2}px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${warnaBorder};">
+    <div class="k-judul-wrap">
+      <div class="k-judul">
         ${isKoreksi ? 'KUITANSI KOREKSI' : esc(kt.judul)}
       </div>
-      ${isKoreksi && data.ref_no_kuitansi ? `<div style="font-size:${fs-1}px;color:#b45309;margin-top:3px;font-family:sans-serif;">📋 Koreksi atas Kuitansi No. <strong>${esc(data.ref_no_kuitansi)}</strong></div>` : ''}
+      ${isKoreksi && data.ref_no_kuitansi ? `<div class="k-ref">📋 Koreksi atas Kuitansi No. <strong>${esc(data.ref_no_kuitansi)}</strong></div>` : ''}
     </div>
 
     <!-- Info -->
-    <table style="width:100%;font-size:${fs}px;margin-bottom:8px;border-collapse:collapse;">
-      ${kt.show_nokwt ? `<tr><td style="width:28%;padding:2px 0;">No. Kuitansi</td><td style="width:2%">:</td><td style="font-weight:700;">${esc(noKwt)}</td><td style="width:24%;text-align:right;">Tanggal</td><td style="width:2%">:</td><td style="font-weight:700;">${esc(data.time)}</td></tr>` : `<tr><td colspan="6" style="text-align:right;padding:2px 0;font-size:${fs-1}px;color:#666;">Tanggal: ${esc(data.time)}</td></tr>`}
-      <tr><td style="padding:2px 0;">Nama Santri</td><td>:</td><td style="font-weight:700;" colspan="4">${esc(data.nama)}</td></tr>
-      <tr><td style="padding:2px 0;">Kelas</td><td>:</td><td colspan="4">${esc(data.kelas)}${kt.show_nisn && data.nisn ? ' &nbsp;|&nbsp; NISN: ' + esc(data.nisn) : ''}</td></tr>
-      ${data.metode ? `<tr><td style="padding:2px 0;">Metode</td><td>:</td><td colspan="4">${data.metode === 'transfer' ? '🏦 Transfer' : '💵 Tunai'}${data.dibayar_oleh ? ' &nbsp;|&nbsp; Dibayar oleh: <strong>' + esc(data.dibayar_oleh) + '</strong>' : ''}</td></tr>` : (data.dibayar_oleh ? `<tr><td style="padding:2px 0;">Dibayar oleh</td><td>:</td><td colspan="4"><strong>${esc(data.dibayar_oleh)}</strong></td></tr>` : '')}
-      ${kt.show_catatan && data.catatan ? `<tr><td style="padding:2px 0;">Keterangan</td><td>:</td><td colspan="4" style="font-style:italic;">${esc(data.catatan)}</td></tr>` : ''}
+    <table class="k-info">
+      ${kt.show_nokwt ? `<tr><td class="k-c-label">No. Kuitansi</td><td class="k-c-sep">:</td><td class="k-b">${esc(noKwt)}</td><td class="k-c-label2">Tanggal</td><td class="k-c-sep">:</td><td class="k-b">${esc(data.time)}</td></tr>` : `<tr><td colspan="6" class="k-tgl">Tanggal: ${esc(data.time)}</td></tr>`}
+      <tr><td class="k-pad">Nama Santri</td><td>:</td><td class="k-b" colspan="4">${esc(data.nama)}</td></tr>
+      <tr><td class="k-pad">Kelas</td><td>:</td><td colspan="4">${esc(data.kelas)}${kt.show_nisn && data.nisn ? ' &nbsp;|&nbsp; NISN: ' + esc(data.nisn) : ''}</td></tr>
+      ${data.metode ? `<tr><td class="k-pad">Metode</td><td>:</td><td colspan="4">${data.metode === 'transfer' ? '🏦 Transfer' : '💵 Tunai'}${data.dibayar_oleh ? ' &nbsp;|&nbsp; Dibayar oleh: <strong>' + esc(data.dibayar_oleh) + '</strong>' : ''}</td></tr>` : (data.dibayar_oleh ? `<tr><td class="k-pad">Dibayar oleh</td><td>:</td><td colspan="4"><strong>${esc(data.dibayar_oleh)}</strong></td></tr>` : '')}
+      ${kt.show_catatan && data.catatan ? `<tr><td class="k-pad">Keterangan</td><td>:</td><td colspan="4" class="k-i">${esc(data.catatan)}</td></tr>` : ''}
     </table>
 
     <!-- Item -->
-    <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
-      <thead><tr style="background:${warnaBorder};color:#fff;">
-        <th style="padding:5px 8px;border:1px solid ${warnaBorder};text-align:left;font-size:${fs}px;">Rincian Pembayaran</th>
-        <th style="padding:5px 8px;border:1px solid ${warnaBorder};text-align:right;font-size:${fs}px;">Nominal</th>
+    <table class="k-items">
+      <thead><tr class="k-items-head">
+        <th class="k-th">Rincian Pembayaran</th>
+        <th class="k-th k-num">Nominal</th>
       </tr></thead>
       <tbody>${itemRows}</tbody>
-      <tfoot><tr style="background:${bgTotal};font-weight:700;">
-        <td style="padding:5px 8px;border:1px solid #ddd;font-size:${fs}px;">TOTAL</td>
-        <td style="padding:5px 8px;border:1px solid #ddd;text-align:right;font-size:${fs+1}px;color:${warnaBorder};">Rp ${fmt(data.total)}</td>
+      <tfoot><tr class="k-total">
+        <td class="k-tcell">TOTAL</td>
+        <td class="k-tcell k-num k-tamt">Rp ${fmt(data.total)}</td>
       </tr></tfoot>
     </table>
 
-    ${kt.show_terbilang ? `<div style="background:#f9f9f9;border:1px dashed #ccc;border-radius:5px;padding:5px 8px;font-size:${fs-1}px;margin-bottom:8px;"><strong>Terbilang:</strong> <em>${terbilangFull(data.total)}</em></div>` : ''}
+    ${kt.show_terbilang ? `<div class="k-terbilang"><strong>Terbilang:</strong> <em>${terbilangFull(data.total)}</em></div>` : ''}
 
     ${ttdHtml}
 
-    ${kt.footer ? `<div style="margin-top:8px;text-align:center;font-size:${fs-1}px;color:#888;border-top:1px solid #eee;padding-top:6px;">${esc(kt.footer)}</div>` : ''}
+    ${kt.footer ? `<div class="k-footer">${esc(kt.footer)}</div>` : ''}
   </div>`;
 }
+
+// Gaya kuitansi — satu sumber untuk preview di aplikasi & jendela cetak
+// (jendela cetak tidak memuat main.css). Selektor diawali .kwt supaya
+// menang atas gaya tabel umum aplikasi saat dipreview.
+const KWT_CSS = `
+.kwt { width:100%; border:2px solid var(--kw); border-radius:8px; padding:12px 16px; font-family:'Times New Roman',serif; box-sizing:border-box; background:var(--kbg); -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.kwt .k-head { display:flex; align-items:center; gap:10px; border-bottom:2px solid var(--kw); padding-bottom:8px; margin-bottom:8px; }
+.kwt .k-head-mid { flex:1; text-align:center; }
+.kwt .k-head-right { text-align:right; min-width:80px; }
+.kwt .k-logo { width:52px; height:52px; object-fit:contain; }
+.kwt .k-logo-ph { width:52px; height:52px; background:#e8f5e9; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.kwt .k-nama { font-size:calc(var(--kfs) + 4px); font-weight:700; color:var(--kw); }
+.kwt .k-sub { font-size:calc(var(--kfs) - 1px); color:#555; }
+.kwt .k-arsip-box { width:2cm; height:0.5cm; margin:0 0 0.2cm auto; border:1px solid #bbb; box-sizing:border-box; }
+.kwt .k-label { background:var(--kw); color:#fff; padding:3px 8px; border-radius:4px; font-size:calc(var(--kfs) - 1px); font-weight:700; }
+.kwt .k-judul-wrap { text-align:center; margin-bottom:8px; }
+.kwt .k-judul { font-size:calc(var(--kfs) + 2px); font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--kw); }
+.kwt .k-ref { font-size:calc(var(--kfs) - 1px); color:#b45309; margin-top:3px; font-family:sans-serif; }
+.kwt .k-info { width:100%; font-size:var(--kfs); margin-bottom:8px; border-collapse:collapse; }
+.kwt .k-c-label { width:28%; padding:2px 0; }
+.kwt .k-c-sep { width:2%; }
+.kwt .k-c-label2 { width:24%; text-align:right; }
+.kwt .k-pad { padding:2px 0; }
+.kwt .k-b { font-weight:700; }
+.kwt .k-i { font-style:italic; }
+.kwt .k-tgl { text-align:right; padding:2px 0; font-size:calc(var(--kfs) - 1px); color:#666; }
+.kwt .k-items { width:100%; border-collapse:collapse; margin-bottom:6px; }
+.kwt .k-items-head { background:var(--kw); color:#fff; }
+.kwt .k-th { padding:5px 8px; border:1px solid var(--kw); text-align:left; font-size:var(--kfs); }
+.kwt .k-cell { padding:4px 8px; border:1px solid #ddd; font-size:var(--kfs); }
+.kwt .k-row-batal { color:#dc2626; }
+.kwt .k-row-koreksi { color:#b45309; font-weight:600; }
+.kwt .k-badge { font-size:9px; padding:1px 5px; border-radius:3px; font-family:sans-serif; }
+.kwt .k-badge-batal { background:#fef2f2; color:#dc2626; }
+.kwt .k-badge-koreksi { background:#fef9c3; color:#b45309; }
+.kwt .k-total { background:var(--kbgt); font-weight:700; }
+.kwt .k-tcell { padding:5px 8px; border:1px solid #ddd; font-size:var(--kfs); }
+.kwt .k-num { text-align:right; }
+.kwt .k-tamt { font-size:calc(var(--kfs) + 1px); color:var(--kw); }
+.kwt .k-terbilang { background:#f9f9f9; border:1px dashed #ccc; border-radius:5px; padding:5px 8px; font-size:calc(var(--kfs) - 1px); margin-bottom:8px; }
+.kwt .k-ttd { display:flex; justify-content:flex-end; font-size:var(--kfs); margin-top:10px; }
+.kwt .k-ttd.split { justify-content:space-between; }
+.kwt .k-ttd-blok { min-width:130px; text-align:center; }
+.kwt .k-ttd-role { margin-bottom:4px; }
+.kwt .k-ttd-img { height:40px; max-width:130px; object-fit:contain; display:block; margin:0 auto; }
+.kwt .k-ttd-space { height:40px; }
+.kwt .k-ttd-line { border-bottom:1.5px solid #333; width:130px; margin:0 auto; }
+.kwt .k-ttd-cap { margin-top:4px; font-size:calc(var(--kfs) - 1px); color:#555; }
+.kwt .k-footer { margin-top:8px; text-align:center; font-size:calc(var(--kfs) - 1px); color:#888; border-top:1px solid #eee; padding-top:6px; }
+.kwt-sep { border-top:2px dashed #aaa; margin:10px 0; }
+`;
 
 // Render halaman template kuitansi
 async function renderTemplateKuitansiPage() {
