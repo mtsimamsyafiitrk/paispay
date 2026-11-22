@@ -97,8 +97,22 @@ function renderBukuIndukPage() {
 // ── Modal: Input Manual ──
 function openBiManual() {
   biResetManualForm();
+  // Saran nama dari data santri (termasuk alumni) & daftar TA mengikuti TA berjalan.
+  document.getElementById('bi_nama_list').innerHTML = appState.students
+    .map(s => `<option value="${esc(s.nama)}">${esc(kelasLabel(s))}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</option>`).join('');
+  const y = taStartYear();
+  document.getElementById('bi_ta_list').innerHTML = Array.from({ length: 8 }, (_, i) => `<option value="${y - i}/${y - i + 1}">`).join('');
   document.getElementById('biManualModal').classList.add('open');
   setTimeout(() => document.getElementById('bi_nama')?.focus(), 60);
+}
+// Nama cocok dengan santri terdaftar → isi NISN (bila kosong). Kelas sengaja
+// tidak diisi: kelas sekarang belum tentu kelas pada TA arsip — cukup petunjuk.
+function biIsiDariSantri() {
+  const nama = document.getElementById('bi_nama').value.trim().toLowerCase();
+  const s = nama && appState.students.find(x => x.nama.toLowerCase() === nama);
+  const nisn = document.getElementById('bi_nisn'), kelas = document.getElementById('bi_kelas');
+  if (s && s.nisn && !nisn.value) nisn.value = s.nisn;
+  kelas.placeholder = s ? `Kelas sekarang: ${kelasLabel(s)}` : 'mis. 9 / IX-A';
 }
 function closeBiManual() {
   document.getElementById('biManualModal').classList.remove('open');
@@ -145,6 +159,7 @@ function biRecalcTotal() {
 }
 function biResetManualForm() {
   ['bi_nama', 'bi_kelas', 'bi_nisn', 'bi_catatan'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const kls = document.getElementById('bi_kelas'); if (kls) kls.placeholder = 'mis. 9 / IX-A';
   const wrap = document.getElementById('bi_items_wrap');
   if (wrap) wrap.innerHTML = biItemRowHTML();
   biRecalcTotal();
