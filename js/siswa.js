@@ -136,33 +136,27 @@ function _renderSiswaTable(resetPage, keepSel) {
     const tagT       = tagihanOf(s.nama);
     const tagNominal = tagT.reduce((a, t) => a + (t.nominal || 0), 0);
     const tagPaid    = tagT.reduce((a, t) => a + (t.paid_amount || 0), 0);
-    const history = s.spp_history || {};
-    const taKeys  = Object.keys(history).sort((a,b) => parseInt(a.split('/')[0]) - parseInt(b.split('/')[0]));
-    let monthBadges;
-    if (taKeys.length > 1) {
-      monthBadges = taKeys.map(ta => {
-        // Lunas bila tak ada satu pun bulan bersisa pada TA tersebut. Dihitung
-        // lewat sppHistMonths agar TA yang hanya ditagih sebagian bulan (mis.
-        // santri masuk di tengah tahun) tidak keliru dianggap menunggak.
-        const lunas = !sppHistMonths(history[ta]).some(x => x.sisa > 0);
-        const short = ta.replace(/20(\d\d)\/20(\d\d)/, '$1/$2');
-        return `<span class="ta-chip ${lunas?'is-ok':'is-due'}">${short}: ${lunas?'<svg class="ic"><use href="#i-check"/></svg>':'<svg class="ic"><use href="#i-alert"/></svg>'}</span>`;
-      }).join('');
-    } else {
-      // Lunas = hijau, menunggak (sudah jatuh tempo) = merah,
-      // belum jatuh tempo = abu-abu (tidak dihitung tunggakan), dan bulan
-      // sebelum santri masuk = pudar (tidak pernah ditagih).
-      const mulaiTtl = sppMulaiLabel(s) ? `Sebelum masuk (SPP mulai ${sppMulaiLabel(s)})` : '';
-      monthBadges = MONTHS.map(m => {
-        const paid   = (s.spp_paid_months||[]).includes(m);
-        const sebelum = !paid && isSppSebelumMasuk(s, m);
-        const due    = !sebelum && isSppDueFor(s, m);
-        const st   = paid ? 'is-paid' : due ? 'is-due' : 'is-future';
-        const ang  = paid ? 0 : sppBulanDibayar(s, m);
-        const ttl  = (paid ? 'Lunas' : sebelum ? mulaiTtl : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo')
-          + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
-        return `<span title="${esc(ttl)}" class="mchip ${st}${ang > 0 ? ' is-angsur' : ''}${sebelum ? ' is-before' : ''}">${m}</span>`;
-      }).join('');
+    // Semua santri: 12 chip bulan TA berjalan (lunas = hijau, menunggak = merah,
+    // belum jatuh tempo = abu-abu, sebelum masuk = pudar). Tunggakan SPP TA
+    // sebelumnya ditandai chip merah di bawahnya — hanya bila memang ada.
+    const lulus = s.status_kelulusan === 'lulus';   // SPP TA berjalan tidak ditagih
+    const mulaiTtl = sppMulaiLabel(s) ? `Sebelum masuk (SPP mulai ${sppMulaiLabel(s)})` : '';
+    let monthBadges = MONTHS.map(m => {
+      const paid   = (s.spp_paid_months||[]).includes(m);
+      const sebelum = !paid && isSppSebelumMasuk(s, m);
+      const due    = !lulus && !sebelum && isSppDueFor(s, m);
+      const st   = paid ? 'is-paid' : due ? 'is-due' : 'is-future';
+      const ang  = paid ? 0 : sppBulanDibayar(s, m);
+      const ttl  = (paid ? 'Lunas' : lulus ? 'Sudah lulus — tidak ditagih SPP tahun berjalan'
+        : sebelum ? mulaiTtl : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo')
+        + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
+      return `<span title="${esc(ttl)}" class="mchip ${st}${ang > 0 ? ' is-angsur' : ''}${sebelum ? ' is-before' : ''}">${m}</span>`;
+    }).join('');
+    const taLalu = sppTunggakanPrevList(s);
+    if (taLalu.length) {
+      monthBadges += '<div class="ta-lalu">' + taLalu.map(y =>
+        `<span class="ta-lalu-chip" title="${esc(`Tunggakan SPP TA ${y.ta}: ${rp(y.amount)} — belum lunas: ${y.unpaid.map(m => MONTH_FULL[m] || m).join(', ')}`)}"><svg class="ic"><use href="#i-alert"/></svg> TA ${esc(y.ta.replace(/20(\d\d)\/20(\d\d)/, '$1/$2'))}: ${rp(y.amount)}</span>`
+      ).join('') + '</div>';
     }
     const nama_safe = escJs(s.nama);
     const no = start + i + 1;
