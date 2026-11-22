@@ -30,9 +30,29 @@ sipay/
 │   ├── audit.js            # Periksa & pulihkan data dari buku besar kuitansi
 │   ├── realtime.js         # Langganan Supabase Realtime (WebSocket)
 │   ├── sync.js             # Auto-sync lintas device (polling + on-focus)
-│   └── init.js             # DOMContentLoaded & inisialisasi app
+│   ├── init.js             # DOMContentLoaded & inisialisasi app
+│   └── app.min.js (+ .map) # HASIL BUILD: gabungan + minify semua file di atas (dimuat index.html)
+├── scripts/build.js        # Penggabung + minify js/*.js -> js/app.min.js (terser)
+├── tests/                  # npm test (logika SPP + cek hasil build terbaru)
+├── package.json            # skrip build/test & dev-dependency terser
 └── README.md
 ```
+
+### Mengubah kode JavaScript
+
+`index.html` hanya memuat **satu file**, `js/app.min.js` — gabungan seluruh
+file di `js/` yang sudah diperkecil (±79 KB terkompresi, bukan 27 permintaan).
+Edit file sumbernya di `js/`, lalu buat ulang hasil build sebelum commit:
+
+```
+npm install        # sekali saja (memasang terser)
+npm run build      # menulis js/app.min.js + js/app.min.js.map
+npm test           # gagal bila hasil build belum dibuat ulang
+```
+
+Source map (`app.min.js.map`) membuat error di konsol browser tetap menunjuk ke
+file & baris asli di `js/`. Menambah file JS baru: daftarkan namanya di `FILES`
+pada `scripts/build.js` (urutan = urutan muat).
 
 ## Perubahan dari Versi Sebelumnya
 
@@ -328,7 +348,7 @@ belum dijalankan, aplikasi tetap berfungsi (detail pembayaran nonaktif otomatis)
 ```
 Branch        : main
 Folder        : / (root)
-Build command : (none — file statis langsung)
+Build command : (none — js/app.min.js sudah ikut di-commit; buat ulang dengan npm run build)
 URL hasil     : https://<username>.github.io/<repo-name>/
 ```
 

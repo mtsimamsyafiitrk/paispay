@@ -27,18 +27,18 @@ async function doLogout() {
 async function testGasConnection() {
   const url = document.getElementById('gasUrlInput').value.trim();
   const res = document.getElementById('gasTestResult');
-  if (!url) { res.innerHTML = '<span style="color:var(--danger)">⚠️ Isi URL dulu</span>'; return; }
-  res.innerHTML = '⏳ Testing...';
+  if (!url) { res.innerHTML = '<span class="text-danger"><svg class="ic"><use href="#i-alert"/></svg> Isi URL dulu</span>'; return; }
+  res.innerHTML = '<svg class="ic"><use href="#i-clock"/></svg> Testing...';
   try {
     const r = await fetch(url + '?action=ping');
     const data = await r.json();
     if (data.ok) {
-      res.innerHTML = `<span style="color:var(--primary-light)">✅ Koneksi berhasil! Server time: ${data.time}</span>`;
+      res.innerHTML = `<span class="text-primary-light"><svg class="ic"><use href="#i-check"/></svg> Koneksi berhasil! Server time: ${data.time}</span>`;
     } else {
-      res.innerHTML = `<span style="color:var(--danger)">❌ Respons tidak valid: ${JSON.stringify(data)}</span>`;
+      res.innerHTML = `<span class="text-danger"><svg class="ic"><use href="#i-x"/></svg> Respons tidak valid: ${JSON.stringify(data)}</span>`;
     }
   } catch(e) {
-    res.innerHTML = `<span style="color:var(--danger)">❌ Gagal: ${e.message}</span>`;
+    res.innerHTML = `<span class="text-danger"><svg class="ic"><use href="#i-x"/></svg> Gagal: ${e.message}</span>`;
   }
 }
 

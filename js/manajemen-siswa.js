@@ -37,15 +37,15 @@ function onPromosiTaChange() {
   const btn  = document.getElementById('promosiConfirmBtn');
   let pesan = '';
   if (raw.trim() && !ta) {
-    pesan = '⚠️ Format tahun ajaran belum benar — tulis seperti 2025/2026 (tahun kedua = tahun pertama + 1).';
+    pesan = '<svg class="ic"><use href="#i-alert"/></svg> Format tahun ajaran belum benar — tulis seperti 2025/2026 (tahun kedua = tahun pertama + 1).';
   } else if (ta && !document.getElementById('promosiSetProfilTA')?.checked
              && typeof isTaBerjalanAtauSesudah === 'function' && isTaBerjalanAtauSesudah(ta)) {
     // TA arsip sama dengan TA berjalan sementara TA di Profil tidak ikut maju →
     // tahun yang sama akan tampil dua kali (SPP berjalan + tunggakan TA lalu).
-    pesan = `⚠️ TA ${ta} masih menjadi TA berjalan di Profil. Centang "Setel TA berjalan di Profil" `
+    pesan = `<svg class="ic"><use href="#i-alert"/></svg> TA ${ta} masih menjadi TA berjalan di Profil. Centang "Setel TA berjalan di Profil" `
           + 'atau perbaiki label di atas, agar tahun ini tidak terhitung dua kali.';
   }
-  if (warn) { warn.textContent = pesan; warn.style.display = pesan ? 'block' : 'none'; }
+  if (warn) { setIconText(warn, pesan); warn.style.display = pesan ? 'block' : 'none'; }
   if (btn) btn.disabled = !promosiMap.size || !ta;   // label TA wajib & harus sah
 }
 
@@ -56,7 +56,7 @@ function renderPromosiStudentList() {
 
   const list = document.getElementById('promosiStudentList');
   if (!students.length) {
-    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);">Tidak ada santri aktif.</div>';
+    list.innerHTML = '<div class="p-24 text-center text-muted">Tidak ada santri aktif.</div>';
     return;
   }
 
@@ -66,7 +66,7 @@ function renderPromosiStudentList() {
   students.forEach((s, i) => {
     if (s.kelas !== lastKelas) {
       lastKelas = s.kelas;
-      html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-pale);margin-top:${i>0?'8px':'0'};">
+      html += `<div class="kelas-group-title${i>0?' is-next':''}">
         Kelas ${esc(s.kelas)}
       </div>`;
     }
@@ -76,31 +76,29 @@ function renderPromosiStudentList() {
     const nameSafe = escJs(s.nama);
     const nextKelas = s.kelas === '7' ? '8' : s.kelas === '8' ? '9' : null;
     const nextLabel = nextKelas
-      ? `<span style="color:var(--primary);font-weight:600;">→ Kelas ${nextKelas}</span>`
-      : `<span style="color:var(--accent);font-weight:600;">→ Lulus 🎓</span>`;
+      ? `<span class="text-primary fw-600">→ Kelas ${nextKelas}</span>`
+      : `<span class="text-accent fw-600">→ Lulus <svg class="ic"><use href="#i-grad"/></svg></span>`;
 
-    html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-      <input type="checkbox" ${sel?'checked':''} onchange="togglePromosiStudent('${nameSafe}',this.checked)"
-        style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
-      <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;font-size:13px;">${esc(s.nama)}</div>
-        <div style="font-size:11px;color:var(--text-muted);">Kelas ${esc(s.kelas)}</div>
+    html += `<div class="list-row">
+      <input class="w-15 h-15 accent-primary shrink-0" type="checkbox" ${sel?'checked':''} onchange="togglePromosiStudent('${nameSafe}',this.checked)"
+       >
+      <div class="flex-1 minw-0">
+        <div class="fw-600 fs-13">${esc(s.nama)}</div>
+        <div class="hint">Kelas ${esc(s.kelas)}</div>
       </div>
       ${sel ? `
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 9px;border-radius:6px;
-          ${action==='naik'?'background:var(--primary-pale);color:var(--primary);font-weight:600;':'color:var(--text-muted);'}">
-          <input type="radio" name="pa${i}" value="naik" ${action==='naik'?'checked':''}
-            onchange="setStudentPromosiAction('${nameSafe}','naik')" style="accent-color:var(--primary);"> Naik Kelas
+        <label class="promosi-opt${action==='naik'?' is-naik':''}">
+          <input class="accent-primary" type="radio" name="pa${i}" value="naik" ${action==='naik'?'checked':''}
+            onchange="setStudentPromosiAction('${nameSafe}','naik')"> Naik Kelas
         </label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 9px;border-radius:6px;
-          ${action==='tinggal'?'background:#fee2e2;color:var(--danger);font-weight:600;':'color:var(--text-muted);'}">
-          <input type="radio" name="pa${i}" value="tinggal" ${action==='tinggal'?'checked':''}
-            onchange="setStudentPromosiAction('${nameSafe}','tinggal')" style="accent-color:var(--danger);"> Tinggal Kelas
+        <label class="promosi-opt${action==='tinggal'?' is-tinggal':''}">
+          <input class="accent-danger" type="radio" name="pa${i}" value="tinggal" ${action==='tinggal'?'checked':''}
+            onchange="setStudentPromosiAction('${nameSafe}','tinggal')"> Tinggal Kelas
         </label>
-        <div style="font-size:12px;min-width:90px;text-align:right;">
-          ${action==='naik' ? nextLabel : `<span style="color:var(--text-muted);">Tetap Kls ${esc(s.kelas)}</span>`}
+        <div class="fs-12 minw-90 text-right">
+          ${action==='naik' ? nextLabel : `<span class="text-muted">Tetap Kls ${esc(s.kelas)}</span>`}
         </div>
-      ` : `<div style="font-size:11px;color:var(--border);min-width:200px;text-align:right;">—</div>`}
+      ` : `<div class="fs-12 text-border minw-200 text-right">—</div>`}
     </div>`;
   });
 
@@ -148,9 +146,9 @@ function updatePromosiSummary() {
     return;
   }
   el.innerHTML = `<strong>${promosiMap.size} santri</strong> dipilih — `
-    + `<span style="color:var(--primary);">${naik} naik kelas</span>`
-    + (lulus ? ` <span style="color:var(--accent);">(${lulus} di antaranya lulus 🎓)</span>` : '')
-    + (tinggal ? `, <span style="color:var(--danger);">${tinggal} tinggal kelas</span>` : '');
+    + `<span class="text-primary">${naik} naik kelas</span>`
+    + (lulus ? ` <span class="text-accent">(${lulus} di antaranya lulus <svg class="ic"><use href="#i-grad"/></svg>)</span>` : '')
+    + (tinggal ? `, <span class="text-danger">${tinggal} tinggal kelas</span>` : '');
   btn.disabled = false;
   onPromosiTaChange();   // label TA juga menentukan tombol boleh ditekan
 }
@@ -497,16 +495,16 @@ function openEditPembayaran(nama) {
   const tagihanWrap = document.getElementById('ep_tagihan_wrap');
   if (tagihanWrap) {
     if (!siswaTagihan.length) {
-      tagihanWrap.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Tidak ada tagihan item untuk santri ini.</div>';
+      tagihanWrap.innerHTML = '<div class="hint">Tidak ada tagihan item untuk santri ini.</div>';
     } else {
       tagihanWrap.innerHTML = siswaTagihan.map(t => `
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-          <div style="flex:1;font-size:13px;font-weight:600;">${esc(t.item_name)}</div>
-          <div style="font-size:12px;color:var(--text-muted);">Total: ${rp(t.nominal)}</div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <label style="font-size:12px;">Terbayar:</label>
-            <input type="number" class="ep_tagihan_paid" data-id="${t.id}" value="${t.paid_amount||0}"
-              style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+        <div class="list-row">
+          <div class="flex-1 fs-13 fw-600">${esc(t.item_name)}</div>
+          <div class="hint">Total: ${rp(t.nominal)}</div>
+          <div class="flex items-center gap-6">
+            <label class="fs-12">Terbayar:</label>
+            <input type="number" class="ep_tagihan_paid w-110 p-5-8 border-1-border rounded-6 fs-13" data-id="${t.id}" value="${t.paid_amount||0}"
+             >
           </div>
         </div>`).join('');
     }

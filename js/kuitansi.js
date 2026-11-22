@@ -79,7 +79,7 @@ async function hapusKuitansi(id) {
       document.getElementById('modalHapusKwtNama').textContent = r.nama || '—';
       document.getElementById('modalHapusKwtDetail').innerHTML =
         `${esc(r.no_kuitansi || '—')} &nbsp;·&nbsp; Rp ${fmt(r.total)} &nbsp;·&nbsp; TA ${esc(r.ta_label || '—')}<br>
-         <span style="font-size:11px;color:#999;">${tgl}</span>`;
+         <span class="meta-999">${tgl}</span>`;
     } else {
       document.getElementById('modalHapusKwtNama').textContent = 'Data Kuitansi';
       document.getElementById('modalHapusKwtDetail').textContent = '—';
@@ -98,7 +98,7 @@ async function konfirmasiHapusKwt() {
 
   const btn = document.getElementById('modalHapusKwtConfirmBtn');
   btn.disabled = true;
-  btn.innerHTML = '⏳ Menghapus...';
+  btn.innerHTML = '<svg class="ic"><use href="#i-clock"/></svg> Menghapus...';
 
   try {
     // 1. Ambil data kuitansi
@@ -167,7 +167,7 @@ async function konfirmasiHapusKwt() {
     toast('⚠️ Gagal: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '🗑️ Ya, Hapus';
+    btn.innerHTML = '<svg class="ic"><use href="#i-trash"/></svg> Ya, Hapus';
   }
 }
 
@@ -213,7 +213,7 @@ async function loadRiwayatKuitansi(keepPage) {
   const el = document.getElementById('kwtTableWrap');
   const statsEl = document.getElementById('kwtStats');
   if (!el) return;
-  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;">Memuat...</div>';
+  el.innerHTML = '<div class="text-center text-muted p-24">Memuat...</div>';
 
   const filters = kwtBuildFilters();
 
@@ -233,20 +233,20 @@ async function loadRiwayatKuitansi(keepPage) {
     const nominalHal = rows.reduce((s,r) => s + (r.total||0), 0);
     const sudahCetak = rows.filter(r => r.dicetak).length;
     if (statsEl) statsEl.innerHTML = `
-      <div class="stat-card blue"><div class="stat-label">Total Kuitansi</div><div class="stat-value" style="font-size:22px;">${known ? total : '—'}</div><div class="stat-sub">${filters.length ? 'sesuai filter' : 'semua data'}</div><div class="stat-icon">🧾</div></div>
-      <div class="stat-card green"><div class="stat-label">Nominal (halaman ini)</div><div class="stat-value" style="font-size:18px;">${rp(nominalHal)}</div><div class="stat-sub">${rows.length} baris ditampilkan</div><div class="stat-icon">💰</div></div>
-      <div class="stat-card gold"><div class="stat-label">Halaman</div><div class="stat-value" style="font-size:22px;">${kwtPage + 1}<span style="font-size:13px;font-weight:500;"> / ${totalPages}</span></div><div class="stat-sub">${KWT_PAGE_SIZE} per halaman</div><div class="stat-icon">📄</div></div>
+      <div class="stat-card blue"><div class="stat-label">Total Kuitansi</div><div class="stat-value fs-22">${known ? total : '—'}</div><div class="stat-sub">${filters.length ? 'sesuai filter' : 'semua data'}</div><div class="stat-icon"><svg class="ic"><use href="#i-file"/></svg></div></div>
+      <div class="stat-card green"><div class="stat-label">Nominal (halaman ini)</div><div class="stat-value fs-18">${rp(nominalHal)}</div><div class="stat-sub">${rows.length} baris ditampilkan</div><div class="stat-icon"><svg class="ic"><use href="#i-cash"/></svg></div></div>
+      <div class="stat-card gold"><div class="stat-label">Halaman</div><div class="stat-value fs-22">${kwtPage + 1}<span class="fs-13 fw-500"> / ${totalPages}</span></div><div class="stat-sub">${KWT_PAGE_SIZE} per halaman</div><div class="stat-icon"><svg class="ic"><use href="#i-file"/></svg></div></div>
     `;
 
     if (!rows.length) {
-      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:13px;">Tidak ada data kuitansi.</div>';
+      el.innerHTML = '<div class="text-center text-muted p-32 fs-13">Tidak ada data kuitansi.</div>';
       return;
     }
 
     const fmt = n => Number(n||0).toLocaleString('id-ID');
     el.innerHTML = `
       <div class="table-wrap">
-        <table class="data-table">
+        <table class="data-table" id="kwtTable">
           <thead><tr>
             <th>No. Kuitansi</th>
             <th>Tanggal</th>
@@ -254,7 +254,7 @@ async function loadRiwayatKuitansi(keepPage) {
             <th>Kelas</th>
             <th>TA</th>
             <th>Rincian</th>
-            <th style="text-align:right;">Total</th>
+            <th class="text-right">Total</th>
             <th>Status</th>
             <th>Aksi</th>
           </tr></thead>
@@ -273,49 +273,49 @@ async function loadRiwayatKuitansi(keepPage) {
               const items = Array.isArray(r.items) ? r.items.map(i => i.name + (i.bulan?' ('+( MONTH_FULL[i.bulan]||i.bulan)+')':'')).join(', ') : '—';
               const isInduk = typeof isIndukKwt === 'function' && isIndukKwt(r);
               const isIncomplete = typeof indukIncomplete === 'function' && indukIncomplete(r);
-              const indukBadges = `${isInduk?'<br><span style="background:var(--primary-pale);color:var(--primary);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;">📖 Buku Induk</span>':''}${isIncomplete?`<br><span title="Data tidak lengkap" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;">⚠️ Tidak lengkap</span>`:''}`;
+              const indukBadges = `${isInduk?'<br><span class="bg-primary-pale text-primary rounded-20 p-2-8 fs-12 fw-700"><svg class="ic"><use href="#i-book"/></svg> Buku Induk</span>':''}${isIncomplete?`<br><span class="pill-sm-warn" title="Data tidak lengkap"><svg class="ic"><use href="#i-alert"/></svg> Tidak lengkap</span>`:''}`;
               const statusBadge = r.dikoreksi_oleh
-                ? `<span style="background:#fef9c3;color:#92400e;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">🔄 Dikoreksi</span><br><span style="font-size:10px;color:#999;">${esc(r.dikoreksi_oleh)}</span>`
+                ? `<span class="pill pill-koreksi"><svg class="ic"><use href="#i-refresh"/></svg> Dikoreksi</span><br><span class="meta-999">${esc(r.dikoreksi_oleh)}</span>`
                 : r.is_koreksi
-                ? `<span style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">📋 Kuitansi Koreksi</span><br><span style="font-size:10px;color:#999;">Ref: ${esc(r.ref_no_kuitansi||'—')}</span>`
+                ? `<span class="pill pill-warn"><svg class="ic"><use href="#i-clip"/></svg> Kuitansi Koreksi</span><br><span class="meta-999">Ref: ${esc(r.ref_no_kuitansi||'—')}</span>`
                 : r.dicetak
-                ? `<span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">✅ Dicetak</span>`
-                : `<span style="background:#fef9c3;color:#854d0e;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">⏳ Belum</span>`;
+                ? `<span class="pill pill-ok"><svg class="ic"><use href="#i-check"/></svg> Dicetak</span>`
+                : `<span class="pill pill-belum"><svg class="ic"><use href="#i-clock"/></svg> Belum</span>`;
               return `<tr>
-                <td style="font-weight:700;font-size:12px;color:var(--primary);">${esc(r.no_kuitansi||'—')}</td>
-                <td style="font-size:12px;">${tgl}<br><span style="color:var(--text-muted);font-size:11px;">${jam}</span></td>
+                <td class="fw-700 fs-12 text-primary">${esc(r.no_kuitansi||'—')}</td>
+                <td class="fs-12">${tgl}<br><span class="hint">${jam}</span></td>
                 <td><strong>${esc(r.nama)}</strong></td>
                 <td>${esc(r.kelas||'—')}</td>
-                <td><span style="background:var(--primary-pale);color:var(--primary);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${esc(r.ta_label||'—')}</span></td>
-                <td style="font-size:12px;max-width:180px;white-space:normal;">${esc(items)}</td>
-                <td style="text-align:right;font-weight:700;color:var(--primary-light);">Rp ${fmt(r.total)}</td>
+                <td><span class="tag-primary">${esc(r.ta_label||'—')}</span></td>
+                <td class="cell-rincian">${esc(items)}</td>
+                <td class="text-right fw-700 text-primary-light">Rp ${fmt(r.total)}</td>
                 <td>${statusBadge}${indukBadges}</td>
-                <td style="white-space:nowrap;">
-                  <button class="btn btn-outline btn-sm" onclick="openIndukDetail('${r.id}')" title="Lihat detail">🔍</button>
-                  <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang">🖨️</button>
-                  ${(!r.dikoreksi_oleh && !r.is_koreksi) ? `<button class="btn btn-outline btn-sm" onclick="openKoreksiKwt('${r.id}')" title="Edit / koreksi kuitansi">✏️</button>` : ''}
-                  ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi">🗑️</button>` : ''}
+                <td class="nowrap">
+                  <button class="btn btn-outline btn-sm" onclick="openIndukDetail('${r.id}')" title="Lihat detail"><svg class="ic"><use href="#i-search"/></svg> Detail</button>
+                  <button class="btn btn-primary btn-sm" onclick="cetakKuitansiFromRiwayat('${r.id}')" title="Cetak ulang"><svg class="ic"><use href="#i-print"/></svg> Cetak</button>
+                  ${(!r.dikoreksi_oleh && !r.is_koreksi) ? `<button class="btn btn-outline btn-sm" onclick="openKoreksiKwt('${r.id}')" title="Edit / koreksi kuitansi"><svg class="ic"><use href="#i-edit"/></svg> Koreksi</button>` : ''}
+                  ${!r.dikoreksi_oleh ? `<button class="btn btn-danger btn-sm act-del" onclick="hapusKuitansi('${r.id}')" title="Hapus kuitansi"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>` : ''}
                 </td>
               </tr>`;
             }).join('')}
           </tbody>
         </table>
       </div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap;">
+      <div class="flex items-center justify-center gap-12 mt-14 flex-wrap">
         <button class="btn btn-outline btn-sm" ${kwtPage <= 0 ? 'disabled' : ''} onclick="kwtPrevPage()">← Sebelumnya</button>
-        <span style="font-size:13px;color:var(--text-muted);">Halaman <strong>${kwtPage + 1}</strong> dari ${totalPages}</span>
+        <span class="fs-13 text-muted">Halaman <strong>${kwtPage + 1}</strong> dari ${totalPages}</span>
         <button class="btn btn-outline btn-sm" ${hasNext ? '' : 'disabled'} onclick="kwtNextPage()">Berikutnya →</button>
       </div>`;
   } catch(e) {
     el.innerHTML = `
-      <div style="padding:24px;text-align:center;">
-        <div style="font-size:32px;margin-bottom:12px;">⚠️</div>
-        <div style="font-weight:700;font-size:15px;color:var(--danger);margin-bottom:8px;">Gagal Memuat Riwayat Kuitansi</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Terjadi kesalahan saat mengambil data dari server.</div>
-        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 16px;font-size:12px;color:#856404;text-align:left;margin-bottom:16px;max-width:480px;margin-left:auto;margin-right:auto;">
+      <div class="p-24 text-center">
+        <div class="fs-32 mb-12"><svg class="ic"><use href="#i-alert"/></svg></div>
+        <div class="fw-700 fs-15 text-danger mb-8">Gagal Memuat Riwayat Kuitansi</div>
+        <div class="fs-13 text-muted mb-16">Terjadi kesalahan saat mengambil data dari server.</div>
+        <div class="warn-banner">
           <strong>Detail error:</strong><br>${e.message || 'Koneksi ke Supabase gagal. Periksa koneksi internet Anda.'}
         </div>
-        <button class="btn btn-primary btn-sm" onclick="loadRiwayatKuitansi()">🔄 Coba Lagi</button>
+        <button class="btn btn-primary btn-sm" onclick="loadRiwayatKuitansi()"><svg class="ic"><use href="#i-refresh"/></svg> Coba Lagi</button>
       </div>`;
     if (statsEl) statsEl.innerHTML = '';
   }

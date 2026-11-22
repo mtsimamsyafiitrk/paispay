@@ -3,15 +3,52 @@ function renderCetakPage() {
   const sel = document.getElementById('cetakNama');
   sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
     appState.students.map(s=>`<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
+  document.getElementById('cetakNamaSearch').value = sel.value;
   document.getElementById('cetakTanggal').value = new Date().toISOString().split('T')[0];
   document.getElementById('cetakTanggalTotal').value = new Date().toISOString().split('T')[0];
 }
 
+// ── Pencarian nama (gaya sama dengan Input Pembayaran & Tunggakan) ──
+let cetakSuggIdx = -1;
+function onCetakNamaSearch() {
+  cetakSuggIdx = -1;
+  const q = document.getElementById('cetakNamaSearch').value.trim().toLowerCase();
+  const dd = document.getElementById('cetakNamaDropdown');
+  const matches = appState.students.filter(s => s.nama.toLowerCase().includes(q)).slice(0, 10);
+  dd.innerHTML = matches.length
+    ? matches.map(s => `<div class="nama-sugg" data-nama="${esc(s.nama)}" onmousedown="pickCetakNama(this.dataset.nama)">
+        <b>${esc(s.nama)}</b><span>${esc(kelasLabel(s))}</span></div>`).join('')
+    : '<div class="nama-sugg-empty">Tidak ditemukan</div>';
+  dd.style.display = 'block';
+}
+function onCetakNamaKeydown(e) {
+  const items = [...document.querySelectorAll('#cetakNamaDropdown .nama-sugg')];
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    cetakSuggIdx = Math.max(0, Math.min(items.length - 1, cetakSuggIdx + (e.key === 'ArrowDown' ? 1 : -1)));
+    items.forEach((el, i) => el.classList.toggle('active', i === cetakSuggIdx));
+    items[cetakSuggIdx]?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && items[cetakSuggIdx]) {
+    pickCetakNama(items[cetakSuggIdx].dataset.nama);
+  } else if (e.key === 'Escape') {
+    document.getElementById('cetakNamaDropdown').style.display = 'none';
+  }
+}
+function pickCetakNama(nama) {
+  document.getElementById('cetakNama').value = nama;
+  document.getElementById('cetakNamaSearch').value = nama;
+  document.getElementById('cetakNamaDropdown').style.display = 'none';
+  onCetakStudentSelect();
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('cetakSearchWrap');
+  if (wrap && !wrap.contains(e.target)) document.getElementById('cetakNamaDropdown').style.display = 'none';
+});
+
 function showCetakForStudent(nama) {
   showPage('cetak');
   setTimeout(() => {
-    document.getElementById('cetakNama').value = nama;
-    onCetakStudentSelect();
+    pickCetakNama(nama);
   }, 100);
 }
 
@@ -197,6 +234,33 @@ async function exportBackupLengkap() {
   });
 }
 
+// Gaya isi surat & rekap — dipakai preview di aplikasi dan jendela cetak
+// (jendela cetak tidak memuat main.css). Diawali .pdf-preview agar menang
+// atas gaya tabel umum aplikasi.
+const SURAT_CSS = `
+.pdf-preview .s-logo-img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.pdf-preview .s-to { margin-bottom:12px; line-height:2; font-size:11pt; }
+.pdf-preview .s-para { text-align:justify; line-height:1.8; margin-bottom:12px; font-size:11pt; }
+.pdf-preview .s-para-end { margin:10px 0; }
+.pdf-preview .s-mb10 { margin-bottom:10px; }
+.pdf-preview .s-w30 { width:30px; }
+.pdf-preview .s-w110 { width:110px; }
+.pdf-preview .s-c { text-align:center; }
+.pdf-preview .s-r { text-align:right; }
+.pdf-preview .s-b { font-weight:bold; }
+.pdf-preview .s-big { font-size:13pt; }
+.pdf-preview .s-red { color:#c0392b; }
+.pdf-preview .s-due { color:#c0392b; font-weight:bold; }
+.pdf-preview .s-small { font-size:9pt; }
+.pdf-preview .s-normal { font-weight:normal; }
+.pdf-preview .s-ket { font-size:10pt; }
+.pdf-preview .s-total-row { background:#f0f0f0; }
+.pdf-preview .s-row-due { background:#fff5f5; }
+.pdf-preview .s-note { margin:10px 0; padding:8px 12px; border-radius:4px; font-size:10.5pt; }
+.pdf-preview .s-note-warn { background:#fff3cd; border-left:4px solid #c8a04a; }
+.pdf-preview .s-note-ok { background:#d4edda; border-left:4px solid #1e7c45; }
+`;
+
 function buildSuratHTML(s, tgl) {
   const sppT  = sppTunggakan(s);
   const prevList = sppTunggakanPrevList(s);   // tunggakan SPP TA sebelumnya
@@ -229,7 +293,7 @@ function buildSuratHTML(s, tgl) {
   return `
   <div class="pdf-preview" id="suratPreview">
     <div class="kop-surat">
-      <div class="kop-logo">${getLogo() ? `<img src="${safeUrl(getLogo())}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🕌'}</div>
+      <div class="kop-logo">${getLogo() ? `<img class="s-logo-img" src="${safeUrl(getLogo())}">` : '🕌'}</div>
       <div class="kop-text">
         <h2>${esc(P.nama||'MADRASAH TERPADU')}</h2>
         <p>${esc(P.alamat||'')}${P.kota?', '+esc(P.kota):''}${P.provinsi?', '+esc(P.provinsi):''}</p>
@@ -238,56 +302,56 @@ function buildSuratHTML(s, tgl) {
     </div>
     <div class="surat-body">
       <h3>SURAT PEMBERITAHUAN PEMBAYARAN</h3>
-      <p style="margin-bottom:12px;line-height:2;font-size:11pt;">
+      <p class="s-to">
         Kepada Yth.<br>
         <strong>Orang Tua / Wali Santri</strong><br>
         Nama Santri &nbsp;: <strong>${esc(s.nama)}</strong><br>
         Kelas &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(s.kelas)}<br>
         NISN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(s.nisn||'—')}
       </p>
-      <p style="text-align:justify;line-height:1.8;margin-bottom:12px;font-size:11pt;">
+      <p class="s-para">
         Dengan hormat, bersama surat ini kami sampaikan informasi pembayaran santri yang bersangkutan untuk Tahun Ajaran Berjalan${sppDueMonthLabel() ? ' (SPP dihitung sampai bulan ' + esc(sppDueMonthLabel()) + ')' : ''}${prevList.length ? ', termasuk tunggakan SPP Tahun Ajaran sebelumnya (' + prevList.map(y => esc(y.ta)).join(', ') + ') yang belum dilunasi,' : ''} sebagaimana tercantum di bawah ini:
       </p>
       <table class="data-table-pdf">
-        <thead><tr><th style="width:30px">No</th><th>Jenis Pembayaran</th><th>Keterangan</th><th style="width:110px">Tagihan (Rp)</th><th style="width:110px">Terbayar (Rp)</th><th style="width:110px">Sisa (Rp)</th></tr></thead>
+        <thead><tr><th class="s-w30">No</th><th>Jenis Pembayaran</th><th>Keterangan</th><th class="s-w110">Tagihan (Rp)</th><th class="s-w110">Terbayar (Rp)</th><th class="s-w110">Sisa (Rp)</th></tr></thead>
         <tbody>
           ${prevList.map(y => `<tr>
-            <td style="text-align:center">${++no}</td>
-            <td>Tunggakan SPP T.A. ${esc(y.ta)}${y.kelas ? ` <span style="font-size:9pt">(Kelas ${esc(y.kelas)})</span>` : ''}</td>
-            <td style="font-size:10pt">${y.bulanLunas} dari ${y.bulanTagih} bulan lunas;<br>Belum: ${y.unpaid.map(m=>MONTH_FULL[m]).join(', ')}</td>
-            <td style="text-align:right">${y.tagihan.toLocaleString('id-ID')}</td>
-            <td style="text-align:right">${y.dibayar.toLocaleString('id-ID')}</td>
-            <td style="text-align:right;color:#c0392b;font-weight:bold;">${y.amount.toLocaleString('id-ID')}</td>
+            <td class="s-c">${++no}</td>
+            <td>Tunggakan SPP T.A. ${esc(y.ta)}${y.kelas ? ` <span class="s-small">(Kelas ${esc(y.kelas)})</span>` : ''}</td>
+            <td class="s-ket">${y.bulanLunas} dari ${y.bulanTagih} bulan lunas;<br>Belum: ${y.unpaid.map(m=>MONTH_FULL[m]).join(', ')}</td>
+            <td class="s-r">${y.tagihan.toLocaleString('id-ID')}</td>
+            <td class="s-r">${y.dibayar.toLocaleString('id-ID')}</td>
+            <td class="s-r s-due">${y.amount.toLocaleString('id-ID')}</td>
           </tr>`).join('')}
           ${sppAktif ? `<tr>
-            <td style="text-align:center">${++no}</td>
-            <td>SPP Bulanan <span style="font-size:9pt">(${mulaiLabel ? 'mulai ' + esc(mulaiLabel) + ' ' : ''}s/d ${esc(sppDueMonthLabel() || '—')})</span></td>
-            <td style="font-size:10pt">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]+(sppBulanDibayar(s,m)>0?' (sisa '+sppBulanSisa(s,m).toLocaleString('id-ID')+')':'')).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}${angsurDimuka.length>0?';<br>Diangsur di muka: '+angsurDimuka.map(m=>MONTH_FULL[m]+' '+sppBulanDibayar(s,m).toLocaleString('id-ID')+' (sisa '+sppBulanSisa(s,m).toLocaleString('id-ID')+')').join(', '):''}</td>
-            <td style="text-align:right">${sppTagihanDue.toLocaleString('id-ID')}</td>
-            <td style="text-align:right">${sppTerbayarDue.toLocaleString('id-ID')}</td>
-            <td style="text-align:right;${sppT>0?'color:#c0392b;font-weight:bold;':''}">${sppT.toLocaleString('id-ID')}</td>
+            <td class="s-c">${++no}</td>
+            <td>SPP Bulanan <span class="s-small">(${mulaiLabel ? 'mulai ' + esc(mulaiLabel) + ' ' : ''}s/d ${esc(sppDueMonthLabel() || '—')})</span></td>
+            <td class="s-ket">${bulanLunasDue.length} dari ${bulanDue.length} bulan lunas${bulanBelum.length>0?';<br>Belum: '+bulanBelum.map(m=>MONTH_FULL[m]+(sppBulanDibayar(s,m)>0?' (sisa '+sppBulanSisa(s,m).toLocaleString('id-ID')+')':'')).join(', '):''}${bulanDimuka.length>0?';<br>Dibayar di muka: '+bulanDimuka.map(m=>MONTH_FULL[m]).join(', '):''}${angsurDimuka.length>0?';<br>Diangsur di muka: '+angsurDimuka.map(m=>MONTH_FULL[m]+' '+sppBulanDibayar(s,m).toLocaleString('id-ID')+' (sisa '+sppBulanSisa(s,m).toLocaleString('id-ID')+')').join(', '):''}</td>
+            <td class="s-r">${sppTagihanDue.toLocaleString('id-ID')}</td>
+            <td class="s-r">${sppTerbayarDue.toLocaleString('id-ID')}</td>
+            <td class="s-r${sppT>0?' s-due':''}">${sppT.toLocaleString('id-ID')}</td>
           </tr>` : ''}
           ${siswaTagihan.map(t => {
             const sisa = Math.max(0, t.nominal - t.paid_amount);
             return `<tr>
-              <td style="text-align:center">${++no}</td>
+              <td class="s-c">${++no}</td>
               <td>${esc(t.item_name)}</td>
-              <td style="font-size:10pt">Terbayar ${t.paid_amount.toLocaleString('id-ID')}</td>
-              <td style="text-align:right">${t.nominal.toLocaleString('id-ID')}</td>
-              <td style="text-align:right">${t.paid_amount.toLocaleString('id-ID')}</td>
-              <td style="text-align:right;${sisa>0?'color:#c0392b;font-weight:bold;':''}">${sisa.toLocaleString('id-ID')}</td>
+              <td class="s-ket">Terbayar ${t.paid_amount.toLocaleString('id-ID')}</td>
+              <td class="s-r">${t.nominal.toLocaleString('id-ID')}</td>
+              <td class="s-r">${t.paid_amount.toLocaleString('id-ID')}</td>
+              <td class="s-r${sisa>0?' s-due':''}">${sisa.toLocaleString('id-ID')}</td>
             </tr>`;
           }).join('')}
-          <tr style="background:#f0f0f0;">
-            <td colspan="3" style="text-align:right;font-weight:bold;">TOTAL TUNGGAKAN</td>
-            <td colspan="3" style="text-align:right;font-weight:bold;font-size:13pt;${totalT>0?'color:#c0392b;':''}">${totalT.toLocaleString('id-ID')}</td>
+          <tr class="s-total-row">
+            <td colspan="3" class="s-r s-b">TOTAL TUNGGAKAN</td>
+            <td colspan="3" class="s-r s-b s-big${totalT>0?' s-red':''}">${totalT.toLocaleString('id-ID')}</td>
           </tr>
         </tbody>
       </table>
-      ${totalT > 0 ? `<p style="margin:10px 0;padding:8px 12px;background:#fff3cd;border-radius:4px;border-left:4px solid #c8a04a;font-size:10.5pt;">
+      ${totalT > 0 ? `<p class="s-note s-note-warn">
         <strong>Terbilang:</strong> <em>${terbilangFull(totalT)}</em></p>`
-      : `<p style="margin:10px 0;padding:8px 12px;background:#d4edda;border-radius:4px;border-left:4px solid #1e7c45;font-size:10.5pt;"><strong>✓ Alhamdulillah, semua pembayaran telah lunas!</strong></p>`}
-      <p style="text-align:justify;line-height:1.8;margin:10px 0;font-size:11pt;">Demikian surat pemberitahuan ini kami sampaikan. Apabila pembayaran telah dilakukan, mohon untuk mengabaikan surat ini. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
+      : `<p class="s-note s-note-ok"><strong>✓ Alhamdulillah, semua pembayaran telah lunas!</strong></p>`}
+      <p class="s-para s-para-end">Demikian surat pemberitahuan ini kami sampaikan. Apabila pembayaran telah dilakukan, mohon untuk mengabaikan surat ini. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
       <div class="ttd-section">
         <div class="ttd-box">
           <p>Mengetahui,<br>Kepala Madrasah</p>
@@ -310,7 +374,7 @@ function previewPDF() {
   if (!nama) { toast('⚠️ Pilih nama santri!'); return; }
   const s = getStudent(nama);
   document.getElementById('pdfPreviewArea').innerHTML =
-    `<div class="pdf-preview-wrap">${buildSuratHTML(s, tgl)}</div>`;
+    `<style>${SURAT_CSS}</style><div class="pdf-preview-wrap">${buildSuratHTML(s, tgl)}</div>`;
 }
 
 function generatePDFIndividu() {
@@ -325,7 +389,7 @@ function previewPDFTotal() {
   const kelasFil = document.getElementById('cetakKelasFilter').value;
   const tgl = document.getElementById('cetakTanggalTotal').value;
   document.getElementById('pdfPreviewTotal').innerHTML =
-    `<div class="pdf-preview-wrap">${buildRekapTotalHTML(kelasFil, tgl)}</div>`;
+    `<style>${SURAT_CSS}</style><div class="pdf-preview-wrap">${buildRekapTotalHTML(kelasFil, tgl)}</div>`;
 }
 
 function generatePDFTotal() {
@@ -382,6 +446,7 @@ function printHTML(bodyHTML, filename) {
     }
     .btn-print { background: #1e5631; color: #fff; }
     .btn-close { background: #ccc; color: #333; }
+    ${SURAT_CSS}
   </style>
 </head>
 <body>
@@ -399,6 +464,11 @@ function printHTML(bodyHTML, filename) {
 }
 
 function buildRekapTotalHTML(kelasFil, tgl) {
+  // Indeks tagihan per nama: tanpa ini tiap baris menyisir seluruh tagihan
+  // (3000 santri × 6000 tagihan ≈ 0,7 dtk).
+  return withTagihanIndex(() => _buildRekapTotalHTML(kelasFil, tgl));
+}
+function _buildRekapTotalHTML(kelasFil, tgl) {
   const P2 = getProfil();
   const tglFmt = new Date(tgl).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   // Hanya santri aktif: alumni, santri pindah/keluar, dan calon santri SPMB
@@ -409,7 +479,7 @@ function buildRekapTotalHTML(kelasFil, tgl) {
   return `
   <div class="pdf-preview" id="suratPreviewTotal">
     <div class="kop-surat">
-      <div class="kop-logo">${getLogo() ? `<img src="${safeUrl(getLogo())}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🕌'}</div>
+      <div class="kop-logo">${getLogo() ? `<img class="s-logo-img" src="${safeUrl(getLogo())}">` : '🕌'}</div>
       <div class="kop-text">
         <h2>${esc(P2.nama)}</h2>
         <p>${esc(P2.alamat)}${P2.kota?', '+esc(P2.kota):''}${P2.provinsi?', '+esc(P2.provinsi):''}<br>${P2.telp?'Telp. '+esc(P2.telp)+' ':''} ${P2.email?'| Email: '+esc(P2.email):''}</p>
@@ -417,7 +487,7 @@ function buildRekapTotalHTML(kelasFil, tgl) {
     </div>
     <div class="surat-body">
       <h3>REKAP PEMBAYARAN SANTRI ${kelasFil?'KELAS '+esc(kelasFil):'SELURUH KELAS'}</h3>
-      <p style="margin-bottom:10px;">Tahun Ajaran ${esc(P2.ta || '—')} &nbsp;|&nbsp; Per Tanggal: ${tglFmt}<br>
+      <p class="s-mb10">Tahun Ajaran ${esc(P2.ta || '—')} &nbsp;|&nbsp; Per Tanggal: ${tglFmt}<br>
       Total Santri: <strong>${list.length}</strong> orang${sppDueMonthLabel() ? ' &nbsp;|&nbsp; Tunggakan SPP dihitung s/d bulan ' + esc(sppDueMonthLabel()) : ''}${list.some(s => sppTunggakanPrev(s) > 0) ? ' &nbsp;|&nbsp; Kolom Tunggakan sudah termasuk sisa SPP Tahun Ajaran sebelumnya' : ''}</p>
       <table class="data-table-pdf">
         <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>SPP Dibayar</th><th>Item Terbayar</th><th>Tunggakan</th></tr></thead>
@@ -425,24 +495,24 @@ function buildRekapTotalHTML(kelasFil, tgl) {
           ${list.map((s,i)=>{
             const tk = totalTunggakan(s);
             const prev = sppTunggakanPrev(s);
-            const itemBayar = appState.tagihan.filter(t=>t.nama===s.nama).reduce((a,t)=>a+(t.paid_amount||0),0);
-            return `<tr${tk>0?' style="background:#fff5f5;"':''}>
-              <td style="text-align:center">${i+1}</td>
+            const itemBayar = tagihanOf(s.nama).reduce((a,t)=>a+(t.paid_amount||0),0);
+            return `<tr${tk>0?' class="s-row-due"':''}>
+              <td class="s-c">${i+1}</td>
               <td>${esc(s.nama)}</td><td>${esc(s.kelas)}</td>
-              <td style="text-align:right">${((s.spp_paid_months||[]).length*(s.spp||0)).toLocaleString('id-ID')}</td>
-              <td style="text-align:right">${itemBayar.toLocaleString('id-ID')}</td>
-              <td style="text-align:right;${tk>0?'color:#c0392b;font-weight:bold;':''}">${tk>0?tk.toLocaleString('id-ID'):'Lunas'}${prev>0?`<br><span style="font-size:9pt;font-weight:normal;">termasuk T.A. lalu ${prev.toLocaleString('id-ID')}</span>`:''}</td>
+              <td class="s-r">${((s.spp_paid_months||[]).length*(s.spp||0)).toLocaleString('id-ID')}</td>
+              <td class="s-r">${itemBayar.toLocaleString('id-ID')}</td>
+              <td class="s-r${tk>0?' s-due':''}">${tk>0?tk.toLocaleString('id-ID'):'Lunas'}${prev>0?`<br><span class="s-small s-normal">termasuk T.A. lalu ${prev.toLocaleString('id-ID')}</span>`:''}</td>
             </tr>`;
           }).join('')}
-          <tr style="background:#f0f0f0;font-weight:bold;">
-            <td colspan="3" style="text-align:right">TOTAL</td>
-            <td style="text-align:right">${list.reduce((a,s)=>a+(s.spp||0)*(s.spp_paid_months||[]).length,0).toLocaleString('id-ID')}</td>
-            <td style="text-align:right">${appState.tagihan.filter(t=>list.some(s=>s.nama===t.nama)).reduce((a,t)=>a+(t.paid_amount||0),0).toLocaleString('id-ID')}</td>
-            <td style="text-align:right;color:#c0392b;">${totalTk.toLocaleString('id-ID')}</td>
+          <tr class="s-total-row s-b">
+            <td colspan="3" class="s-r">TOTAL</td>
+            <td class="s-r">${list.reduce((a,s)=>a+(s.spp||0)*(s.spp_paid_months||[]).length,0).toLocaleString('id-ID')}</td>
+            <td class="s-r">${list.reduce((a,s)=>a+tagihanOf(s.nama).reduce((b,t)=>b+(t.paid_amount||0),0),0).toLocaleString('id-ID')}</td>
+            <td class="s-r s-red">${totalTk.toLocaleString('id-ID')}</td>
           </tr>
         </tbody>
       </table>
-      <div class="ttd-section" style="margin-top:20px;">
+      <div class="ttd-section">
         <div class="ttd-box"><p>Mengetahui,<br>Kepala Madrasah</p><div class="ttd-space"></div><p><strong>${esc(P2.kepsek)}</strong>${P2.kepsek_nip?'<br><small>'+esc(P2.kepsek_nip)+'</small>':''}</p></div>
         <div class="ttd-box"><p>${esc(P2.kota||'Tarakan')}, ${tglFmt}<br>Bendahara</p><div class="ttd-space"></div><p><strong>${esc(P2.bendahara)}</strong>${P2.bendahara_nip?'<br><small>'+esc(P2.bendahara_nip)+'</small>':''}</p></div>
       </div>

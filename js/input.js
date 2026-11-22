@@ -65,10 +65,10 @@ function setMetode(m) {
   const lbl = document.getElementById('dibayarOlehLabel');
   const inp = document.getElementById('inputDibayarOleh');
   if (m === 'transfer') {
-    if (lbl) lbl.innerHTML = 'Dibayar oleh <span style="color:var(--text-muted);font-weight:400;">(pengirim transfer)</span>';
+    if (lbl) lbl.innerHTML = 'Dibayar oleh <span class="text-muted fw-400">(pengirim transfer)</span>';
     if (inp) inp.placeholder = 'Nama pengirim transfer...';
   } else {
-    if (lbl) lbl.innerHTML = 'Dibayar oleh <span style="color:var(--text-muted);font-weight:400;">(opsional)</span>';
+    if (lbl) lbl.innerHTML = 'Dibayar oleh <span class="text-muted fw-400">(opsional)</span>';
     if (inp) inp.placeholder = 'Nama pembayar / penyetor...';
   }
 }
@@ -108,7 +108,7 @@ function onInputNamaSearch() {
   // Bila toggle dicentang tapi memang tak ada satu pun santri non-aktif,
   // jelaskan penyebabnya (bukan sekadar "tidak ditemukan").
   if (showNonAktif && !appState.students.some(isNonAktif)) {
-    dd.innerHTML = `<div style="padding:14px 16px;font-size:12.5px;color:var(--text-muted);line-height:1.55;">
+    dd.innerHTML = `<div class="p-14-16 fs-12-5 text-muted lh-155">
       Belum ada santri berstatus <strong>lulus / pindah / keluar</strong>.<br>
       Tandai dulu lewat menu <strong>Data Santri</strong> (pilih santri → ubah status)
       atau <strong>Promosi Kelas</strong>, lalu mereka akan muncul di sini.
@@ -132,7 +132,7 @@ function onInputNamaSearch() {
   }
 
   if (!list.length) {
-    dd.innerHTML = `<div style="padding:14px 16px;font-size:13px;color:var(--text-muted);">Tidak ditemukan</div>`;
+    dd.innerHTML = `<div class="p-14-16 fs-13 text-muted">Tidak ditemukan</div>`;
     dd.style.display = 'block';
     return;
   }
@@ -140,8 +140,8 @@ function onInputNamaSearch() {
   const tunggakBadge = s => {
     const tk = totalTunggakan(s);
     return tk > 0
-      ? `<span style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;">⚠️ ${rp(tk)}</span>`
-      : `<span style="font-size:11px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
+      ? `<span class="fs-12 fw-700 text-danger bg-danger-pale p-2-8 rounded-20"><svg class="ic"><use href="#i-alert"/></svg> ${rp(tk)}</span>`
+      : `<span class="fs-12 fw-700 text-primary-light bg-primary-pale p-2-8 rounded-20">✓ Lunas</span>`;
   };
 
   // Highlight karakter yang cocok (tiap potongan di-escape agar aman dari XSS)
@@ -150,18 +150,18 @@ function onInputNamaSearch() {
     const idx = text.toLowerCase().indexOf(q);
     if (idx < 0) return esc(text);
     return esc(text.slice(0, idx)) +
-      `<mark style="background:#fef08a;border-radius:2px;padding:0 1px;">${esc(text.slice(idx, idx+q.length))}</mark>` +
+      `<mark class="hl">${esc(text.slice(idx, idx+q.length))}</mark>` +
       esc(text.slice(idx + q.length));
   };
 
   dd.innerHTML = list.slice(0, 15).map((s, i) => `
-    <div class="input-nama-item" data-idx="${i}" data-nama="${esc(s.nama)}"
+    <div class="input-nama-item sugg-row" data-idx="${i}" data-nama="${esc(s.nama)}"
       onmousedown="selectInputNama('${escJs(s.nama)}')"
       onmouseenter="hoverInputNamaItem(${i})"
-      style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">
+     >
       <div>
-        <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span style="font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">${esc(kelasLabel(s))}</span>` : ''}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
+        <div class="fw-600 fs-13-5">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span class="fs-12 fw-700 text-accent bg-accent-pale rounded-5 p-1-6 align-middle">${esc(kelasLabel(s))}</span>` : ''}</div>
+        <div class="hint mt-2">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
       </div>
       ${tunggakBadge(s)}
     </div>`).join('');
@@ -266,11 +266,11 @@ function onStudentSelect() {
   // Santri yang masuk di tengah TA hanya ditagih sejak bulan masuknya.
   const bulanDitagih  = sppBillableMonths(s).length;
   document.getElementById('studentSummary').innerHTML = `
-    <div style="margin-top:14px;padding:12px 14px;background:var(--primary-pale);border-radius:12px;display:grid;grid-template-columns:1fr auto;gap:7px 14px;align-items:baseline;">
-      <div style="font-size:12px;color:var(--text-muted);">SPP per bulan</div>
-      <div style="font-size:12.5px;font-weight:700;">${s.spp > 0 ? rp(s.spp) : '<span style="color:var(--text-muted);font-weight:400;">Belum diisi</span>'}</div>
-      <div style="font-size:12px;color:var(--text-muted);">Bulan SPP terbayar</div>
-      <div style="font-size:12.5px;font-weight:700;">${bulanTerbayar} <span style="font-weight:400;color:var(--text-muted);">dari ${bulanDitagih} bulan${sppMulaiLabel(s) ? ' (mulai ' + esc(sppMulaiLabel(s)) + ')' : ''}</span></div>
+    <div class="summary-grid">
+      <div class="hint">SPP per bulan</div>
+      <div class="fs-12-5 fw-700">${s.spp > 0 ? rp(s.spp) : '<span class="text-muted fw-400">Belum diisi</span>'}</div>
+      <div class="hint">Bulan SPP terbayar</div>
+      <div class="fs-12-5 fw-700">${bulanTerbayar} <span class="fw-400 text-muted">dari ${bulanDitagih} bulan${sppMulaiLabel(s) ? ' (mulai ' + esc(sppMulaiLabel(s)) + ')' : ''}</span></div>
     </div>
   `;
   renderPaymentItems(s);
@@ -392,7 +392,7 @@ function renderPaymentItems(student) {
   const cont = document.getElementById('paymentItems');
   inputPrevArrears = student ? sppTunggakanPrevList(student) : [];
   if (!student) {
-    cont.innerHTML = `<div class="pos-empty">👆 Pilih santri dulu — tagihannya akan muncul di sini.</div>`;
+    cont.innerHTML = `<div class="pos-empty"><svg class="ic"><use href="#i-info"/></svg> Pilih santri dulu — tagihannya akan muncul di sini.</div>`;
     syncChips(); calcTotal();
     return;
   }
@@ -424,10 +424,10 @@ function renderPaymentItems(student) {
           dibayar > 0 ? 'sisa ' + rp(sppInputSisa(student, m)) : '', (due ? 'due' : 'ahead') + (dibayar > 0 ? ' partial' : ''));
       };
       return `<div class="pos-card">${head(rp(rate) + '/bln')}
-        ${mulaiSpp ? `<div class="pos-note">📅 Santri masuk di tengah tahun ajaran — SPP dihitung mulai <strong>${esc(mulaiSpp)}</strong>.</div>` : ''}
+        ${mulaiSpp ? `<div class="pos-note"><svg class="ic"><use href="#i-cal"/></svg> Santri masuk di tengah tahun ajaran — SPP dihitung mulai <strong>${esc(mulaiSpp)}</strong>.</div>` : ''}
         ${tunggak.length
           ? `<div class="pos-label danger">Menunggak · ${tunggak.length} bulan</div><div class="pos-chips">${tunggak.map(m => mchip(m, true)).join('')}</div>`
-          : `<div class="pos-note ok">✅ Tidak ada tunggakan SPP s/d bulan berjalan</div>`}
+          : `<div class="pos-note ok"><svg class="ic"><use href="#i-check"/></svg> Tidak ada tunggakan SPP s/d bulan berjalan</div>`}
         ${dimuka.length ? `<details class="pos-more"><summary>Bayar di muka · ${dimuka.length} bulan</summary>
           <div class="pos-chips">${dimuka.map(m => mchip(m, false)).join('')}</div></details>` : ''}
       </div>`;
@@ -469,7 +469,7 @@ function renderPaymentItems(student) {
 // Item yang tak perlu tindakan (lunas / nominal belum diatur): satu baris tipis.
 function doneRow(name, kind, text) {
   return `<div class="pay-item-done ${kind === 'warn' ? 'is-warn' : 'is-lunas'}">
-    <span class="pid-mark">${kind === 'warn' ? '⚠️' : '✓'}</span>
+    <span class="pid-mark">${kind === 'warn' ? '<svg class="ic"><use href="#i-alert"/></svg>' : '✓'}</span>
     <span class="pid-name">${esc(name)}</span>
     <span class="pid-note">${esc(text)}</span>
   </div>`;
@@ -486,11 +486,11 @@ function renderArrearsBanner(student, prevList) {
     .filter(t => t.nama === student.nama && Math.max(0, (t.nominal || 0) - (t.paid_amount || 0)) > 0)
     .forEach(t => baris.push({ label: t.item_name, amount: Math.max(0, t.nominal - t.paid_amount) }));
   const total = baris.reduce((a, r) => a + r.amount, 0);
-  if (total <= 0) return `<div class="pos-banner ok">✅ Tidak ada tunggakan — seluruh kewajiban ${esc(student.nama)} sudah lunas</div>`;
+  if (total <= 0) return `<div class="pos-banner ok"><svg class="ic"><use href="#i-check"/></svg> Tidak ada tunggakan — seluruh kewajiban ${esc(student.nama)} sudah lunas</div>`;
   return `<div class="pos-banner">
     <div class="pos-banner-top">
       <div><div class="pos-banner-label">Total tunggakan</div><div class="pos-banner-total">${rp(total)}</div></div>
-      <button type="button" class="btn btn-danger btn-sm" onclick="selectAllTunggakan(this)">⚡ Masukkan semua</button>
+      <button type="button" class="btn btn-danger btn-sm" onclick="selectAllTunggakan(this)"><svg class="ic"><use href="#i-zap"/></svg> Masukkan semua</button>
     </div>
     <div class="pos-banner-rows">${baris.map(r => `<span>${esc(r.label)}</span><b>${rp(r.amount)}</b>`).join('')}</div>
   </div>`;
@@ -499,7 +499,7 @@ function renderArrearsBanner(student, prevList) {
 // Tunggakan SPP tahun ajaran sebelumnya: chip per bulan per TA.
 function renderPrevArrearsBlock(list, chip) {
   return `<div class="pos-card prev">
-    <div class="pos-card-head"><div class="pos-card-name danger">⚠️ Tunggakan SPP TA sebelumnya</div>
+    <div class="pos-card-head"><div class="pos-card-name danger"><svg class="ic"><use href="#i-alert"/></svg> Tunggakan SPP TA sebelumnya</div>
       <div class="pos-card-meta">${rp(list.reduce((a, y) => a + y.amount, 0))}</div></div>
     ${list.map(y => `<div class="pos-label">TA ${esc(y.ta)}${y.kelas ? ' · Kelas ' + esc(y.kelas) : ''}</div>
       <div class="pos-chips">${y.detail.map(d => chip('prev|' + y.ta + '|' + d.m,
@@ -658,7 +658,7 @@ function renderCart() {
   }
   if (!box) return;
   if (!inputCart.length) {
-    box.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">🛒</div>Keranjang kosong<br><small>Klik bulan atau tombol <b>Lunas</b> di daftar tagihan</small></div>`;
+    box.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon"><svg class="ic"><use href="#i-cart"/></svg></div>Keranjang kosong<br><small>Klik bulan atau tombol <b>Lunas</b> di daftar tagihan</small></div>`;
     _cartBaru = '';
     return;
   }
@@ -887,7 +887,7 @@ async function _submitPayment() {
   // Render session table
   const tbody = document.querySelector('#sessionTable tbody');
   const row = document.createElement('tr');
-  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')">🖨️ Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
+  row.innerHTML = `<td><strong>${esc(nama)}</strong></td><td>${esc(student.kelas)}</td><td>${esc(items.map(i=>i.name+(i.bulanList?.length?' ('+i.bulanList.map(b=>MONTH_FULL[b]).join(', ')+')':i.bulan?' ('+MONTH_FULL[i.bulan]+')':'')).join(', '))}</td><td><strong>${rp(totalAmt)}</strong></td><td>${esc(timeStr)}</td><td class="nowrap"><button class="btn btn-primary btn-sm" onclick="cetakKuitansiById('${escJs(nama)}','${escJs(timeStr)}')"><svg class="ic"><use href="#i-print"/></svg> Kuitansi</button> <button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
   if(tbody.firstChild?.tagName==='TR' && tbody.firstChild.querySelector('[colspan]')) tbody.innerHTML='';
   tbody.prepend(row);
 
@@ -935,6 +935,7 @@ async function cetakKuitansi(data) {
     .kuitansi-wrap { display:flex; flex-direction:column; gap:10px; max-width:190mm; margin:0 auto; }
     hr.sep { border:none; border-top:2px dashed #aaa; margin:4px 0; }
     .print-btn { display:block; margin:0 auto 14px; padding:10px 32px; background:#1e5631; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; }
+    ${KWT_CSS}
   </style></head><body>
   <button class="print-btn no-print" onclick="window.print()">🖨️ Cetak Kuitansi</button>
   <div class="kuitansi-wrap">

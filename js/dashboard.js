@@ -36,10 +36,10 @@ function _renderDashboard() {
     : `${all.length} santri aktif`;
 
   document.getElementById('statGrid').innerHTML = `
-    <div class="stat-card green" title="${esc(judulSantri)}"><div class="stat-label">Total Santri</div><div class="stat-value">${ss.length}</div><div class="stat-sub">${subSantri}</div><div class="stat-icon">🎓</div></div>
-    <div class="stat-card gold"><div class="stat-label">Total Terkumpul</div><div class="stat-value" style="font-size:18px;">${rp(totalBayarSPP+totalBayarTagihan)}</div><div class="stat-sub">SPP + Semua Pembayaran</div><div class="stat-icon">💰</div></div>
-    <div class="stat-card red"><div class="stat-label">Total Tunggakan</div><div class="stat-value" style="font-size:18px;">${rp(totalTunggak)}</div><div class="stat-sub">${belumLunas} dari ${ss.length} santri aktif belum lunas${tunggakNonAktif > 0 ? ` &nbsp;·&nbsp; ${rp(tunggakNonAktif)} non-aktif` : ''}</div><div class="stat-icon">⚠️</div></div>
-    <div class="stat-card blue"><div class="stat-label">Tagihan Aktif</div><div class="stat-value">${appState.tagihan.filter(t=>t.paid_amount>=t.nominal).length}</div><div class="stat-sub">dari ${appState.tagihan.length} total tagihan</div><div class="stat-icon">✅</div></div>
+    <div class="stat-card green" title="${esc(judulSantri)}"><div class="stat-label">Total Santri</div><div class="stat-value">${ss.length}</div><div class="stat-sub">${subSantri}</div><div class="stat-icon"><svg class="ic"><use href="#i-grad"/></svg></div></div>
+    <div class="stat-card gold"><div class="stat-label">Total Terkumpul</div><div class="stat-value fs-18">${rp(totalBayarSPP+totalBayarTagihan)}</div><div class="stat-sub">SPP + Semua Pembayaran</div><div class="stat-icon"><svg class="ic"><use href="#i-cash"/></svg></div></div>
+    <div class="stat-card red"><div class="stat-label">Total Tunggakan</div><div class="stat-value fs-18">${rp(totalTunggak)}</div><div class="stat-sub">${belumLunas} dari ${ss.length} santri aktif belum lunas${tunggakNonAktif > 0 ? ` &nbsp;·&nbsp; ${rp(tunggakNonAktif)} non-aktif` : ''}</div><div class="stat-icon"><svg class="ic"><use href="#i-alert"/></svg></div></div>
+    <div class="stat-card blue"><div class="stat-label">Santri Lunas</div><div class="stat-value">${ss.length - belumLunas}</div><div class="stat-sub">dari ${ss.length} santri aktif tanpa tunggakan</div><div class="stat-icon"><svg class="ic"><use href="#i-check"/></svg></div></div>
   `;
 
   // Kelas table
@@ -61,7 +61,7 @@ function _renderDashboard() {
     return `<tr>
       <td><strong>${k==='?'?'Kelas Belum Diset':esc(k)}</strong></td>
       <td>${ks.length}</td>
-      <td>${lunas} / ${ks.length} <span style="color:var(--text-muted);font-size:11px;">(${pct_}%)</span></td>
+      <td>${lunas} / ${ks.length} <span class="hint">(${pct_}%)</span></td>
       <td>${rp(tkItems)}</td>
       <td>${pct_===100?'<span class="badge badge-green">✓ Lunas</span>':pct_>50?'<span class="badge badge-yellow">~Sebagian</span>':'<span class="badge badge-red">Banyak Tunggak</span>'}</td>
     </tr>`;
@@ -88,25 +88,35 @@ function _renderDashboard() {
     // Bulan yang belum jatuh tempo ditandai netral — capaian rendah di situ
     // wajar (belum ditagih), jadi jangan diberi warna "merah".
     const due = isSppDue(m);
-    return `<div style="margin-bottom:10px;${due?'':'opacity:.6;'}">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
-        <span style="font-weight:600;">${MONTH_FULL[m]}${due?'':' <span style="font-weight:400;font-size:10px;color:var(--text-muted);">(belum jatuh tempo)</span>'}</span><span style="color:var(--text-muted);">${paid}/${total}</span>
+    return `<div class="mb-10${due?'':' is-dim'}">
+      <div class="flex justify-between fs-12 mb-3">
+        <span class="fw-600">${MONTH_FULL[m]}${due?'':' <span class="fw-400 fs-12 text-muted">(belum jatuh tempo)</span>'}</span><span class="text-muted">${paid}/${total}</span>
       </div>
       <div class="progress-wrap"><div class="progress-bar ${!due?'yellow':p>80?'green':p>40?'yellow':'red'}" style="width:${p}%"></div></div>
     </div>`;
   }).join('');
 
+  // Tunggakan terbesar — santri aktif, 5 teratas, langsung bisa dibayar
+  const top = ss.map(s => ({ s, tk: totalTunggakan(s) })).filter(x => x.tk > 0)
+    .sort((a, b) => b.tk - a.tk).slice(0, 5);
+  document.querySelector('#dashTopTunggak tbody').innerHTML = top.length
+    ? top.map(({ s, tk }) => `<tr>
+        <td><strong>${esc(s.nama)}</strong></td><td>${esc(kelasLabel(s))}</td>
+        <td class="text-right text-danger fw-700">${rp(tk)}</td>
+        <td class="text-right"><button class="btn btn-primary btn-sm" onclick="quickInput('${escJs(s.nama)}')"><svg class="ic"><use href="#i-card"/></svg> Bayar</button></td>
+      </tr>`).join('')
+    : '<tr><td class="empty-row" colspan="4"><svg class="ic"><use href="#i-check"/></svg> Tidak ada tunggakan</td></tr>';
+
   // Recent transactions
   const tbody2 = document.querySelector('#recentTable tbody');
-  const recent = appState.transactions.slice(-10).reverse();
+  const recent = appState.transactions.slice(-6).reverse();
   if (!recent.length) {
-    tbody2.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Belum ada transaksi tercatat</td></tr>';
+    tbody2.innerHTML = '<tr><td class="empty-row" colspan="4">Belum ada transaksi tercatat</td></tr>';
   } else {
     tbody2.innerHTML = recent.map(t => `<tr>
-      <td style="font-size:11px;color:var(--text-muted);">${esc(t.time)}</td>
-      <td><strong>${esc(t.nama)}</strong></td><td>${esc(t.kelas)}</td>
-      <td>${esc(t.jenis)}</td><td>${rp(t.nominal)}</td>
-      <td><span class="badge badge-green">Lunas</span></td>
+      <td class="hint">${esc(t.time)}</td>
+      <td><strong>${esc(t.nama)}</strong></td>
+      <td>${esc(t.jenis)}</td><td class="text-right">${rp(t.nominal)}</td>
     </tr>`).join('');
   }
 }

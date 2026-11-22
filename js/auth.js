@@ -17,7 +17,7 @@ function isLoggedIn() {
 }
 function showLoginError(msg) {
   const err = document.getElementById('loginError');
-  err.textContent = '⚠️ ' + msg;
+  setIconText(err, '⚠️ ' + msg);
   err.style.display = 'block';
   setTimeout(() => err.style.display = 'none', 4000);
 }

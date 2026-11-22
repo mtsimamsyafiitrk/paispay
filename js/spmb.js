@@ -46,25 +46,25 @@ function _renderSpmbStats(list) {
 
   el.innerHTML = `
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--accent-pale);color:var(--accent);">⭐</div>
+      <div class="stat-icon bg-accent-pale text-accent"><svg class="ic"><use href="#i-star"/></svg></div>
       <div class="stat-info">
         <div class="stat-label">Total Calon Santri</div>
         <div class="stat-value">${totalCalon} orang</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--primary-pale);color:var(--primary-light);">💳</div>
+      <div class="stat-icon bg-primary-pale text-primary-light"><svg class="ic"><use href="#i-card"/></svg></div>
       <div class="stat-info">
         <div class="stat-label">Terkumpul Pendaftaran</div>
-        <div class="stat-value" style="font-size:15px;">${rp(totalPendaftaran)}</div>
-        ${totalSisaPendaftaran > 0 ? `<div style="font-size:11px;color:var(--danger);margin-top:2px;">Sisa: ${rp(totalSisaPendaftaran)}</div>` : ''}
+        <div class="stat-value fs-15">${rp(totalPendaftaran)}</div>
+        ${totalSisaPendaftaran > 0 ? `<div class="fs-12 text-danger mt-2">Sisa: ${rp(totalSisaPendaftaran)}</div>` : ''}
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--primary-pale);color:var(--primary-light);">🏛️</div>
+      <div class="stat-icon bg-primary-pale text-primary-light"><svg class="ic"><use href="#i-bank"/></svg></div>
       <div class="stat-info">
         <div class="stat-label">Terkumpul Pangkal</div>
-        <div class="stat-value" style="font-size:15px;">${rp(totalPangkal)}</div>
+        <div class="stat-value fs-15">${rp(totalPangkal)}</div>
       </div>
     </div>
   `;
@@ -74,9 +74,9 @@ function _renderSpmbTable(list) {
   const tbody = document.getElementById('spmbTableBody');
   if (!tbody) return;
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted);">
+    tbody.innerHTML = `<tr><td class="text-center p-32 text-muted" colspan="8">
       Belum ada calon santri.<br>
-      <span style="font-size:12px;">Klik <strong>Tambah Calon</strong> atau <strong>Import Excel</strong> untuk mulai.</span>
+      <span class="fs-12">Klik <strong>Tambah Calon</strong> atau <strong>Import Excel</strong> untuk mulai.</span>
     </td></tr>`;
     const chkAll = document.getElementById('spmbChkAll');
     if (chkAll) chkAll.checked = false;
@@ -95,39 +95,39 @@ function _renderSpmbTable(list) {
 
     const pendaftaranBadge = _pd.nominal > 0
       ? (pendaftaranOk
-        ? `<span style="font-size:11px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
-        : `<div style="font-size:12px;">${rp(_pd.paid)} / ${rp(_pd.nominal)}</div>
-           <div style="font-size:11px;color:var(--danger);">Sisa ${rp(sisaPendaftaran)}</div>`)
-      : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
+        ? `<span class="fs-12 fw-700 text-primary-light"><svg class="ic"><use href="#i-check"/></svg> Lunas</span>`
+        : `<div class="fs-12">${rp(_pd.paid)} / ${rp(_pd.nominal)}</div>
+           <div class="fs-12 text-danger">Sisa ${rp(sisaPendaftaran)}</div>`)
+      : `<span class="hint">—</span>`;
 
     const pangkalBadge = _pk.nominal > 0
       ? (pangkalOk
-        ? `<span style="font-size:11px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
-        : `<div style="font-size:12px;">${rp(_pk.paid)} / ${rp(_pk.nominal)}</div>
-           <div style="font-size:11px;color:var(--danger);">Sisa ${rp(sisaPangkal)}</div>`)
-      : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
+        ? `<span class="fs-12 fw-700 text-primary-light"><svg class="ic"><use href="#i-check"/></svg> Lunas</span>`
+        : `<div class="fs-12">${rp(_pk.paid)} / ${rp(_pk.nominal)}</div>
+           <div class="fs-12 text-danger">Sisa ${rp(sisaPangkal)}</div>`)
+      : `<span class="hint">—</span>`;
 
     const sppLabel = s.spp > 0
-      ? `<span style="font-weight:600;">${rp(s.spp)}</span>`
-      : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
+      ? `<span class="fw-600">${rp(s.spp)}</span>`
+      : `<span class="hint">—</span>`;
 
     return `<tr>
-      <td><input type="checkbox" class="spmb-row-chk" data-nama="${esc(s.nama)}"
+      <td><input type="checkbox" class="spmb-row-chk w-15 h-15 accent-primary" data-nama="${esc(s.nama)}"
         ${sel ? 'checked' : ''} onchange="toggleSpmbRowSelect(this)"
-        style="width:15px;height:15px;accent-color:var(--primary);"></td>
+       ></td>
       <td>${i + 1}</td>
       <td>
-        <div style="font-weight:600;font-size:13px;">${esc(s.nama)}</div>
-        ${s.nisn ? `<div style="font-size:11px;color:var(--text-muted);">NISN: ${esc(s.nisn)}</div>` : ''}
+        <div class="fw-600 fs-13">${esc(s.nama)}</div>
+        ${s.nisn ? `<div class="hint">NISN: ${esc(s.nisn)}</div>` : ''}
       </td>
-      <td><span style="font-weight:700;font-size:14px;">Kelas ${esc(s.kelas)}</span></td>
+      <td><span class="fw-700 fs-14">Kelas ${esc(s.kelas)}</span></td>
       <td>${sppLabel}</td>
       <td>${pendaftaranBadge}</td>
       <td>${pangkalBadge}</td>
-      <td style="white-space:nowrap;">
-        <button class="btn btn-sm btn-accent" onclick="confirmPromoteSingle('${nameSafe}')" title="Promosikan ke siswa aktif" style="font-size:11px;">🎓 Promosi</button>
-        <button class="btn btn-sm btn-outline" onclick="openEditCalonModal('${nameSafe}')" title="Edit data" style="font-size:11px;">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteCalonSantri('${nameSafe}')" title="Hapus" style="font-size:11px;">🗑️</button>
+      <td class="nowrap">
+        <button class="btn btn-sm btn-accent fs-12" onclick="confirmPromoteSingle('${nameSafe}')" title="Promosikan ke siswa aktif"><svg class="ic"><use href="#i-grad"/></svg> Promosi</button>
+        <button class="btn btn-sm btn-outline fs-12" onclick="openEditCalonModal('${nameSafe}')" title="Edit data"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
+        <button class="btn btn-sm btn-danger act-del fs-12" onclick="deleteCalonSantri('${nameSafe}')" title="Hapus"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
       </td>
     </tr>`;
   }).join('');
@@ -505,8 +505,8 @@ function _parseSpmbRows(rows) {
   if (!spmbImportBuffer.length) { toast('⚠️ Tidak ada data valid di file'); return; }
 
   document.getElementById('spmbImportPreview').innerHTML = `
-    <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px;">
-      ✅ ${spmbImportBuffer.length} calon santri siap diimport:
+    <div class="fs-13 fw-600 text-primary mb-10">
+      <svg class="ic"><use href="#i-check"/></svg> ${spmbImportBuffer.length} calon santri siap diimport:
     </div>
     <div class="table-wrap">
       <table>

@@ -18,20 +18,20 @@ function showDetail(nama) {
 
   // Warning nama mirip
   const dupesHtml = dupes.length ? `
-    <div style="background:#fef9c3;border-radius:8px;padding:8px 12px;margin-top:10px;font-size:12px;">
-      ⚠️ Nama mirip ditemukan: ${dupes.map(d => `<strong>${esc(d.a === s.nama ? d.b : d.a)}</strong> (${d.score}%)`).join(', ')}
+    <div class="note-yellow-sm">
+      <svg class="ic"><use href="#i-alert"/></svg> Nama mirip ditemukan: ${dupes.map(d => `<strong>${esc(d.a === s.nama ? d.b : d.a)}</strong> (${d.score}%)`).join(', ')}
       — Periksa apakah ini siswa yang sama.
     </div>` : '';
 
   document.getElementById('modalBody').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-      <div><div style="font-size:11px;color:var(--text-muted);">Kelas</div><div style="font-weight:700;">${esc(s.kelas)}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">NISN</div><div style="font-weight:700;">${esc(s.nisn||'—')}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">SPP/bulan</div><div style="font-weight:700;">${rp(s.spp)}</div></div>
-      <div><div style="font-size:11px;color:var(--text-muted);">Item Tagihan</div><div style="font-weight:700;">${rp(tagPaid)} / ${rp(tagNominal)}</div></div>
+    <div class="grid cols-2 gap-8 mb-16">
+      <div><div class="hint">Kelas</div><div class="fw-700">${esc(s.kelas)}</div></div>
+      <div><div class="hint">NISN</div><div class="fw-700">${esc(s.nisn||'—')}</div></div>
+      <div><div class="hint">SPP/bulan</div><div class="fw-700">${rp(s.spp)}</div></div>
+      <div><div class="hint">Item Tagihan</div><div class="fw-700">${rp(tagPaid)} / ${rp(tagNominal)}</div></div>
     </div>
-    <div style="margin-bottom:16px;">
-      <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--primary);">Status SPP TA Ini</div>
+    <div class="mb-16">
+      <div class="fw-700 fs-13 mb-8 text-primary">Status SPP TA Ini</div>
       <div class="month-grid">${MONTHS.map(m => {
         const paid    = (s.spp_paid_months||[]).includes(m);
         const sebelum = !paid && isSppSebelumMasuk(s, m);
@@ -42,24 +42,24 @@ function showDetail(nama) {
           : sebelum ? `Sebelum masuk — tidak ditagih (SPP mulai ${esc(sppMulaiLabel(s))})`
           : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo')
           + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
-        return `<div class="month-btn ${cls}" title="${ttl}"${ang > 0 ? ' style="outline:1.5px dashed var(--accent);"' : ''}>${m}${ang > 0 ? `<div style="font-size:9px;font-weight:500;">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
+        return `<div class="month-btn ${cls}${ang > 0 ? ' is-angsur' : ''}" title="${ttl}">${m}${ang > 0 ? `<div class="fs-12 fw-500">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
       }).join('')}</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">
+      <div class="fs-12 text-muted mt-6">
         Tunggakan SPP dihitung ${sppMulaiLabel(s) ? 'mulai <strong>' + esc(sppMulaiLabel(s)) + '</strong> (bulan santri masuk) ' : ''}s/d bulan berjalan${sppDueMonthLabel() ? ' (' + esc(sppDueMonthLabel()) + ')' : ''}.
       </div>
     </div>
-    <div style="background:${totalT>0?'var(--danger-pale)':'var(--primary-pale)'};border-radius:10px;padding:14px;">
-      ${sppT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan SPP:</strong> ${rp(sppT)}</div>` : ''}
-      ${prevT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan SPP Tahun Lalu:</strong> ${rp(prevT)}
-        <span style="font-size:11px;color:var(--text-muted);">(${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</span></div>` : ''}
-      ${itemT > 0 ? `<div style="margin-bottom:4px;"><strong>Tunggakan Item Tagihan:</strong> ${rp(itemT)}</div>` : ''}
-      ${totalT===0 ? '<div style="color:var(--primary-light);font-weight:700;">✓ Semua pembayaran lunas!</div>' : `<div style="font-weight:700;margin-top:4px;">Total: ${rp(totalT)}</div>`}
+    <div class="sum-box ${totalT>0?'is-due':'is-ok'}">
+      ${sppT > 0 ? `<div class="mb-4"><strong>Tunggakan SPP:</strong> ${rp(sppT)}</div>` : ''}
+      ${prevT > 0 ? `<div class="mb-4"><strong>Tunggakan SPP Tahun Lalu:</strong> ${rp(prevT)}
+        <span class="hint">(${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</span></div>` : ''}
+      ${itemT > 0 ? `<div class="mb-4"><strong>Tunggakan Item Tagihan:</strong> ${rp(itemT)}</div>` : ''}
+      ${totalT===0 ? '<div class="text-primary-light fw-700">✓ Semua pembayaran lunas!</div>' : `<div class="fw-700 mt-4">Total: ${rp(totalT)}</div>`}
     </div>
     ${otherTAHtml}
     ${dupesHtml}
-    <div style="margin-top:16px;display:flex;gap:8px;">
-      <button class="btn btn-primary" onclick="closeModal();quickInput('${escJs(s.nama)}')">💳 Bayar Sekarang</button>
-      <button class="btn btn-outline" onclick="closeModal();showCetakForStudent('${escJs(s.nama)}')">📄 Cetak Surat</button>
+    <div class="mt-16 flex gap-8">
+      <button class="btn btn-primary" onclick="closeModal();quickInput('${escJs(s.nama)}')"><svg class="ic"><use href="#i-card"/></svg> Bayar Sekarang</button>
+      <button class="btn btn-outline" onclick="closeModal();showCetakForStudent('${escJs(s.nama)}')"><svg class="ic"><use href="#i-file"/></svg> Cetak Surat</button>
     </div>
   `;
   document.getElementById('detailModal').classList.add('open');

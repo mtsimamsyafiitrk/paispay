@@ -10,7 +10,7 @@ function openKoreksiKwt(id) {
   const ld = document.getElementById('koreksiLoading');
   if (ld) ld.style.display = 'none';
   const list = document.getElementById('koreksiItemList');
-  if (list) list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;">Memuat...</div>';
+  if (list) list.innerHTML = '<div class="text-center text-muted p-16">Memuat...</div>';
   const ref = document.getElementById('koreksiRefLabel');
   if (ref) ref.textContent = '—';
   document.getElementById('koreksiModal').classList.add('open');
@@ -37,14 +37,14 @@ function onKoreksiNamaSearch() {
   const q = (document.getElementById('koreksiNamaSearch').value || '').toLowerCase().trim();
   const dd = document.getElementById('koreksiNamaDropdown');
   const list = q ? appState.students.filter(s => s.nama.toLowerCase().includes(q) || (s.nisn && s.nisn.includes(q))) : appState.students.slice(0, 20);
-  if (!list.length) { dd.innerHTML = `<div style="padding:12px 16px;font-size:13px;color:var(--text-muted);">Tidak ditemukan</div>`; dd.style.display='block'; return; }
+  if (!list.length) { dd.innerHTML = `<div class="p-12-16 fs-13 text-muted">Tidak ditemukan</div>`; dd.style.display='block'; return; }
   dd.innerHTML = list.slice(0,12).map((s,i) => `
-    <div class="koreksi-nama-item" data-idx="${i}" data-nama="${esc(s.nama)}"
+    <div class="koreksi-nama-item p-10-16 pointer border-b-1-border fs-13" data-idx="${i}" data-nama="${esc(s.nama)}"
       onmousedown="selectKoreksiNama('${escJs(s.nama)}')"
       onmouseenter="this.style.background='var(--primary-pale)'" onmouseleave="this.style.background=''"
-      style="padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;">
-      <div style="font-weight:600;">${esc(s.nama)}</div>
-      <div style="font-size:11px;color:var(--text-muted);">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn?' · NISN '+esc(s.nisn):''}</div>
+     >
+      <div class="fw-600">${esc(s.nama)}</div>
+      <div class="hint">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn?' · NISN '+esc(s.nisn):''}</div>
     </div>`).join('');
   dd.style.display = 'block';
 }
@@ -73,36 +73,33 @@ async function selectKoreksiNama(nama) {
 // ── Step 2: Daftar kuitansi ──
 async function loadKoreksiKwtList(nama) {
   const listEl = document.getElementById('koreksiKwtList');
-  listEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;">Memuat...</div>';
+  listEl.innerHTML = '<div class="text-center text-muted p-16">Memuat...</div>';
   showKoreksiInlineStep(2);
   try {
     const rows = await sb('kuitansi?select=*&nama=eq.' + encodeURIComponent(nama) + '&is_koreksi=eq.false&order=created_at.desc&limit=20');
-    if (!rows.length) { listEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:13px;">Tidak ada kuitansi ditemukan.</div>'; return; }
+    if (!rows.length) { listEl.innerHTML = '<div class="text-center text-muted p-16 fs-13">Tidak ada kuitansi ditemukan.</div>'; return; }
     const fmt = n => Number(n||0).toLocaleString('id-ID');
     listEl.innerHTML = rows.map(r => {
       const tgl = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
       const sudahDikoreksi = !!r.dikoreksi_oleh;
-      return `<div onclick="${sudahDikoreksi ? '' : `selectKoreksiKwt('${r.id}')`}"
-        style="padding:12px 16px;border:2px solid ${sudahDikoreksi?'#e5e7eb':'var(--border)'};border-radius:12px;cursor:${sudahDikoreksi?'not-allowed':'pointer'};background:${sudahDikoreksi?'#f9fafb':'#fff'};opacity:${sudahDikoreksi?'.6':'1'};transition:.15s;"
-        onmouseenter="if(!${sudahDikoreksi}) this.style.borderColor='var(--primary)'"
-        onmouseleave="if(!${sudahDikoreksi}) this.style.borderColor='var(--border)'">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+      return `<div class="kwt-pick${sudahDikoreksi ? ' is-done' : ''}" onclick="${sudahDikoreksi ? '' : `selectKoreksiKwt('${r.id}')`}">
+        <div class="flex justify-between items-center">
           <div>
-            <div style="font-weight:700;font-size:13px;color:var(--primary);">${esc(r.no_kuitansi||'—')}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${tgl} · TA ${esc(r.ta_label||'—')}</div>
+            <div class="fw-700 fs-13 text-primary">${esc(r.no_kuitansi||'—')}</div>
+            <div class="hint mt-2">${tgl} · TA ${esc(r.ta_label||'—')}</div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-weight:700;font-size:14px;">Rp ${fmt(r.total)}</div>
+          <div class="text-right">
+            <div class="fw-700 fs-14">Rp ${fmt(r.total)}</div>
             ${sudahDikoreksi
-              ? `<div style="font-size:11px;color:#6b7280;background:#f3f4f6;padding:2px 8px;border-radius:10px;margin-top:2px;">Sudah dikoreksi</div>`
-              : `<div style="font-size:11px;color:var(--primary-light);">Klik untuk pilih →</div>`}
+              ? `<div class="chip-gray">Sudah dikoreksi</div>`
+              : `<div class="fs-12 text-primary-light">Klik untuk pilih →</div>`}
           </div>
         </div>
-        ${r.catatan ? `<div style="font-size:11px;color:#666;margin-top:6px;">💬 ${esc(r.catatan)}</div>` : ''}
+        ${r.catatan ? `<div class="meta-666"><svg class="ic"><use href="#i-msg"/></svg> ${esc(r.catatan)}</div>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
-    listEl.innerHTML = `<div style="color:var(--danger);padding:16px;font-size:13px;">Gagal: ${e.message}</div>`;
+    listEl.innerHTML = `<div class="text-danger p-16 fs-13">Gagal: ${e.message}</div>`;
   }
 }
 
@@ -127,26 +124,26 @@ async function selectKoreksiKwt(id) {
       const pangkalPaidSekarang = student ? pangkalTunggakan(student) === 0 
         ? (student.pangkal||0) 
         : (student.pangkal_paid||0) : 0;
-      return `<div style="border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;background:#fafafa;">
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
-          <input type="checkbox" id="koreksiChk_${i}" data-idx="${i}" style="margin-top:3px;width:16px;height:16px;accent-color:var(--primary);cursor:pointer;" onchange="toggleKoreksiItem(${i})">
-          <div style="flex:1;">
-            <div style="font-weight:600;font-size:13px;">${esc(item.name)}${item.bulan?' ('+esc(MONTH_FULL[item.bulan]||item.bulan)+')':''}</div>
-            <div style="font-size:12px;color:var(--text-muted);">Nilai tercatat di kuitansi: <strong>Rp ${fmt(item.amount)}</strong></div>
-            ${isPangkal ? `<div style="font-size:11px;color:#888;margin-top:2px;">Total pangkal dibayar saat ini: Rp ${fmt(pangkalPaidSekarang)} dari Rp ${fmt(student?.pangkal||0)}</div>` : ''}
+      return `<div class="koreksi-card">
+        <label class="flex items-start gap-10 pointer">
+          <input class="mt-3 w-16 h-16 accent-primary pointer" type="checkbox" id="koreksiChk_${i}" data-idx="${i}" onchange="toggleKoreksiItem(${i})">
+          <div class="flex-1">
+            <div class="fw-600 fs-13">${esc(item.name)}${item.bulan?' ('+esc(MONTH_FULL[item.bulan]||item.bulan)+')':''}</div>
+            <div class="hint">Nilai tercatat di kuitansi: <strong>Rp ${fmt(item.amount)}</strong></div>
+            ${isPangkal ? `<div class="meta-888">Total pangkal dibayar saat ini: Rp ${fmt(pangkalPaidSekarang)} dari Rp ${fmt(student?.pangkal||0)}</div>` : ''}
           </div>
         </label>
         <!-- Input nilai koreksi (muncul saat dicentang) -->
-        <div id="koreksiInput_${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
-          <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-muted);">Pilih Tindakan</div>
-          <select id="koreksiAksi_${i}" style="width:100%;padding:8px 12px;border:2px solid var(--primary-light);border-radius:8px;font-size:13px;font-family:inherit;outline:none;margin-bottom:8px;">
+        <div class="koreksi-input" id="koreksiInput_${i}" hidden>
+          <div class="fs-12 fw-600 mb-6 text-muted">Pilih Tindakan</div>
+          <select class="w-full p-8-12 border-2-primary-light rounded-8 fs-13 font-inherit outline-none mb-8" id="koreksiAksi_${i}">
             <option value="batalkan">Batalkan item ini (pembayaran dianggap tidak terjadi)</option>
             <option value="koreksi_nilai">Koreksi nilai — ubah nominal yang benar</option>
           </select>
-          <input type="number" id="koreksiVal_${i}" placeholder="Nilai yang benar (Rp)..." value="${item.amount}"
-            style="width:100%;padding:8px 12px;border:2px solid var(--primary-light);border-radius:8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;display:none;"
+          <input class="w-full p-8-12 border-2-primary-light rounded-8 fs-13 font-inherit outline-none box-border" type="number" id="koreksiVal_${i}" placeholder="Nilai yang benar (Rp)..." value="${item.amount}"
+            hidden
             oninput="updateKoreksiTotal()">
-          ${isPangkal ? `<div id="koreksiPangkalInfo_${i}" style="display:none;margin-top:6px;font-size:11px;color:#888;"></div>` : ''}
+          ${isPangkal ? `<div class="koreksi-info" id="koreksiPangkalInfo_${i}" hidden></div>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -163,10 +160,10 @@ async function selectKoreksiKwt(id) {
           if (isPangkal && infoEl) {
             if (aksiEl.value === 'batalkan') {
               infoEl.style.display = 'block';
-              infoEl.innerHTML = '⚠️ Pembayaran pangkal sebesar <strong>Rp ' + fmt(item.amount) + '</strong> akan dikurangi dari total yang tercatat.';
+              infoEl.innerHTML = '<svg class="ic"><use href="#i-alert"/></svg> Pembayaran pangkal sebesar <strong>Rp ' + fmt(item.amount) + '</strong> akan dikurangi dari total yang tercatat.';
             } else if (aksiEl.value === 'koreksi_nilai') {
               infoEl.style.display = 'block';
-              infoEl.innerHTML = '✏️ Isikan nominal pangkal yang <strong>benar</strong> untuk kuitansi ini. Selisih akan disesuaikan otomatis.';
+              infoEl.innerHTML = '<svg class="ic"><use href="#i-edit"/></svg> Isikan nominal pangkal yang <strong>benar</strong> untuk kuitansi ini. Selisih akan disesuaikan otomatis.';
             } else {
               infoEl.style.display = 'none';
             }
