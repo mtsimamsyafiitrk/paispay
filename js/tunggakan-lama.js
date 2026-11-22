@@ -411,7 +411,7 @@ async function saveTunggakanLama() {
 
   // Segarkan semua tampilan yang membaca spp_history.
   const s = appState.students.find(x => x.nama === nama);
-  if (typeof renderSiswaTable === 'function') renderSiswaTable();
+  if (typeof renderSiswaTable === 'function') renderSiswaTable(false, true);
   if (typeof renderTunggakan  === 'function') renderTunggakan();
   if (typeof renderDashboard  === 'function') renderDashboard();
   const detailEl = document.getElementById('tunggakanDetail');

@@ -208,7 +208,16 @@ async function kwtCountTotal(filters) {
   } catch { return NaN; }
 }
 
+// Kolom cari: tunggu jeda mengetik (tiap pencarian = 2 permintaan ke server).
+let _kwtCariTimer = null;
+function cariRiwayatKuitansi() {
+  clearTimeout(_kwtCariTimer);
+  _kwtCariTimer = setTimeout(() => loadRiwayatKuitansi(), 350);
+}
+
+let _kwtReq = 0;   // hanya jawaban permintaan terakhir yang boleh digambar
 async function loadRiwayatKuitansi(keepPage) {
+  const req = ++_kwtReq;
   if (!keepPage) kwtPage = 0;
   const el = document.getElementById('kwtTableWrap');
   const statsEl = document.getElementById('kwtStats');
@@ -222,8 +231,9 @@ async function loadRiwayatKuitansi(keepPage) {
     const url = ['kuitansi?select=*', 'order=created_at.desc']
       .concat(filters)
       .concat(['limit=' + KWT_PAGE_SIZE, 'offset=' + offset]).join('&');
-    let rows = await sb(url);
-    const total = await kwtCountTotal(filters);              // bisa NaN bila gagal
+    // Data & jumlah total diminta bersamaan (dulu berurutan).
+    let [rows, total] = await Promise.all([sb(url), kwtCountTotal(filters)]);   // total bisa NaN bila gagal
+    if (req !== _kwtReq) return;   // sudah ada pencarian yang lebih baru
     const known = Number.isFinite(total);
     const totalPages = known ? Math.max(1, Math.ceil(total / KWT_PAGE_SIZE))
                              : kwtPage + (rows.length === KWT_PAGE_SIZE ? 2 : 1);
@@ -307,6 +317,7 @@ async function loadRiwayatKuitansi(keepPage) {
         <button class="btn btn-outline btn-sm" ${hasNext ? '' : 'disabled'} onclick="kwtNextPage()">Berikutnya →</button>
       </div>`;
   } catch(e) {
+    if (req !== _kwtReq) return;   // galat dari pencarian lama — abaikan
     el.innerHTML = `
       <div class="p-24 text-center">
         <div class="fs-32 mb-12"><svg class="ic"><use href="#i-alert"/></svg></div>
