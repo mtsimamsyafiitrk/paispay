@@ -464,6 +464,11 @@ function printHTML(bodyHTML, filename) {
 }
 
 function buildRekapTotalHTML(kelasFil, tgl) {
+  // Indeks tagihan per nama: tanpa ini tiap baris menyisir seluruh tagihan
+  // (3000 santri × 6000 tagihan ≈ 0,7 dtk).
+  return withTagihanIndex(() => _buildRekapTotalHTML(kelasFil, tgl));
+}
+function _buildRekapTotalHTML(kelasFil, tgl) {
   const P2 = getProfil();
   const tglFmt = new Date(tgl).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   // Hanya santri aktif: alumni, santri pindah/keluar, dan calon santri SPMB
@@ -490,7 +495,7 @@ function buildRekapTotalHTML(kelasFil, tgl) {
           ${list.map((s,i)=>{
             const tk = totalTunggakan(s);
             const prev = sppTunggakanPrev(s);
-            const itemBayar = appState.tagihan.filter(t=>t.nama===s.nama).reduce((a,t)=>a+(t.paid_amount||0),0);
+            const itemBayar = tagihanOf(s.nama).reduce((a,t)=>a+(t.paid_amount||0),0);
             return `<tr${tk>0?' class="s-row-due"':''}>
               <td class="s-c">${i+1}</td>
               <td>${esc(s.nama)}</td><td>${esc(s.kelas)}</td>
@@ -502,7 +507,7 @@ function buildRekapTotalHTML(kelasFil, tgl) {
           <tr class="s-total-row s-b">
             <td colspan="3" class="s-r">TOTAL</td>
             <td class="s-r">${list.reduce((a,s)=>a+(s.spp||0)*(s.spp_paid_months||[]).length,0).toLocaleString('id-ID')}</td>
-            <td class="s-r">${appState.tagihan.filter(t=>list.some(s=>s.nama===t.nama)).reduce((a,t)=>a+(t.paid_amount||0),0).toLocaleString('id-ID')}</td>
+            <td class="s-r">${list.reduce((a,s)=>a+tagihanOf(s.nama).reduce((b,t)=>b+(t.paid_amount||0),0),0).toLocaleString('id-ID')}</td>
             <td class="s-r s-red">${totalTk.toLocaleString('id-ID')}</td>
           </tr>
         </tbody>

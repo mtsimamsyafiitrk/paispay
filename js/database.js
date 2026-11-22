@@ -364,10 +364,11 @@ async function createTagihanForStudent(student) {
 // Item per-siswa (pangkal/pendaftaran) dikecualikan (nominal per-siswa).
 async function createTagihanForItem(item) {
   if (PER_STUDENT_ITEMS.includes(item.id)) return 0;
+  const sudahAda = new Set(appState.tagihan.filter(t => t.item_id === item.id).map(t => t.nama));
   const students = appState.students.filter(s =>
     !s.status_kelulusan &&
     (item.kelas || []).includes(s.kelas) &&
-    !appState.tagihan.find(t => t.nama === s.nama && t.item_id === item.id)
+    !sudahAda.has(s.nama)
   );
   if (!students.length) return 0;
   const records = students.map(s => ({

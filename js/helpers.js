@@ -88,7 +88,7 @@ function showPage(id) {
   closeSidebar();
   if(id==='dashboard') renderDashboard();
   if(id==='rekap-siswa') renderSiswaTable();
-  if(id==='tunggakan') renderTunggakan();
+  if(id==='tunggakan') { tunggakanShowAll = false; renderTunggakan(); }
   if(id==='spmb') renderSpmbPage();
   if(id==='pengaturan') renderItemList();
   if(id==='input') renderInputPage();

@@ -210,6 +210,8 @@ function siswaGoPage(page) {
 // ── TUNGGAKAN ──
 let tunggakanSuggIdx = -1;
 
+const TUNGGAKAN_LIMIT = 50;
+let tunggakanShowAll = false;   // direset saat halaman Tunggakan dibuka lagi
 function renderTunggakan() {
   return withTagihanIndex(_renderTunggakan);
 }
@@ -267,8 +269,12 @@ function _renderTunggakan() {
   // Daftar santri aktif yang menunggak, terbesar di atas — tidak perlu ketik nama dulu
   const daftar = ss.filter(isSantriAktif).map(s => ({ s, tk: totalTunggakan(s) }))
     .filter(x => x.tk > 0).sort((a, b) => b.tk - a.tk);
-  document.querySelector('#tunggakanTable tbody').innerHTML = daftar.length
-    ? daftar.map(({ s, tk }, i) => {
+  // Ribuan baris sekaligus membuat browser lambat menggambar (≈0,8 dtk untuk
+  // 3000 santri) — tampilkan yang terbesar dulu, sisanya lewat tombol.
+  const tampil = tunggakanShowAll ? daftar : daftar.slice(0, TUNGGAKAN_LIMIT);
+  const sisa = daftar.length - tampil.length;
+  document.querySelector('#tunggakanTable tbody').innerHTML = (daftar.length
+    ? tampil.map(({ s, tk }, i) => {
         const nSpp = sppUnpaidDueMonths(s).length;
         const n = escJs(s.nama);
         return `<tr>
@@ -283,7 +289,8 @@ function _renderTunggakan() {
           </td>
         </tr>`;
       }).join('')
-    : '<tr><td class="empty-row" colspan="6"><svg class="ic"><use href="#i-check"/></svg> Semua santri aktif sudah lunas</td></tr>';
+    : '<tr><td class="empty-row" colspan="6"><svg class="ic"><use href="#i-check"/></svg> Semua santri aktif sudah lunas</td></tr>')
+    + (sisa > 0 ? `<tr><td class="empty-row" colspan="6"><button class="btn btn-outline btn-sm" onclick="tunggakanShowAll=true;renderTunggakan()">Tampilkan semua (${sisa} lagi)</button></td></tr>` : '');
   const inp = document.getElementById('searchTunggakan');
   if (inp) inp.value = '';
   hideTunggakanDropdown();
