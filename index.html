@@ -80,6 +80,13 @@
 </div>
 
 
+<script>
+  // Sudah login di perangkat ini? Sembunyikan layar login seketika (sebelum
+  // app.min.js dimuat) supaya tidak berkedip. init.js memunculkannya lagi bila
+  // sesi ternyata ditolak server.
+  try { if (JSON.parse(localStorage.getItem('sipay_session') || 'null')?.access_token)
+    document.getElementById('loginScreen').classList.add('hidden'); } catch (e) {}
+</script>
 <div id="sidebarBackdrop" class="overlay-backdrop" onclick="closeSidebar()"></div>
 <div class="toast" id="toast"></div>
 
