@@ -909,3 +909,39 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 
 /* ══ Ikon garis di tombol (sprite di awal index.html) ══ */
 .ic { width: 1.15em; height: 1.15em; vertical-align: -.22em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* ══ Komponen & utilitas (dulu style inline di index.html) ══ */
+.card-title { font-weight: 700; font-size: 15px; color: var(--primary); margin-bottom: 16px; }
+.card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-weight: 700; font-size: 14px; color: var(--primary); margin-bottom: 14px; }
+.sub-title { font-weight: 700; font-size: 13px; color: var(--primary); margin-bottom: 10px; }
+.label-strong { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.label-muted { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.field-label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
+.hint { font-size: 12px; color: var(--text-muted); }
+.hint-13 { font-size: 13px; color: var(--text-muted); }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+.check-chip { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; cursor: pointer; padding: 6px 8px; border-radius: 8px; border: 1.5px solid var(--border); }
+.check-inline { display: flex; align-items: center; gap: 4px; font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; cursor: pointer; }
+.check-inline-13 { display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; }
+.check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 8px; background: var(--bg); border-radius: 8px; }
+.choice-opt { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border); cursor: pointer; font-size: 14px; }
+.mini-cell { padding: 5px 8px; background: #e8f5ee; border-radius: 6px; text-align: center; font-size: 12px; }
+.pale-box { padding: 6px 10px; background: var(--primary-pale); border-radius: 6px; }
+.soft-panel { background: var(--bg); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.chk-lg { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+.accent-primary { accent-color: var(--primary); }
+.row-10 { display: flex; gap: 10px; }
+.justify-end { justify-content: flex-end; }
+.flex-1 { flex: 1; }
+.minw-0 { min-width: 0; }
+.minw-200 { min-width: 200px; }
+.relative { position: relative; }
+.text-danger { color: var(--danger); }
+.text-right { text-align: right; }
+.lh-15 { line-height: 1.5; }
+.mw-440 { max-width: 440px; } .mw-480 { max-width: 480px; } .mw-560 { max-width: 560px; }
+/* Jarak: ditaruh paling akhir supaya menimpa margin bawaan komponen di atas */
+.mt-4 { margin-top: 4px; } .mt-6 { margin-top: 6px; }
+.mb-0 { margin-bottom: 0; } .mb-10 { margin-bottom: 10px; } .mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; } .mb-20 { margin-bottom: 20px; }
