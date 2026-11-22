@@ -150,15 +150,15 @@ function onInputNamaSearch() {
     const idx = text.toLowerCase().indexOf(q);
     if (idx < 0) return esc(text);
     return esc(text.slice(0, idx)) +
-      `<mark style="background:#fef08a;border-radius:2px;padding:0 1px;">${esc(text.slice(idx, idx+q.length))}</mark>` +
+      `<mark class="hl">${esc(text.slice(idx, idx+q.length))}</mark>` +
       esc(text.slice(idx + q.length));
   };
 
   dd.innerHTML = list.slice(0, 15).map((s, i) => `
-    <div class="input-nama-item" data-idx="${i}" data-nama="${esc(s.nama)}"
+    <div class="input-nama-item sugg-row" data-idx="${i}" data-nama="${esc(s.nama)}"
       onmousedown="selectInputNama('${escJs(s.nama)}')"
       onmouseenter="hoverInputNamaItem(${i})"
-      style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">
+     >
       <div>
         <div class="fw-600 fs-13-5">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span class="fs-12 fw-700 text-accent bg-accent-pale rounded-5 p-1-6 align-middle">${esc(kelasLabel(s))}</span>` : ''}</div>
         <div class="hint mt-2">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
@@ -266,7 +266,7 @@ function onStudentSelect() {
   // Santri yang masuk di tengah TA hanya ditagih sejak bulan masuknya.
   const bulanDitagih  = sppBillableMonths(s).length;
   document.getElementById('studentSummary').innerHTML = `
-    <div style="margin-top:14px;padding:12px 14px;background:var(--primary-pale);border-radius:12px;display:grid;grid-template-columns:1fr auto;gap:7px 14px;align-items:baseline;">
+    <div class="summary-grid">
       <div class="hint">SPP per bulan</div>
       <div class="fs-12-5 fw-700">${s.spp > 0 ? rp(s.spp) : '<span class="text-muted fw-400">Belum diisi</span>'}</div>
       <div class="hint">Bulan SPP terbayar</div>

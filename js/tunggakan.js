@@ -41,7 +41,7 @@ function renderItemList() {
               </label>`).join('')}
             </div>
           </div>
-          <div class="form-group" style="justify-content:flex-end;flex-direction:row;align-items:flex-end;gap:8px;grid-column:1/-1;">
+          <div class="form-group fg-actions">
             <button class="btn btn-primary btn-sm" onclick="saveEditItem(${idx})"><svg class="ic"><use href="#i-save"/></svg> Simpan</button>
             <button class="btn btn-outline btn-sm" onclick="cancelEditItem()">Batal</button>
           </div>
@@ -52,14 +52,14 @@ function renderItemList() {
     // Badge kelas
     const _klsLabel = k => k === 'calon' ? 'Kls Calon' : 'Kls ' + k;
     const kelasBadge = itemKelas.length
-      ? itemKelas.map(k => `<span style="background:${k==='calon'?'var(--accent-pale)':'var(--primary-pale)'};color:${k==='calon'?'var(--accent)':'var(--primary)'};border-radius:5px;padding:1px 7px;font-size:12px;font-weight:700;">${_klsLabel(k)}</span>`).join(' ')
-      : `<span style="background:#fee2e2;color:#dc2626;border-radius:5px;padding:1px 7px;font-size:12px;font-weight:700;">Tidak ada kelas</span>`;
+      ? itemKelas.map(k => `<span class="kls-tag${k==='calon'?' is-calon':''}">${_klsLabel(k)}</span>`).join(' ')
+      : `<span class="kls-tag is-none">Tidak ada kelas</span>`;
 
-    return `<div draggable="true" data-idx="${idx}"
+    return `<div class="item-row" draggable="true" data-idx="${idx}"
       ondragstart="onItemDragStart(event, ${idx})" ondragover="onItemDragOver(event)"
       ondragleave="onItemDragLeave(event)" ondrop="onItemDrop(event, ${idx})" ondragend="onItemDragEnd(event)"
-      style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);border-radius:8px;">
-      <span title="Seret untuk mengubah urutan" style="cursor:grab;color:var(--text-muted);font-size:18px;line-height:1;user-select:none;flex-shrink:0;">⠿</span>
+     >
+      <span class="drag-handle" title="Seret untuk mengubah urutan">⠿</span>
       <label class="toggle"><input type="checkbox" ${item.active?'checked':''} onchange="toggleItem(${idx})"><span class="toggle-slider"></span></label>
       <div class="flex-1 minw-0">
         <div class="fw-600 fs-13-5">${esc(item.name)}</div>
@@ -69,7 +69,7 @@ function renderItemList() {
       <span class="badge ${item.active?'badge-green':'badge-gray'} nowrap">${item.active?'Aktif':'Nonaktif'}</span>
       <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
       ${BAKU_ITEMS.includes(item.id)
-        ? `<span title="Item baku — tidak bisa dihapus, hanya bisa diedit" style="color:var(--text-muted);font-size:15px;padding:0 6px;cursor:default;"><svg class="ic"><use href="#i-lock"/></svg></span>`
+        ? `<span class="lock-ico" title="Item baku — tidak bisa dihapus, hanya bisa diedit"><svg class="ic"><use href="#i-lock"/></svg></span>`
         : `<button class="btn btn-danger btn-sm act-del" onclick="confirmRemoveItem(${idx})" title="Hapus item"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>`}
     </div>`;
   }).join('');

@@ -176,7 +176,7 @@ function thRender() {
   const body = document.getElementById('thBody');
   if (!thDraft.length) {
     body.innerHTML = `
-      <div style="text-align:center;padding:28px 16px;border:1.5px dashed var(--border);border-radius:12px;">
+      <div class="empty-dashed">
         <div class="fs-13 text-muted mb-12">
           Belum ada riwayat tahun ajaran sebelumnya untuk santri ini.
         </div>
@@ -197,7 +197,7 @@ function thCardHTML(y, i) {
   const monthRows = MONTHS.map(m => {
     const c = y.months[m];
     const off = !c.tagih;
-    return `<div style="display:grid;grid-template-columns:118px 1fr 1fr;gap:8px;align-items:center;padding:4px 0;${off ? 'opacity:.45;' : ''}">
+    return `<div class="th-month-row${off ? ' is-off' : ''}">
       <label class="flex items-center gap-6 fs-12-5 fw-600 pointer">
         <input class="accent-primary w-15 h-15" type="checkbox" ${c.tagih ? 'checked' : ''} onchange="thToggleMonth(${i},'${m}',this.checked)"
          >
@@ -214,7 +214,7 @@ function thCardHTML(y, i) {
 
   return `<div class="border-1-5-border rounded-12 p-14 mb-12 bg-card">
     <div id="th_warn_${i}">${thWarnHTML(y)}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;">
+    <div class="th-ta-grid">
       <div class="form-group m-0">
         <label>Tahun Ajaran <span class="text-danger">*</span></label>
         <input type="text" value="${esc(y.ta)}" placeholder="2024/2025" oninput="thSetField(${i},'ta',this.value)">
@@ -237,7 +237,7 @@ function thCardHTML(y, i) {
       <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'belum')"><svg class="ic"><use href="#i-x"/></svg> Semua belum bayar</button>
     </div>
 
-    <div style="display:grid;grid-template-columns:118px 1fr 1fr;gap:8px;font-size:12px;font-weight:700;color:var(--text-muted);padding-bottom:6px;border-bottom:1px solid var(--border);">
+    <div class="th-head-grid">
       <div>Bulan ditagih</div><div>Nominal (Rp)</div><div>Sudah dibayar (Rp)</div>
     </div>
     ${monthRows}
@@ -256,7 +256,7 @@ function thSummaryHTML(t) {
     <span>Ditagih: <strong>${t.bulan} bln</strong></span>
     <span>Tagihan: <strong>${rp(t.tagihan)}</strong></span>
     <span>Terbayar: <strong class="text-primary-light">${rp(t.dibayar)}</strong></span>
-    <span>Sisa: <strong style="color:${t.sisa > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${t.sisa > 0 ? rp(t.sisa) + ` (${t.menunggak} bln)` : '<svg class="ic"><use href="#i-check"/></svg> Lunas'}</strong></span>
+    <span>Sisa: <strong class="${t.sisa > 0 ? 'text-danger' : 'text-primary-light'}">${t.sisa > 0 ? rp(t.sisa) + ` (${t.menunggak} bln)` : '<svg class="ic"><use href="#i-check"/></svg> Lunas'}</strong></span>
   </div>`;
 }
 
@@ -264,7 +264,7 @@ function thRenderFooter() {
   const total = thDraft.reduce((a, y) => a + thRowTotals(y).sisa, 0);
   const el = document.getElementById('thTotal');
   if (el) el.innerHTML = thDraft.length
-    ? `Total tunggakan TA sebelumnya: <strong style="color:${total > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${rp(total)}</strong>`
+    ? `Total tunggakan TA sebelumnya: <strong class="${total > 0 ? 'text-danger' : 'text-primary-light'}">${rp(total)}</strong>`
     : '';
 }
 

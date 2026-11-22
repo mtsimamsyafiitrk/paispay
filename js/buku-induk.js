@@ -122,7 +122,7 @@ function closeBiMassal() {
 function biItemRowHTML() {
   const bulanOpts = ['<option value="">— Bulan (opsional) —</option>']
     .concat(MONTHS.map(m =>`<option value="${m}">${esc(MONTH_FULL[m] || m)}</option>`)).join('');
-  return `<div class="bi-item-row" style="display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center;">
+  return `<div class="bi-item-row bi-item-grid">
     <input type="text" class="bi-item-name p-9-11 border-1-5-border rounded-9 fs-13 font-inherit outline-none box-border" list="bi_item_names" placeholder="Nama item (mis. SPP)"
      >
     <input type="text" class="bi-item-nominal p-9-11 border-1-5-border rounded-9 fs-13 font-inherit outline-none box-border" inputmode="numeric" placeholder="Nominal (Rp)" oninput="biRecalcTotal()"
@@ -355,9 +355,9 @@ function indukRenderPreview() {
   wrap.innerHTML = `
     <div class="flex gap-10 flex-wrap mb-12">
       <span class="bg-primary-pale text-primary rounded-8 p-6-12 fs-12 fw-700">${indukBuffer.length} baris terbaca</span>
-      ${tidakLengkap ? `<span style="background:#fef3c7;color:#b45309;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-alert"/></svg> ${tidakLengkap} baris tidak lengkap</span>` : '<span style="background:#dcfce7;color:#166534;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-check"/></svg> Semua lengkap</span>'}
+      ${tidakLengkap ? `<span class="tag-lg-warn"><svg class="ic"><use href="#i-alert"/></svg> ${tidakLengkap} baris tidak lengkap</span>` : '<span class="tag-lg-ok"><svg class="ic"><use href="#i-check"/></svg> Semua lengkap</span>'}
     </div>
-    <div class="table-wrap" style="max-height:340px;overflow:auto;"><table class="data-table">
+    <div class="table-wrap scroll-340"><table class="data-table">
       <thead><tr><th>#</th><th>TA</th><th>Nama</th><th>Kelas</th><th>Item</th><th class="text-right">Nominal</th><th>Bulan</th><th>Status</th></tr></thead>
       <tbody>${indukBuffer.map((r, i) => `<tr>
         <td>${i + 1}</td>
@@ -483,14 +483,14 @@ function renderIndukDetail(r) {
   const items = Array.isArray(r.items) ? r.items : [];
 
   const warning = incomplete ? `
-    <div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+    <div class="alert-danger-sm">
       <div class="fw-800 fs-13 text-danger mb-3"><svg class="ic"><use href="#i-alert"/></svg> Data tidak lengkap</div>
       <div class="fs-12-5 text-text">${esc(masalah || 'Sebagian data pembayaran ini tidak tercatat lengkap dari arsip lama.')}</div>
     </div>` : '';
 
   const badges = `
     ${induk ? '<span class="tag-primary"><svg class="ic"><use href="#i-book"/></svg> Buku Induk</span>' : ''}
-    ${incomplete ? '<span style="background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-alert"/></svg> Tidak lengkap</span>' : ''}`;
+    ${incomplete ? '<span class="tag-warn"><svg class="ic"><use href="#i-alert"/></svg> Tidak lengkap</span>' : ''}`;
 
   const rowsHtml = items.length ? items.map(it => `<tr>
       <td>${esc(it.name || '—')}${it.bulan ? ` <span class="hint">(${esc(MONTH_FULL[it.bulan] || it.bulan)})</span>` : ''}</td>

@@ -140,13 +140,13 @@
     </a>
   </div>
   <div class="flex-1"></div>
-  <div style="padding:12px 12px 4px;">
-    <a class="nav-item" onclick="openLogoutConfirm()" href="#" style="color:rgba(255,100,100,.85);margin-bottom:0;">
+  <div class="sidebar-foot">
+    <a class="nav-item nav-logout" onclick="openLogoutConfirm()" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Keluar
     </a>
   </div>
-  <div style="padding:10px 20px 16px; font-size:12px; color:rgba(255,255,255,.35); text-align:center;">
+  <div class="sidebar-version">
     TA 2025/2026 • v1.0
   </div>
 </aside>
@@ -257,7 +257,7 @@
                   onblur="onInputNamaBlur()"
                  >
                 <div id="inputNamaDropdown"
-                  style="display:none;">
+                  hidden>
                 </div>
               </div>
               <div class="mt-6">
@@ -300,7 +300,7 @@
         </div>
 
         <div class="pos-detail">
-          <div class="form-group" style="margin:0 0 10px;">
+          <div class="form-group fg-tight">
             <label>Tanggal &amp; Jam Pembayaran</label>
             <div class="flex gap-6 mb-6">
               <button type="button" id="tglTodayBtn" class="seg-btn active" onclick="setTglMode('today')">Hari ini</button>
@@ -356,7 +356,7 @@
     <div class="card mb-16">
       <!-- Filter Chips Kelas + Promosi -->
       <div class="flex items-center justify-between mb-8 gap-12 flex-wrap">
-        <button class="btn btn-accent btn-sm" onclick="openPromosiKelasModal()" style="font-weight:700;letter-spacing:.3px;white-space:nowrap;"><svg class="ic"><use href="#i-grad"/></svg> PROMOSI KELAS</button>
+        <button class="btn btn-accent btn-sm btn-promosi" onclick="openPromosiKelasModal()"><svg class="ic"><use href="#i-grad"/></svg> PROMOSI KELAS</button>
         <div class="flex items-center gap-8 flex-wrap">
           <span class="label-muted">Filter Kelas</span>
           <div class="kelas-chips mb-0" id="kelasChips">
@@ -396,9 +396,9 @@
     <!-- Bulk action bar -->
     <div class="bulk-bar" id="bulkBar">
       <span id="bulkCount">0 dipilih</span>
-      <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);" onclick="openBulkStatusModal()"><svg class="ic"><use href="#i-clip"/></svg> Ubah Status</button>
+      <button class="btn btn-sm btn-on-dark" onclick="openBulkStatusModal()"><svg class="ic"><use href="#i-clip"/></svg> Ubah Status</button>
       <button class="btn btn-danger btn-sm" onclick="deleteSelected()"><svg class="ic"><use href="#i-trash"/></svg> Hapus Terpilih</button>
-      <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4);" onclick="clearSelection()">✕ Batal</button>
+      <button class="btn btn-outline btn-sm btn-outline-on-dark" onclick="clearSelection()">✕ Batal</button>
     </div>
     <div class="card">
       <div class="table-wrap">
@@ -452,7 +452,7 @@
       <span id="spmbBulkCount">0 dipilih</span>
       <button class="btn btn-accent btn-sm" onclick="promoteSelectedCalon()"><svg class="ic"><use href="#i-grad"/></svg> Promosikan</button>
       <button class="btn btn-danger btn-sm" onclick="deleteSelectedCalon()"><svg class="ic"><use href="#i-trash"/></svg> Hapus Terpilih</button>
-      <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4);" onclick="clearSpmbSelection()">✕ Batal</button>
+      <button class="btn btn-outline btn-sm btn-outline-on-dark" onclick="clearSpmbSelection()">✕ Batal</button>
     </div>
 
     <!-- Tabel calon santri -->
@@ -491,9 +491,9 @@
           onkeydown="onTunggakanKeydown(event)"
           autocomplete="off"
          >
-        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:17px;pointer-events:none;"><svg class="ic"><use href="#i-search"/></svg></span>
+        <span class="search-ico"><svg class="ic"><use href="#i-search"/></svg></span>
         <!-- Dropdown suggestions -->
-        <div id="tunggakanDropdown" style="display:none;"></div>
+        <div id="tunggakanDropdown" hidden></div>
       </div>
     </div>
 
@@ -595,7 +595,7 @@
         </div>
         <div class="row-10">
           <button class="btn btn-primary" onclick="openEditAkun()"><svg class="ic"><use href="#i-edit"/></svg> Edit Profil Akun</button>
-          <button class="btn btn-outline" style="color:var(--danger);border-color:var(--danger);" onclick="openGantiPassword()"><svg class="ic"><use href="#i-lock"/></svg> Ganti Password</button>
+          <button class="btn btn-outline btn-outline-danger" onclick="openGantiPassword()"><svg class="ic"><use href="#i-lock"/></svg> Ganti Password</button>
         </div>
       </div>
     </div>
@@ -622,7 +622,7 @@
             <div class="relative" id="cetakSearchWrap">
               <input type="text" id="cetakNamaSearch" placeholder="Ketik nama santri..." autocomplete="off"
                 oninput="onCetakNamaSearch()" onfocus="onCetakNamaSearch()" onkeydown="onCetakNamaKeydown(event)">
-              <div id="cetakNamaDropdown" class="nama-dropdown" style="display:none;"></div>
+              <div id="cetakNamaDropdown" class="nama-dropdown" hidden></div>
             </div>
           </div>
           <div class="form-group">
@@ -646,7 +646,7 @@
       <div id="pdfPreviewArea"></div>
     </div>
 
-    <div id="cetak-total" style="display:none;">
+    <div id="cetak-total" hidden>
       <div class="card mb-20">
         <div class="card-title">Rekap Keseluruhan</div>
         <div class="form-grid">
@@ -671,7 +671,7 @@
     </div>
 
     <!-- Tab: Export / Backup -->
-    <div id="cetak-export" style="display:none;">
+    <div id="cetak-export" hidden>
       <div class="card mb-16">
         <div class="fw-700 fs-15 text-primary mb-4">Export Data ke Excel</div>
         <div class="fs-12 text-muted mb-20">Backup data ke file Excel (.xlsx) — bisa dibuka di Microsoft Excel atau Google Sheets</div>
@@ -735,7 +735,7 @@
         <!-- Tampilan -->
         <div class="card mb-16">
           <div class="section-title">Tampilan</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
+          <div class="grid-auto-150">
             <div class="form-group mb-0">
               <label>Warna Lembar Pembayar</label>
               <div class="flex items-center gap-8">
@@ -827,7 +827,7 @@
                 Pakai TTD Online
               </label>
             </div>
-            <div id="kt_ttd_online_area" style="display:none;">
+            <div id="kt_ttd_online_area" hidden>
               <div class="flex items-center gap-12">
                 <div id="kt_ttd_preview" onclick="document.getElementById('kt_ttd_input').click()"
                  
@@ -836,9 +836,9 @@
                 </div>
                 <div class="flex-1">
                   <div class="fs-12 text-555 mb-6">Format: PNG/JPG transparan disarankan<br>Ukuran maks 1MB</div>
-                  <input type="file" id="kt_ttd_input" accept="image/*" style="display:none;" onchange="previewTTDOnline(this)">
+                  <input type="file" id="kt_ttd_input" accept="image/*" hidden onchange="previewTTDOnline(this)">
                   <button class="btn btn-outline btn-sm" onclick="document.getElementById('kt_ttd_input').click()"><svg class="ic"><use href="#i-folder"/></svg> Pilih File</button>
-                  <button class="btn btn-danger btn-sm" id="kt_ttd_hapus" style="display:none;" onclick="hapusTTDOnline()"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
+                  <button class="btn btn-danger btn-sm" id="kt_ttd_hapus" hidden onclick="hapusTTDOnline()"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
                 </div>
               </div>
             </div>
@@ -866,7 +866,7 @@
       <!-- Kanan: Preview -->
       <div>
         <div class="fw-700 fs-14 text-primary mb-10">Preview Kuitansi</div>
-        <div style="background:#f0f0f0;border-radius:12px;padding:12px;overflow:auto;max-height:85vh;">
+        <div class="preview-box">
           <div id="kt_preview"></div>
         </div>
         <div class="mt-10 fs-12 text-muted text-center">Preview menggunakan data contoh. Kuitansi asli memakai data transaksi nyata.</div>
@@ -934,7 +934,7 @@
     <div class="flex gap-10 justify-end mt-18">
       <button class="btn btn-outline" onclick="closeAuditModal()">Tutup</button>
       <button class="btn btn-outline" id="auditRunBtn" onclick="runAudit()"><svg class="ic"><use href="#i-search"/></svg> Mulai Periksa</button>
-      <button class="btn btn-primary" id="auditApplyBtn" onclick="applyAuditFix()" style="display:none;"><svg class="ic"><use href="#i-save"/></svg> Terapkan Pemulihan</button>
+      <button class="btn btn-primary" id="auditApplyBtn" onclick="applyAuditFix()" hidden><svg class="ic"><use href="#i-save"/></svg> Terapkan Pemulihan</button>
     </div>
   </div>
 </div>
@@ -956,7 +956,7 @@
       <div class="form-group"><label>NISN</label><input type="text" id="bi_nisn" placeholder="Opsional"></div>
     </div>
 
-    <div style="font-weight:700;font-size:13px;color:var(--primary);margin:12px 0 8px;">Rincian Pembayaran</div>
+    <div class="section-label">Rincian Pembayaran</div>
     <div id="bi_items_wrap"></div>
     <button type="button" class="btn btn-outline btn-sm" onclick="biAddItemRow()"><svg class="ic"><use href="#i-plus"/></svg> Tambah Item</button>
 
@@ -988,11 +988,11 @@
       <button class="btn btn-outline btn-sm" onclick="downloadTemplateInduk()">⬇️ Download Template</button>
       <label class="btn btn-primary btn-sm pointer">
         <svg class="ic"><use href="#i-folder"/></svg> Pilih File
-        <input type="file" id="bi_massal_file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleIndukFile(this)">
+        <input type="file" id="bi_massal_file" accept=".xlsx,.xls,.csv" hidden onchange="handleIndukFile(this)">
       </label>
     </div>
     <div id="bi_preview_wrap"></div>
-    <button id="bi_confirm_btn" class="btn btn-primary" style="display:none;" onclick="confirmImportInduk()"><svg class="ic"><use href="#i-save"/></svg> Simpan ke Buku Induk</button>
+    <button id="bi_confirm_btn" class="btn btn-primary" hidden onclick="confirmImportInduk()"><svg class="ic"><use href="#i-save"/></svg> Simpan ke Buku Induk</button>
   </div>
 </div>
 
@@ -1052,11 +1052,11 @@
 
 <!-- ═══ MODAL KOREKSI PEMBAYARAN ═══ -->
 
-<div id="modalHapusKwt" style="display:none;">
-  <div style="background:#fff;border-radius:20px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.25);font-family:'Plus Jakarta Sans',sans-serif;overflow:hidden;">
+<div id="modalHapusKwt" hidden>
+  <div class="confirm-card">
     <!-- Header merah -->
-    <div style="background:linear-gradient(135deg,#dc2626,#ef4444);padding:24px;text-align:center;">
-      <div style="width:56px;height:56px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px;"><svg class="ic"><use href="#i-trash"/></svg></div>
+    <div class="confirm-head-danger">
+      <div class="confirm-icon"><svg class="ic"><use href="#i-trash"/></svg></div>
       <div class="fw-800 fs-18 text-white">Hapus Kuitansi</div>
     </div>
     <!-- Body -->
@@ -1065,11 +1065,11 @@
         <div id="modalHapusKwtNama">—</div>
         <div id="modalHapusKwtDetail">—</div>
       </div>
-      <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:14px 16px;margin-bottom:20px;">
-        <div style="font-weight:700;font-size:13px;color:#dc2626;margin-bottom:6px;"><svg class="ic"><use href="#i-alert"/></svg> Perhatian</div>
-        <div style="font-size:12px;color:#7f1d1d;line-height:1.6;">
+      <div class="warn-panel">
+        <div class="warn-panel-title"><svg class="ic"><use href="#i-alert"/></svg> Perhatian</div>
+        <div class="warn-panel-text">
           Menghapus kuitansi koreksi ini akan <strong>membatalkan efek koreksi</strong> dan mengembalikan data ke kondisi sebelum dikoreksi:
-          <ul style="margin:6px 0 0 16px;padding:0;">
+          <ul class="warn-panel-list">
             <li>SPP bulan yang dibatalkan akan dikembalikan ke catatan</li>
             <li>Nominal pangkal dikembalikan ke nilai sebelum koreksi</li>
             <li>Kuitansi lama tidak lagi ditandai "Dikoreksi"</li>
@@ -1087,8 +1087,8 @@
     </div>
   </div>
 </div>
-<div id="modalCetakKwt" style="display:none;">
-  <div style="background:#fff;border-radius:20px;padding:32px;width:100%;max-width:400px;margin:16px;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center;font-family:'Plus Jakarta Sans',sans-serif;">
+<div id="modalCetakKwt" hidden>
+  <div class="logout-dialog">
     <div class="fs-48 mb-12"><svg class="ic"><use href="#i-print"/></svg></div>
     <div class="fw-800 fs-18 text-primary mb-8">Pembayaran Berhasil!</div>
     <div id="modalCetakNama">—</div>
@@ -1142,11 +1142,11 @@
             <div class="hint lh-15">
               Format: JPG, PNG, SVG<br>Ukuran disarankan: 200×200px atau persegi
             </div>
-            <button type="button" id="pf_logo_remove" onclick="removeLogo()" style="display:none;">
+            <button type="button" id="pf_logo_remove" onclick="removeLogo()" hidden>
               <svg class="ic"><use href="#i-trash"/></svg> Hapus logo
             </button>
           </div>
-          <input type="file" id="pf_logo_input" accept="image/*" style="display:none" onchange="handleLogoUpload(this)">
+          <input type="file" id="pf_logo_input" accept="image/*" hidden onchange="handleLogoUpload(this)">
         </div>
       </div>
       <div class="form-group full">
@@ -1352,7 +1352,7 @@
         <label>SPP mulai bulan <span class="hint">— untuk santri yang masuk di tengah tahun ajaran</span></label>
         <select id="ed_spp_mulai"></select>
         <div class="hint mt-4">Bulan sebelum pilihan ini tidak dihitung sebagai tunggakan SPP tahun berjalan.</div>
-        <div id="edSppMulaiWarn" style="display:none;"></div>
+        <div id="edSppMulaiWarn" hidden></div>
       </div>
     </div>
     <div class="mt-14 p-10-14 bg-primary-pale rounded-10 fs-12 text-primary flex items-center gap-8">
@@ -1373,7 +1373,7 @@
 
 <!-- ═══ EDITOR TUNGGAKAN SPP TA SEBELUMNYA ═══ -->
 <div class="modal-overlay" id="tunggakanLamaModal">
-  <div class="modal" style="max-width:760px;max-height:92vh;overflow-y:auto;">
+  <div class="modal modal-760">
     <div class="modal-header sticky top-0 bg-white z-2">
       <div>
         <div class="modal-title"><svg class="ic"><use href="#i-cal"/></svg> Tunggakan SPP Tahun Ajaran Sebelumnya</div>
@@ -1391,7 +1391,7 @@
 
     <div id="thBody"></div>
 
-    <div style="display:flex;gap:10px;margin-top:18px;justify-content:space-between;align-items:center;flex-wrap:wrap;position:sticky;bottom:0;background:#fff;padding-top:12px;">
+    <div class="modal-sticky-foot">
       <div class="hint-13" id="thTotal"></div>
       <div class="row-10">
         <button class="btn btn-outline" onclick="closeTunggakanLamaModal()">Batal</button>
@@ -1402,7 +1402,7 @@
 </div>
 <!-- ═══ IMPORT TUNGGAKAN MODAL ═══ -->
 <div class="modal-overlay" id="importTunggakanModal">
-  <div class="modal" style="max-width:900px;max-height:92vh;overflow-y:auto;">
+  <div class="modal modal-900">
     <div class="modal-header sticky top-0 bg-white z-2">
       <div class="modal-title"><svg class="ic"><use href="#i-download"/></svg> Import Data Tunggakan &amp; Riwayat Pembayaran</div>
       <button class="modal-close" onclick="closeImportTunggakanModal()">✕</button>
@@ -1429,12 +1429,12 @@
         <div class="fs-40 mb-10"><svg class="ic"><use href="#i-folder"/></svg></div>
         <p class="upload-title">Klik untuk pilih file rekap tunggakan</p>
         <p class="upload-hint">atau drag &amp; drop di sini • Format: .json, .csv, .xlsx</p>
-        <input type="file" id="tgFile" accept=".json,.csv,.xlsx,.xls" style="display:none" onchange="handleTunggakanFile(this)">
+        <input type="file" id="tgFile" accept=".json,.csv,.xlsx,.xls" hidden onchange="handleTunggakanFile(this)">
       </div>
     </div>
 
     <!-- Step 2: Preview & Confirm -->
-    <div id="tg_step2" style="display:none;">
+    <div id="tg_step2" hidden>
       <div id="tgPreview"></div>
       <div class="flex gap-10 mt-18 justify-between items-center flex-wrap">
         <button class="btn btn-outline" onclick="tgGoStep(1)">← Pilih File Lain</button>
@@ -1449,14 +1449,14 @@
 
 <!-- ═══ IMPORT MASSAL MODAL ═══ -->
 <div class="modal-overlay" id="importModal">
-  <div class="modal" style="max-width:680px;max-height:90vh;overflow-y:auto;">
-    <div class="modal-header" style="position:sticky;top:0;background:#fff;z-index:2;border-radius:var(--radius) var(--radius) 0 0;">
+  <div class="modal modal-680">
+    <div class="modal-header modal-header-sticky">
       <div class="modal-title"><svg class="ic"><use href="#i-download"/></svg> Import Massal Data Santri</div>
       <button class="modal-close" onclick="document.getElementById('importModal').classList.remove('open')">✕</button>
     </div>
 
     <!-- Step indicator -->
-    <div style="display:flex;gap:0;margin-bottom:20px;">
+    <div class="seg-row">
       <div id="imp_step1_ind">① Unduh Format</div>
       <div id="imp_step2_ind">② Upload File</div>
       <div id="imp_step3_ind">③ Konfirmasi</div>
@@ -1479,7 +1479,7 @@
             <div class="pale-box"><strong>SPP</strong><br><span class="hint">Nominal SPP/bulan</span></div>
           </div>
           <div class="fw-700 mb-6 text-primary">Kolom SPP per bulan <span class="fw-400 text-muted">(isi 1 = sudah bayar, kosong = belum)</span>:</div>
-          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">
+          <div class="month-grid-6">
             <div class="mini-cell"><strong>SPP_Jul</strong></div>
             <div class="mini-cell"><strong>SPP_Agt</strong></div>
             <div class="mini-cell"><strong>SPP_Sep</strong></div>
@@ -1504,7 +1504,7 @@
     </div>
 
     <!-- Step 2: Upload -->
-    <div id="imp_step2" style="display:none;">
+    <div id="imp_step2" hidden>
       <div class="bg-primary-pale rounded-12 p-14 mb-16 fs-13 text-primary">
         <strong><svg class="ic"><use href="#i-info"/></svg> Pastikan</strong> file yang diupload sudah diisi data santri sesuai format template.
       </div>
@@ -1513,7 +1513,7 @@
         <div class="fs-40 mb-10"><svg class="ic"><use href="#i-folder"/></svg></div>
         <p class="upload-title">Klik untuk pilih file Excel</p>
         <p class="upload-hint">atau drag &amp; drop di sini • Format: .xlsx, .xls, .csv</p>
-        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
+        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" hidden onchange="handleImportFile(this)">
       </div>
       <div class="flex justify-between mt-16">
         <button class="btn btn-outline" onclick="impGoStep(1)">← Kembali</button>
@@ -1521,7 +1521,7 @@
     </div>
 
     <!-- Step 3: Preview & Confirm -->
-    <div id="imp_step3" style="display:none;">
+    <div id="imp_step3" hidden>
       <div class="sub-title" id="importPreviewLabel"></div>
       <div class="table-wrap mh-320 overflow-y-auto rounded-10 border-1-border">
         <table id="importPreviewTable">
@@ -1640,7 +1640,7 @@
         <label>Konfirmasi Password Baru</label>
         <input type="password" id="gp_newpass2" placeholder="Ulangi password baru">
       </div>
-      <div id="gp_step3_error" style="display:none;"></div>
+      <div id="gp_step3_error" hidden></div>
       <div class="row-10 justify-end">
         <button class="btn btn-outline" onclick="closeGantiPass()">Batal</button>
         <button class="btn btn-primary" onclick="saveNewPassword()"><svg class="ic"><use href="#i-lock"/></svg> Simpan Password Baru</button>
@@ -1651,19 +1651,18 @@
 
 <!-- ═══ PROMOSI KELAS MODAL ═══ -->
 <div class="modal-overlay" id="promosiKelasModal">
-  <div class="modal" style="max-width:660px;max-height:88vh;display:flex;flex-direction:column;padding:0;">
-    <div class="modal-header" style="padding:18px 20px 14px;flex-shrink:0;">
+  <div class="modal modal-660-col">
+    <div class="modal-header modal-header-fixed">
       <div class="modal-title"><svg class="ic"><use href="#i-grad"/></svg> Promosi Kelas</div>
       <button class="modal-close" onclick="document.getElementById('promosiKelasModal').classList.remove('open')">✕</button>
     </div>
-    <div style="padding:0 20px 10px;font-size:13px;color:var(--text-muted);flex-shrink:0;">
+    <div class="modal-intro">
       <div class="flex gap-10 align-end flex-wrap">
         <div class="form-group m-0 mw-190">
           <label>Arsipkan SPP sebagai TA</label>
           <input type="text" id="promosiTaInput" placeholder="2025/2026" oninput="onPromosiTaChange()">
         </div>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;padding-bottom:9px;
-          text-transform:none;letter-spacing:normal;font-weight:500;color:var(--text);">
+        <label class="check-all-label">
           <input type="checkbox" id="promosiSetProfilTA" checked onchange="onPromosiTaChange()"
            >
           Setel TA berjalan di Profil jadi <strong id="promosiTaBaru">—</strong>
@@ -1672,16 +1671,16 @@
       <div class="mt-6">
         SPP tahun berjalan yang belum lunas akan diarsipkan sebagai tunggakan TA di atas — pastikan itu tahun ajaran yang <strong>baru berakhir</strong>, bukan tahun ajaran baru.
       </div>
-      <div id="promosiTaWarn" style="display:none;"></div>
+      <div id="promosiTaWarn" hidden></div>
     </div>
     <!-- Bulk select by kelas -->
-    <div style="padding:8px 20px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div class="modal-toolbar">
       <span class="label-muted">Pilih semua:</span>
       <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('7')">Kelas 7</button>
       <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('8')">Kelas 8</button>
       <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('9')">Kelas 9</button>
       <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('all')">Semua Aktif</button>
-      <button class="btn btn-outline btn-sm" onclick="selectKelasGroup('none')" style="margin-left:auto;">Reset</button>
+      <button class="btn btn-outline btn-sm ml-auto" onclick="selectKelasGroup('none')">Reset</button>
     </div>
     <!-- Student list -->
     <div id="promosiStudentList"></div>
@@ -1754,7 +1753,7 @@
     <p class="fs-14 text-text mb-8 lh-16">
       Anda akan menonaktifkan item: <strong id="deactivateItemName"></strong>
     </p>
-    <div id="deactivateTagihanWarn" style="display:none;">
+    <div id="deactivateTagihanWarn" hidden>
       <svg class="ic"><use href="#i-alert"/></svg> Ada record tagihan santri yang terkait item ini. Pilih tindakan:
     </div>
     <div class="flex flex-col gap-10 mb-20">
@@ -1887,7 +1886,7 @@
       <label>SPP mulai bulan <span class="hint">— bulan santri ini mulai aktif</span></label>
       <select id="promosiCalonMulaiInput"></select>
       <div class="hint mt-4">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
-      <div id="promosiCalonMulaiWarn" style="display:none;"></div>
+      <div id="promosiCalonMulaiWarn" hidden></div>
     </div>
     <div class="fs-12 text-muted mb-18 lh-15">
       SPP ini akan langsung sinkron dengan item <strong>SPP Bulanan</strong> di menu Input Pembayaran. Data pembayaran Pangkal &amp; Uang Pendaftaran yang sudah tercatat tetap tersimpan.
@@ -1918,7 +1917,7 @@
       <label>SPP mulai bulan <span class="hint">— berlaku untuk semua calon terpilih</span></label>
       <select id="promosiMassalMulaiInput"></select>
       <div class="hint mt-4">Bulan sebelum ini tidak dihitung sebagai tunggakan SPP.</div>
-      <div id="promosiMassalMulaiWarn" style="display:none;"></div>
+      <div id="promosiMassalMulaiWarn" hidden></div>
     </div>
     <div class="fs-12 text-muted mb-18 lh-15">
       Semua calon terpilih dipindahkan ke Data Siswa aktif sesuai kelas target. SPP langsung sinkron ke <strong>Input Pembayaran</strong>.
@@ -1932,8 +1931,8 @@
 
 <!-- ═══ IMPORT CALON SPMB MODAL ═══ -->
 <div class="modal-overlay" id="importCalonModal">
-  <div class="modal" style="max-width:640px;max-height:88vh;display:flex;flex-direction:column;padding:0;">
-    <div class="modal-header" style="padding:18px 20px 14px;flex-shrink:0;">
+  <div class="modal modal-640-col">
+    <div class="modal-header modal-header-fixed">
       <div class="modal-title"><svg class="ic"><use href="#i-folder"/></svg> Import Calon Santri SPMB</div>
       <button class="modal-close" onclick="document.getElementById('importCalonModal').classList.remove('open')">✕</button>
     </div>
@@ -1948,7 +1947,7 @@
           <div class="fs-32 mb-8"><svg class="ic"><use href="#i-folder"/></svg></div>
           <div class="fs-14 fw-600 text-primary mb-4">Klik atau drag file ke sini</div>
           <div class="hint">Format: .xlsx atau .csv</div>
-          <input type="file" id="spmbImportFile" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleSpmbImportFile(this)">
+          <input type="file" id="spmbImportFile" accept=".xlsx,.xls,.csv" hidden onchange="handleSpmbImportFile(this)">
         </label>
         <div class="mt-12 text-center">
           <button class="btn btn-outline btn-sm" onclick="downloadTemplateCalonExcel()"><svg class="ic"><use href="#i-clip"/></svg> Download Template Excel</button>
@@ -1956,7 +1955,7 @@
       </div>
 
       <!-- Step 2: Preview -->
-      <div id="spmbImportStep2" style="display:none;">
+      <div id="spmbImportStep2" hidden>
         <div id="spmbImportPreview"></div>
         <div class="mt-12">
           <button class="btn btn-outline btn-sm" onclick="document.getElementById('spmbImportStep1').style.display='block';document.getElementById('spmbImportStep2').style.display='none';">← Upload Ulang</button>
@@ -1980,7 +1979,7 @@
     </div>
     <div id="koreksiRefLabel">—</div>
     <div id="koreksiItemList"></div>
-    <div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#854d0e;">
+    <div class="note-amber">
       <svg class="ic"><use href="#i-alert"/></svg> Pastikan item yang dipilih benar. Sistem akan membatalkan item lama dan mencatat nilai koreksi baru.
     </div>
     <div class="form-group mb-16">
@@ -1991,7 +1990,7 @@
     <button class="btn btn-primary w-full justify-center" onclick="prosesKoreksi()">
       <svg class="ic"><use href="#i-refresh"/></svg> Proses Koreksi & Buat Kuitansi Koreksi
     </button>
-    <div id="koreksiLoading" style="display:none;">
+    <div id="koreksiLoading" hidden>
       <div class="fs-36 mb-10"><svg class="ic"><use href="#i-clock"/></svg></div>
       <div class="fw-600 text-primary">Memproses koreksi...</div>
       <div class="hint mt-4">Mohon tunggu sebentar</div>

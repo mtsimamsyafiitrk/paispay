@@ -82,10 +82,7 @@ async function loadKoreksiKwtList(nama) {
     listEl.innerHTML = rows.map(r => {
       const tgl = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
       const sudahDikoreksi = !!r.dikoreksi_oleh;
-      return `<div onclick="${sudahDikoreksi ? '' : `selectKoreksiKwt('${r.id}')`}"
-        style="padding:12px 16px;border:2px solid ${sudahDikoreksi?'#e5e7eb':'var(--border)'};border-radius:12px;cursor:${sudahDikoreksi?'not-allowed':'pointer'};background:${sudahDikoreksi?'#f9fafb':'#fff'};opacity:${sudahDikoreksi?'.6':'1'};transition:.15s;"
-        onmouseenter="if(!${sudahDikoreksi}) this.style.borderColor='var(--primary)'"
-        onmouseleave="if(!${sudahDikoreksi}) this.style.borderColor='var(--border)'">
+      return `<div class="kwt-pick${sudahDikoreksi ? ' is-done' : ''}" onclick="${sudahDikoreksi ? '' : `selectKoreksiKwt('${r.id}')`}">
         <div class="flex justify-between items-center">
           <div>
             <div class="fw-700 fs-13 text-primary">${esc(r.no_kuitansi||'—')}</div>
@@ -94,11 +91,11 @@ async function loadKoreksiKwtList(nama) {
           <div class="text-right">
             <div class="fw-700 fs-14">Rp ${fmt(r.total)}</div>
             ${sudahDikoreksi
-              ? `<div style="font-size:12px;color:#6b7280;background:#f3f4f6;padding:2px 8px;border-radius:10px;margin-top:2px;">Sudah dikoreksi</div>`
+              ? `<div class="chip-gray">Sudah dikoreksi</div>`
               : `<div class="fs-12 text-primary-light">Klik untuk pilih →</div>`}
           </div>
         </div>
-        ${r.catatan ? `<div style="font-size:12px;color:#666;margin-top:6px;"><svg class="ic"><use href="#i-msg"/></svg> ${esc(r.catatan)}</div>` : ''}
+        ${r.catatan ? `<div class="meta-666"><svg class="ic"><use href="#i-msg"/></svg> ${esc(r.catatan)}</div>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
@@ -127,26 +124,26 @@ async function selectKoreksiKwt(id) {
       const pangkalPaidSekarang = student ? pangkalTunggakan(student) === 0 
         ? (student.pangkal||0) 
         : (student.pangkal_paid||0) : 0;
-      return `<div style="border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;background:#fafafa;">
+      return `<div class="koreksi-card">
         <label class="flex items-start gap-10 pointer">
           <input class="mt-3 w-16 h-16 accent-primary pointer" type="checkbox" id="koreksiChk_${i}" data-idx="${i}" onchange="toggleKoreksiItem(${i})">
           <div class="flex-1">
             <div class="fw-600 fs-13">${esc(item.name)}${item.bulan?' ('+esc(MONTH_FULL[item.bulan]||item.bulan)+')':''}</div>
             <div class="hint">Nilai tercatat di kuitansi: <strong>Rp ${fmt(item.amount)}</strong></div>
-            ${isPangkal ? `<div style="font-size:12px;color:#888;margin-top:2px;">Total pangkal dibayar saat ini: Rp ${fmt(pangkalPaidSekarang)} dari Rp ${fmt(student?.pangkal||0)}</div>` : ''}
+            ${isPangkal ? `<div class="meta-888">Total pangkal dibayar saat ini: Rp ${fmt(pangkalPaidSekarang)} dari Rp ${fmt(student?.pangkal||0)}</div>` : ''}
           </div>
         </label>
         <!-- Input nilai koreksi (muncul saat dicentang) -->
-        <div id="koreksiInput_${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
+        <div class="koreksi-input" id="koreksiInput_${i}" hidden>
           <div class="fs-12 fw-600 mb-6 text-muted">Pilih Tindakan</div>
           <select class="w-full p-8-12 border-2-primary-light rounded-8 fs-13 font-inherit outline-none mb-8" id="koreksiAksi_${i}">
             <option value="batalkan">Batalkan item ini (pembayaran dianggap tidak terjadi)</option>
             <option value="koreksi_nilai">Koreksi nilai — ubah nominal yang benar</option>
           </select>
           <input class="w-full p-8-12 border-2-primary-light rounded-8 fs-13 font-inherit outline-none box-border" type="number" id="koreksiVal_${i}" placeholder="Nilai yang benar (Rp)..." value="${item.amount}"
-            style="display:none;"
+            hidden
             oninput="updateKoreksiTotal()">
-          ${isPangkal ? `<div id="koreksiPangkalInfo_${i}" style="display:none;margin-top:6px;font-size:12px;color:#888;"></div>` : ''}
+          ${isPangkal ? `<div class="koreksi-info" id="koreksiPangkalInfo_${i}" hidden></div>` : ''}
         </div>
       </div>`;
     }).join('');

@@ -56,7 +56,7 @@ async function renderLogSiswa(resetPage = true) {
         </div>
         ${txns.map(r => {
           const jam = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : r.time?.split(' ')[1] || '—';
-          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:#fafafa;border:1px solid var(--border);margin-bottom:6px;">
+          return `<div class="log-row">
             <div class="fs-12 text-muted nowrap minw-40">${jam}</div>
             <div class="flex-1 minw-0">
               <div class="fw-700 fs-13">${esc(r.nama)} <span class="fw-400 text-muted">— ${esc(r.kelas)}</span></div>
@@ -143,7 +143,7 @@ function _renderSiswaTable(resetPage) {
         // santri masuk di tengah tahun) tidak keliru dianggap menunggak.
         const lunas = !sppHistMonths(history[ta]).some(x => x.sisa > 0);
         const short = ta.replace(/20(\d\d)\/20(\d\d)/, '$1/$2');
-        return `<span style="font-size:12px;padding:2px 7px;border-radius:5px;margin:1px;background:${lunas?'var(--primary-pale)':'var(--accent-pale)'};color:${lunas?'var(--primary)':'#7a5c10'};">${short}: ${lunas?'<svg class="ic"><use href="#i-check"/></svg>':'<svg class="ic"><use href="#i-alert"/></svg>'}</span>`;
+        return `<span class="ta-chip ${lunas?'is-ok':'is-due'}">${short}: ${lunas?'<svg class="ic"><use href="#i-check"/></svg>':'<svg class="ic"><use href="#i-alert"/></svg>'}</span>`;
       }).join('');
     } else {
       // Lunas = hijau, menunggak (sudah jatuh tempo) = merah,
@@ -154,12 +154,11 @@ function _renderSiswaTable(resetPage) {
         const paid   = (s.spp_paid_months||[]).includes(m);
         const sebelum = !paid && isSppSebelumMasuk(s, m);
         const due    = !sebelum && isSppDueFor(s, m);
-        const bg   = paid ? 'var(--primary)' : due ? 'var(--danger-pale)' : '#e5e0d8';
-        const fg   = paid ? '#fff' : due ? 'var(--danger)' : '#999';
+        const st   = paid ? 'is-paid' : due ? 'is-due' : 'is-future';
         const ang  = paid ? 0 : sppBulanDibayar(s, m);
         const ttl  = (paid ? 'Lunas' : sebelum ? mulaiTtl : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo')
           + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
-        return `<span title="${esc(ttl)}" style="display:inline-block;width:28px;text-align:center;padding:1px 0;border-radius:4px;font-size:12px;margin:1px;background:${ang > 0 ? 'var(--accent-pale)' : bg};color:${fg};${ang > 0 ? 'outline:1px dashed var(--accent);' : ''}${sebelum?'opacity:.45;':''}">${m}</span>`;
+        return `<span title="${esc(ttl)}" class="mchip ${st}${ang > 0 ? ' is-angsur' : ''}${sebelum ? ' is-before' : ''}">${m}</span>`;
       }).join('');
     }
     const nama_safe = escJs(s.nama);
@@ -168,8 +167,7 @@ function _renderSiswaTable(resetPage) {
     const skBadge = sk && STATUS_KELULUSAN_BADGE[sk]
       ? `<span class="badge ${STATUS_KELULUSAN_BADGE[sk].cls} ml-4">${STATUS_KELULUSAN_BADGE[sk].icon} ${STATUS_KELULUSAN_BADGE[sk].label}</span>`
       : '';
-    const rowStyle = sk ? 'opacity:0.65;' : '';
-    return `<tr style="${rowStyle}">
+    return `<tr${sk ? ' class="row-nonaktif"' : ''}>
       <td class="chk-col"><input type="checkbox" class="row-chk" data-nama="${esc(s.nama)}" onchange="toggleRowSelect(this)"></td>
       <td>${no}</td>
       <td><strong>${esc(s.nama)}</strong>${skBadge}</td>
@@ -195,7 +193,7 @@ function _renderSiswaTable(resetPage) {
   if (totalPages > 1) {
     const pag = document.createElement('div');
     pag.id = 'siswaPagination';
-    pag.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 0;font-size:13px;';
+    pag.className = 'pagination';
     pag.innerHTML = `
       <button class="btn btn-outline btn-sm" onclick="siswaGoPage(${siswaPage-1})" ${siswaPage<=1?'disabled':''}>← Prev</button>
       <span class="text-muted">Hal ${siswaPage} / ${totalPages} &nbsp;(${total} santri)</span>
@@ -312,10 +310,10 @@ function onTunggakanSearch() {
     const badge = tk > 0
       ? `<span class="fs-12 fw-700 text-danger bg-danger-pale p-2-8 rounded-20">Tunggak ${rp(tk)}</span>`
       : `<span class="fs-12 fw-700 text-primary-light bg-primary-pale p-2-8 rounded-20">✓ Lunas</span>`;
-    return `<div class="tk-sugg-item" data-idx="${i}" data-nama="${esc(s.nama)}"
+    return `<div class="tk-sugg-item sugg-row-tk" data-idx="${i}" data-nama="${esc(s.nama)}"
       onmousedown="selectTunggakanStudent('${escJs(s.nama)}')"
       onmouseenter="hoverTunggakanItem(${i})"
-      style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;">
+     >
       <div>
         <div class="fw-600 fs-13-5">${esc(s.nama)}</div>
         <div class="fs-12 text-muted mt-1">${esc(kelasLabel(s))}</div>
@@ -396,18 +394,13 @@ function renderTunggakanDetail(s) {
     const paid    = (s.spp_paid_months||[]).includes(m);
     const sebelum = !paid && isSppSebelumMasuk(s, m);
     const due     = !sebelum && isSppDueFor(s, m);
-    const border = paid ? 'var(--primary)' : due ? 'var(--danger)' : 'var(--border)';
-    const bg     = paid ? 'var(--primary)' : due ? 'var(--danger-pale)' : 'var(--card)';
-    const fg     = paid ? '#fff' : due ? 'var(--danger)' : 'var(--text-muted)';
+    const st     = paid ? 'is-paid' : due ? 'is-due' : 'is-future';
     const ang    = paid ? 0 : sppBulanDibayar(s, m);
     const ttl    = (paid ? 'Lunas'
       : sebelum ? `Sebelum masuk — tidak ditagih (SPP mulai ${mulaiLabel})`
       : due ? 'Belum bayar (sudah jatuh tempo)' : 'Belum jatuh tempo')
       + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
-    return `<div title="${esc(ttl)}"
-      style="padding:5px 2px;border-radius:8px;border:1.5px solid ${border};
-      background:${ang > 0 ? 'var(--accent-pale)' : bg};color:${fg};${paid || due ? '' : 'border-style:dashed;'}${sebelum ? 'opacity:.45;' : ''}
-      font-size:12px;font-weight:600;text-align:center;">${m}${ang > 0 ? `<div class="fs-12 fw-500">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
+    return `<div title="${esc(ttl)}" class="mbox ${st}${ang > 0 ? ' is-angsur' : ''}${sebelum ? ' is-before' : ''}">${m}${ang > 0 ? `<div class="fs-12 fw-500">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
   }).join('');
 
   // Riwayat berlabel TA berjalan tidak ikut dihitung (lihat sppTunggakanPrevList)
@@ -415,7 +408,7 @@ function renderTunggakanDetail(s) {
   // bukan dibiarkan menggantung tanpa penjelasan.
   const taBentrok = (typeof sppHistTaBentrok === 'function') ? sppHistTaBentrok(s) : [];
   const bentrokNote = taBentrok.length ? `
-    <div style="background:#fef3c7;border:1.5px solid var(--warning,#d97706);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#92400e;">
+    <div class="warn-box-spp">
       <svg class="ic"><use href="#i-alert"/></svg> <strong>Riwayat TA ${taBentrok.map(esc).join(', ')}</strong> berlabel tahun ajaran berjalan, jadi <strong>tidak dihitung</strong> sebagai tunggakan TA sebelumnya —
       tagihan tahun berjalan sudah dihitung lewat SPP di atas. Rapikan lewat tombol <strong><svg class="ic"><use href="#i-cal"/></svg> Tunggakan TA Lama</strong>.
     </div>` : '';
@@ -451,7 +444,7 @@ function renderTunggakanDetail(s) {
           <span>Dibayar</span><strong class="text-primary-light">${rp(t.paid_amount)}</strong>
         </div>
         <div class="flex justify-between mb-10 fs-13">
-          <span>Sisa</span><strong style="color:${lunas?'var(--primary-light)':'var(--danger)'};">${lunas?'<svg class="ic"><use href="#i-check"/></svg> Lunas':rp(sisa)}</strong>
+          <span>Sisa</span><strong class="${lunas?'text-primary-light':'text-danger'}">${lunas?'<svg class="ic"><use href="#i-check"/></svg> Lunas':rp(sisa)}</strong>
         </div>
         <div class="progress-wrap h-8">
           <div class="progress-bar ${pctPaid>=100?'green':'yellow'}" style="width:${pctPaid}%"></div>
@@ -461,13 +454,13 @@ function renderTunggakanDetail(s) {
   }).join('');
 
   const totalBanner = totalT > 0
-    ? `<div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+    ? `<div class="alert-danger">
         <div class="fw-800 fs-15 text-danger"><svg class="ic"><use href="#i-alert"/></svg> Total Tunggakan: ${rp(totalT)}</div>
         ${sppT > 0  ? `<div class="fs-13 mt-4">SPP: ${rp(sppT)} (${bulanBelum.length} bulan belum lunas${sppDueMonthLabel() ? ' s/d ' + sppDueMonthLabel() : ''})</div>` : ''}
         ${prevT > 0 ? `<div class="fs-13 mt-2">SPP tahun lalu: ${rp(prevT)} (${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</div>` : ''}
         ${itemT > 0 ? `<div class="fs-13 mt-2">Item lain: ${rp(itemT)}</div>` : ''}
       </div>`
-    : `<div style="background:var(--primary-pale);border-left:4px solid var(--primary-light);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+    : `<div class="alert-ok">
         <div class="fw-800 fs-15 text-primary-light"><svg class="ic"><use href="#i-check"/></svg> Semua Pembayaran Lunas</div>
       </div>`;
 
@@ -486,11 +479,11 @@ function renderTunggakanDetail(s) {
         </div>
         <div class="stat-box stat-box-lg">
           <div class="hint mb-4">Item Tagihan</div>
-          <div style="font-size:18px;font-weight:800;color:${itemT>0?'var(--danger)':'var(--primary-light)'};">${tagihanSiswa.length}</div>
+          <div class="fs-18 fw-800 ${itemT>0?'text-danger':'text-primary-light'}">${tagihanSiswa.length}</div>
         </div>
       </div>
       <div class="mb-8 fw-700 fs-13 text-primary"><svg class="ic"><use href="#i-cal"/></svg> Status SPP per Bulan (TA berjalan)</div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px;">${monthGrid}</div>
+      <div class="month-grid-6-lg">${monthGrid}</div>
       <div class="fs-12 text-muted mb-20 lh-16">
         Tunggakan dihitung sampai bulan berjalan${sppDueMonthLabel() ? ' (<strong>' + esc(sppDueMonthLabel()) + '</strong>)' : ''} —
         bulan bergaris putus-putus belum jatuh tempo &amp; tidak dihitung menunggak.

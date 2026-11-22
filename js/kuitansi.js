@@ -79,7 +79,7 @@ async function hapusKuitansi(id) {
       document.getElementById('modalHapusKwtNama').textContent = r.nama || '—';
       document.getElementById('modalHapusKwtDetail').innerHTML =
         `${esc(r.no_kuitansi || '—')} &nbsp;·&nbsp; Rp ${fmt(r.total)} &nbsp;·&nbsp; TA ${esc(r.ta_label || '—')}<br>
-         <span style="font-size:12px;color:#999;">${tgl}</span>`;
+         <span class="meta-999">${tgl}</span>`;
     } else {
       document.getElementById('modalHapusKwtNama').textContent = 'Data Kuitansi';
       document.getElementById('modalHapusKwtDetail').textContent = '—';
@@ -273,21 +273,21 @@ async function loadRiwayatKuitansi(keepPage) {
               const items = Array.isArray(r.items) ? r.items.map(i => i.name + (i.bulan?' ('+( MONTH_FULL[i.bulan]||i.bulan)+')':'')).join(', ') : '—';
               const isInduk = typeof isIndukKwt === 'function' && isIndukKwt(r);
               const isIncomplete = typeof indukIncomplete === 'function' && indukIncomplete(r);
-              const indukBadges = `${isInduk?'<br><span class="bg-primary-pale text-primary rounded-20 p-2-8 fs-12 fw-700"><svg class="ic"><use href="#i-book"/></svg> Buku Induk</span>':''}${isIncomplete?`<br><span title="Data tidak lengkap" style="background:#fef3c7;color:#b45309;border-radius:20px;padding:2px 8px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-alert"/></svg> Tidak lengkap</span>`:''}`;
+              const indukBadges = `${isInduk?'<br><span class="bg-primary-pale text-primary rounded-20 p-2-8 fs-12 fw-700"><svg class="ic"><use href="#i-book"/></svg> Buku Induk</span>':''}${isIncomplete?`<br><span class="pill-sm-warn" title="Data tidak lengkap"><svg class="ic"><use href="#i-alert"/></svg> Tidak lengkap</span>`:''}`;
               const statusBadge = r.dikoreksi_oleh
-                ? `<span style="background:#fef9c3;color:#92400e;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-refresh"/></svg> Dikoreksi</span><br><span style="font-size:12px;color:#999;">${esc(r.dikoreksi_oleh)}</span>`
+                ? `<span class="pill pill-koreksi"><svg class="ic"><use href="#i-refresh"/></svg> Dikoreksi</span><br><span class="meta-999">${esc(r.dikoreksi_oleh)}</span>`
                 : r.is_koreksi
-                ? `<span class="pill pill-warn"><svg class="ic"><use href="#i-clip"/></svg> Kuitansi Koreksi</span><br><span style="font-size:12px;color:#999;">Ref: ${esc(r.ref_no_kuitansi||'—')}</span>`
+                ? `<span class="pill pill-warn"><svg class="ic"><use href="#i-clip"/></svg> Kuitansi Koreksi</span><br><span class="meta-999">Ref: ${esc(r.ref_no_kuitansi||'—')}</span>`
                 : r.dicetak
                 ? `<span class="pill pill-ok"><svg class="ic"><use href="#i-check"/></svg> Dicetak</span>`
-                : `<span style="background:#fef9c3;color:#854d0e;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-clock"/></svg> Belum</span>`;
+                : `<span class="pill pill-belum"><svg class="ic"><use href="#i-clock"/></svg> Belum</span>`;
               return `<tr>
                 <td class="fw-700 fs-12 text-primary">${esc(r.no_kuitansi||'—')}</td>
                 <td class="fs-12">${tgl}<br><span class="hint">${jam}</span></td>
                 <td><strong>${esc(r.nama)}</strong></td>
                 <td>${esc(r.kelas||'—')}</td>
                 <td><span class="tag-primary">${esc(r.ta_label||'—')}</span></td>
-                <td style="font-size:12px;max-width:180px;white-space:normal;">${esc(items)}</td>
+                <td class="cell-rincian">${esc(items)}</td>
                 <td class="text-right fw-700 text-primary-light">Rp ${fmt(r.total)}</td>
                 <td>${statusBadge}${indukBadges}</td>
                 <td class="nowrap">
@@ -312,7 +312,7 @@ async function loadRiwayatKuitansi(keepPage) {
         <div class="fs-32 mb-12"><svg class="ic"><use href="#i-alert"/></svg></div>
         <div class="fw-700 fs-15 text-danger mb-8">Gagal Memuat Riwayat Kuitansi</div>
         <div class="fs-13 text-muted mb-16">Terjadi kesalahan saat mengambil data dari server.</div>
-        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 16px;font-size:12px;color:#856404;text-align:left;margin-bottom:16px;max-width:480px;margin-left:auto;margin-right:auto;">
+        <div class="warn-banner">
           <strong>Detail error:</strong><br>${e.message || 'Koneksi ke Supabase gagal. Periksa koneksi internet Anda.'}
         </div>
         <button class="btn btn-primary btn-sm" onclick="loadRiwayatKuitansi()"><svg class="ic"><use href="#i-refresh"/></svg> Coba Lagi</button>

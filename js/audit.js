@@ -245,7 +245,7 @@ function renderAuditResult(r) {
   </div>`;
 
   if (bersih) {
-    html += `<div class="info-box" style="background:#dcfce7;color:#166534;">
+    html += `<div class="info-box info-box-ok">
       <svg class="ic"><use href="#i-check"/></svg> <strong>Tidak ada pembayaran yang hilang.</strong> Semua kuitansi cocok dengan data yang tercatat.
     </div>`;
     document.getElementById('auditBody').innerHTML = html;
@@ -257,8 +257,8 @@ function renderAuditResult(r) {
     html += `<div class="group-title">
       <svg class="ic"><use href="#i-cal"/></svg> Bulan SPP berkuitansi tapi belum tercatat lunas — <span class="text-danger">${totalBulan} bulan</span>
     </div>
-    <div style="max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:8px;">
-    <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
+    <div class="scroll-box-200">
+    <table class="table-compact">
       <thead><tr class="bg-bg sticky top-0">
         <th class="text-left p-6-10">Santri</th>
         <th class="text-left p-6-10">Tahun Ajaran</th>
@@ -284,8 +284,8 @@ function renderAuditResult(r) {
       langsung dari file (bukan dari kuitansi), sehingga selisih di sini bisa saja
       <em>bukan</em> data hilang. Centang penerapannya hanya jika angkanya masuk akal.
     </div>
-    <div style="max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:8px;">
-    <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
+    <div class="scroll-box-200">
+    <table class="table-compact">
       <thead><tr class="bg-bg sticky top-0">
         <th class="text-left p-6-10">Santri</th>
         <th class="text-left p-6-10">Item</th>
@@ -349,7 +349,7 @@ function renderAuditResult(r) {
 
   document.getElementById('auditBody').innerHTML = html;
   const applyBtn = document.getElementById('auditApplyBtn');
-  applyBtn.style.display = '';
+  applyBtn.hidden = false; applyBtn.style.display = '';
   applyBtn.disabled = false;
   applyBtn.innerHTML = '<svg class="ic"><use href="#i-save"/></svg> Terapkan Pemulihan';
 }

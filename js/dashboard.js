@@ -88,7 +88,7 @@ function _renderDashboard() {
     // Bulan yang belum jatuh tempo ditandai netral — capaian rendah di situ
     // wajar (belum ditagih), jadi jangan diberi warna "merah".
     const due = isSppDue(m);
-    return `<div style="margin-bottom:10px;${due?'':'opacity:.6;'}">
+    return `<div class="mb-10${due?'':' is-dim'}">
       <div class="flex justify-between fs-12 mb-3">
         <span class="fw-600">${MONTH_FULL[m]}${due?'':' <span class="fw-400 fs-12 text-muted">(belum jatuh tempo)</span>'}</span><span class="text-muted">${paid}/${total}</span>
       </div>

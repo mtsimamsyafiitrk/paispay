@@ -403,11 +403,11 @@ function tgRenderPreview() {
   const taRows = S.taList.map(ta => {
     const a = S.taStat.get(ta);
     const isCur = ta === curTA;
-    return `<tr${isCur ? ' style="background:var(--primary-pale);"' : ''}>
+    return `<tr${isCur ? ' class="row-pale"' : ''}>
       <td>${esc(ta)}${isCur ? ' <span class="fs-12 fw-700 text-primary">TA BERJALAN</span>' : ''}</td>
       <td class="text-right">${a.santri}</td>
       <td class="text-right">${a.bulan}</td>
-      <td style="text-align:right;font-weight:700;color:${a.sisa > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${rp(a.sisa)}</td>
+      <td class="text-right fw-700 ${a.sisa > 0 ? 'text-danger' : 'text-primary-light'}">${rp(a.sisa)}</td>
     </tr>`;
   }).join('');
 
@@ -504,7 +504,7 @@ function tgRenderPreview() {
           Tagihan yang belum ada tetap dibuat.</span></span>
     </label>
 
-    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;">
+    <div class="grid-14-1">
       <div>
         <div class="sub-title mb-6"><svg class="ic"><use href="#i-cal"/></svg> Tunggakan SPP per Tahun Ajaran</div>
         <div class="table-wrap"><table><thead><tr><th>TA</th><th class="text-right">Santri</th><th class="text-right">Bulan</th><th class="text-right">Tunggakan</th></tr></thead>
@@ -519,7 +519,7 @@ function tgRenderPreview() {
 
     ${warnBlocks.join('')}
 
-    <div style="font-weight:700;font-size:13px;color:var(--primary);margin:16px 0 6px;"><svg class="ic"><use href="#i-users"/></svg> 25 Tunggakan Terbesar</div>
+    <div class="section-label-tight"><svg class="ic"><use href="#i-users"/></svg> 25 Tunggakan Terbesar</div>
     <div class="table-wrap mh-280 overflow-y-auto">
       <table><thead><tr><th>#</th><th>Nama</th><th>Kelas</th><th>Status</th>
         <th class="text-right">SPP</th><th class="text-right">Item lain</th><th class="text-right">Total</th></tr></thead>

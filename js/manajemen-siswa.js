@@ -66,7 +66,7 @@ function renderPromosiStudentList() {
   students.forEach((s, i) => {
     if (s.kelas !== lastKelas) {
       lastKelas = s.kelas;
-      html += `<div style="font-size:12px;font-weight:700;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-pale);margin-top:${i>0?'8px':'0'};">
+      html += `<div class="kelas-group-title${i>0?' is-next':''}">
         Kelas ${esc(s.kelas)}
       </div>`;
     }
@@ -79,7 +79,7 @@ function renderPromosiStudentList() {
       ? `<span class="text-primary fw-600">→ Kelas ${nextKelas}</span>`
       : `<span class="text-accent fw-600">→ Lulus <svg class="ic"><use href="#i-grad"/></svg></span>`;
 
-    html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+    html += `<div class="list-row">
       <input class="w-15 h-15 accent-primary shrink-0" type="checkbox" ${sel?'checked':''} onchange="togglePromosiStudent('${nameSafe}',this.checked)"
        >
       <div class="flex-1 minw-0">
@@ -87,15 +87,13 @@ function renderPromosiStudentList() {
         <div class="hint">Kelas ${esc(s.kelas)}</div>
       </div>
       ${sel ? `
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 9px;border-radius:6px;
-          ${action==='naik'?'background:var(--primary-pale);color:var(--primary);font-weight:600;':'color:var(--text-muted);'}">
+        <label class="promosi-opt${action==='naik'?' is-naik':''}">
           <input class="accent-primary" type="radio" name="pa${i}" value="naik" ${action==='naik'?'checked':''}
             onchange="setStudentPromosiAction('${nameSafe}','naik')"> Naik Kelas
         </label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 9px;border-radius:6px;
-          ${action==='tinggal'?'background:#fee2e2;color:var(--danger);font-weight:600;':'color:var(--text-muted);'}">
-          <input type="radio" name="pa${i}" value="tinggal" ${action==='tinggal'?'checked':''}
-            onchange="setStudentPromosiAction('${nameSafe}','tinggal')" style="accent-color:var(--danger);"> Tinggal Kelas
+        <label class="promosi-opt${action==='tinggal'?' is-tinggal':''}">
+          <input class="accent-danger" type="radio" name="pa${i}" value="tinggal" ${action==='tinggal'?'checked':''}
+            onchange="setStudentPromosiAction('${nameSafe}','tinggal')"> Tinggal Kelas
         </label>
         <div class="fs-12 minw-90 text-right">
           ${action==='naik' ? nextLabel : `<span class="text-muted">Tetap Kls ${esc(s.kelas)}</span>`}
@@ -500,7 +498,7 @@ function openEditPembayaran(nama) {
       tagihanWrap.innerHTML = '<div class="hint">Tidak ada tagihan item untuk santri ini.</div>';
     } else {
       tagihanWrap.innerHTML = siswaTagihan.map(t => `
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div class="list-row">
           <div class="flex-1 fs-13 fw-600">${esc(t.item_name)}</div>
           <div class="hint">Total: ${rp(t.nominal)}</div>
           <div class="flex items-center gap-6">

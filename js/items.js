@@ -18,7 +18,7 @@ function showDetail(nama) {
 
   // Warning nama mirip
   const dupesHtml = dupes.length ? `
-    <div style="background:#fef9c3;border-radius:8px;padding:8px 12px;margin-top:10px;font-size:12px;">
+    <div class="note-yellow-sm">
       <svg class="ic"><use href="#i-alert"/></svg> Nama mirip ditemukan: ${dupes.map(d => `<strong>${esc(d.a === s.nama ? d.b : d.a)}</strong> (${d.score}%)`).join(', ')}
       — Periksa apakah ini siswa yang sama.
     </div>` : '';
@@ -42,13 +42,13 @@ function showDetail(nama) {
           : sebelum ? `Sebelum masuk — tidak ditagih (SPP mulai ${esc(sppMulaiLabel(s))})`
           : due ? 'Belum bayar (jatuh tempo)' : 'Belum jatuh tempo')
           + (ang > 0 ? ` — diangsur ${rp(ang)}, sisa ${rp(sppBulanSisa(s, m))}` : '');
-        return `<div class="month-btn ${cls}" title="${ttl}"${ang > 0 ? ' style="outline:1.5px dashed var(--accent);"' : ''}>${m}${ang > 0 ? `<div class="fs-12 fw-500">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
+        return `<div class="month-btn ${cls}${ang > 0 ? ' is-angsur' : ''}" title="${ttl}">${m}${ang > 0 ? `<div class="fs-12 fw-500">sisa ${rp(sppBulanSisa(s, m))}</div>` : ''}</div>`;
       }).join('')}</div>
       <div class="fs-12 text-muted mt-6">
         Tunggakan SPP dihitung ${sppMulaiLabel(s) ? 'mulai <strong>' + esc(sppMulaiLabel(s)) + '</strong> (bulan santri masuk) ' : ''}s/d bulan berjalan${sppDueMonthLabel() ? ' (' + esc(sppDueMonthLabel()) + ')' : ''}.
       </div>
     </div>
-    <div style="background:${totalT>0?'var(--danger-pale)':'var(--primary-pale)'};border-radius:10px;padding:14px;">
+    <div class="sum-box ${totalT>0?'is-due':'is-ok'}">
       ${sppT > 0 ? `<div class="mb-4"><strong>Tunggakan SPP:</strong> ${rp(sppT)}</div>` : ''}
       ${prevT > 0 ? `<div class="mb-4"><strong>Tunggakan SPP Tahun Lalu:</strong> ${rp(prevT)}
         <span class="hint">(${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</span></div>` : ''}
