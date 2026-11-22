@@ -88,7 +88,7 @@ function showPage(id) {
   closeSidebar();
   if(id==='dashboard') renderDashboard();
   if(id==='rekap-siswa') renderSiswaTable();
-  if(id==='tunggakan') { tunggakanShowAll = false; renderTunggakan(); }
+  if(id==='tunggakan') { tunggakanShowAll = false; tunggakanNama = null; document.getElementById('searchTunggakan').value = ''; hideTunggakanDropdown(); renderTunggakan(); }
   if(id==='spmb') renderSpmbPage();
   if(id==='pengaturan') renderItemList();
   if(id==='input') renderInputPage();
@@ -111,7 +111,7 @@ function activePageId() {
 function renderHalamanAktif() {
   const id = activePageId();
   if (id === 'dashboard')   renderDashboard();
-  if (id === 'rekap-siswa') renderSiswaTable();
+  if (id === 'rekap-siswa') renderSiswaTable(false, true);
   if (id === 'tunggakan')   renderTunggakan();
   if (id === 'cetak')       renderCetakNamaOptions();
 }

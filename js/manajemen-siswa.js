@@ -369,7 +369,7 @@ function deleteSingle(nama) {
     appState.transactions = appState.transactions.filter(t => t.nama !== nama);
     appState.tagihan = appState.tagihan.filter(t => t.nama !== nama);
     document.getElementById('deleteModal').classList.remove('open');
-    renderSiswaTable();
+    renderSiswaTable(false, true);
     toast(`🗑️ ${nama} berhasil dihapus`);
     await deleteStudentFromDB(nama);
     await deleteTransactionsByNama(nama);
@@ -533,7 +533,7 @@ async function saveEditPembayaran() {
   }
 
   document.getElementById('editPembayaranModal').classList.remove('open');
-  renderSiswaTable();
+  renderSiswaTable(false, true);
   renderTunggakan();
   renderDashboard();
   const detailEl = document.getElementById('tunggakanDetail');
@@ -616,7 +616,7 @@ async function saveEditSiswa() {
   document.getElementById('editSiswaModal').classList.remove('open');
 
   // Refresh semua tampilan terkait
-  renderSiswaTable();
+  renderSiswaTable(false, true);
   renderTunggakan();
   renderDashboard();
 

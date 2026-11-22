@@ -100,10 +100,12 @@ const STATUS_KELULUSAN_BADGE = {
 
 // withTagihanIndex: selama menggambar, pencarian tagihan per santri memakai
 // indeks Map — bukan memindai ulang seluruh appState.tagihan tiap baris.
-function renderSiswaTable(resetPage = true) {
-  return withTagihanIndex(() => _renderSiswaTable(resetPage));
+// keepSel: pertahankan centang pilihan (dipakai saat data berubah — sinkron
+// otomatis, edit satu santri — supaya admin tidak kehilangan pilihannya).
+function renderSiswaTable(resetPage = true, keepSel = false) {
+  return withTagihanIndex(() => _renderSiswaTable(resetPage, keepSel));
 }
-function _renderSiswaTable(resetPage) {
+function _renderSiswaTable(resetPage, keepSel) {
   if (resetPage) siswaPage = 1;
   const q = document.getElementById('searchSiswa').value.toLowerCase();
   const sFilter = document.getElementById('filterStatus').value;
@@ -119,10 +121,11 @@ function _renderSiswaTable(resetPage) {
     if (skFilter && skFilter !== 'aktif' && skFilter !== 'semua' && s.status_kelulusan !== skFilter) return false;
     return true;
   });
-  clearSelection();
+  if (!keepSel) clearSelection();
 
   const total      = list.length;
   const totalPages = Math.ceil(total / SISWA_PER_PAGE) || 1;
+  siswaPage = Math.min(Math.max(1, siswaPage), totalPages);   // mis. setelah baris terakhir halaman dihapus
   const start      = (siswaPage - 1) * SISWA_PER_PAGE;
   const pageList   = list.slice(start, start + SISWA_PER_PAGE);
 
@@ -200,6 +203,17 @@ function _renderSiswaTable(resetPage) {
       <button class="btn btn-outline btn-sm" onclick="siswaGoPage(${siswaPage+1})" ${siswaPage>=totalPages?'disabled':''}>Next →</button>`;
     document.querySelector('#siswaTable').after(pag);
   }
+  if (keepSel) pulihkanPilihan();
+}
+
+// Centang ulang baris yang masih dipilih; buang nama yang sudah tidak ada.
+function pulihkanPilihan() {
+  const ada = new Set(appState.students.map(s => s.nama));
+  [...selectedRows].forEach(n => { if (!ada.has(n)) selectedRows.delete(n); });
+  const chks = document.querySelectorAll('#siswaTable tbody .row-chk');
+  chks.forEach(c => { c.checked = selectedRows.has(c.dataset.nama); });
+  document.getElementById('chkAll').checked = chks.length > 0 && [...chks].every(c => c.checked);
+  updateBulkBar();
 }
 
 function siswaGoPage(page) {
@@ -212,6 +226,7 @@ let tunggakanSuggIdx = -1;
 
 const TUNGGAKAN_LIMIT = 50;
 let tunggakanShowAll = false;   // direset saat halaman Tunggakan dibuka lagi
+let tunggakanNama = null;       // santri yang rinciannya sedang dibuka (bertahan saat data diperbarui)
 function renderTunggakan() {
   return withTagihanIndex(_renderTunggakan);
 }
@@ -265,7 +280,11 @@ function _renderTunggakan() {
     </div>` : ''}
     ${itemCards}
   `;
-  document.getElementById('tunggakanDetail').innerHTML = '';
+  // Data berubah (sinkron otomatis / simpan): rincian yang sedang dibuka
+  // digambar ulang dengan data terbaru, bukan dihapus.
+  const terpilih = tunggakanNama && appState.students.find(x => x.nama === tunggakanNama);
+  if (terpilih) renderTunggakanDetail(terpilih);
+  else { tunggakanNama = null; document.getElementById('tunggakanDetail').innerHTML = ''; }
   // Daftar santri aktif yang menunggak, terbesar di atas — tidak perlu ketik nama dulu
   const daftar = ss.filter(isSantriAktif).map(s => ({ s, tk: totalTunggakan(s) }))
     .filter(x => x.tk > 0).sort((a, b) => b.tk - a.tk);
@@ -291,9 +310,6 @@ function _renderTunggakan() {
       }).join('')
     : '<tr><td class="empty-row" colspan="6"><svg class="ic"><use href="#i-check"/></svg> Semua santri aktif sudah lunas</td></tr>')
     + (sisa > 0 ? `<tr><td class="empty-row" colspan="6"><button class="btn btn-outline btn-sm" onclick="tunggakanShowAll=true;renderTunggakan()">Tampilkan semua (${sisa} lagi)</button></td></tr>` : '');
-  const inp = document.getElementById('searchTunggakan');
-  if (inp) inp.value = '';
-  hideTunggakanDropdown();
 }
 
 function onTunggakanSearch() {
@@ -365,6 +381,7 @@ function hideTunggakanDropdown() {
 function selectTunggakanStudent(nama) {
   const s = appState.students.find(x => x.nama === nama);
   if (!s) return;
+  tunggakanNama = s.nama;
   document.getElementById('searchTunggakan').value = s.nama;
   hideTunggakanDropdown();
   renderTunggakanDetail(s);

@@ -310,7 +310,7 @@ async function prosesKoreksi() {
 
     // === 4. Refresh & cetak kuitansi koreksi ===
     // (siswa sudah di-PATCH langsung ke Supabase)
-    renderSiswaTable();
+    renderSiswaTable(false, true);
     renderTunggakan();
     renderDashboard();
 
