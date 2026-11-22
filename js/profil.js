@@ -120,9 +120,9 @@ function applyProfil(p) {
   if (el('profilNama')) el('profilNama').textContent = p.nama;
   if (el('profilAlamat')) el('profilAlamat').textContent = [p.alamat, p.kota, p.provinsi].filter(Boolean).join(', ');
   if (el('profilKontak')) el('profilKontak').innerHTML = [
-    p.telp ? '📞 ' + esc(p.telp) : '',
-    p.email ? '✉️ ' + esc(p.email) : '',
-    p.ta ? '📅 TA ' + esc(p.ta) : ''
+    p.telp ? '<svg class="ic"><use href="#i-phone"/></svg> ' + esc(p.telp) : '',
+    p.email ? '<svg class="ic"><use href="#i-mail"/></svg> ' + esc(p.email) : '',
+    p.ta ? '<svg class="ic"><use href="#i-cal"/></svg> TA ' + esc(p.ta) : ''
   ].filter(Boolean).join(' &nbsp;|&nbsp; ');
   const sn = document.querySelector('.sidebar-logo .school-name');
   if (sn) sn.innerHTML = esc(p.nama).replace(/\s+/, '<br>');

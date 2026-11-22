@@ -91,7 +91,7 @@ function renderBukuIndukPage() {
   biRenderSession();
   // datalist nama item
   const dl = document.getElementById('bi_item_names');
-  if (dl) dl.innerHTML = (appState.payItems || []).map(i => `<option value="${esc(i.name)}">`).join('');
+  if (dl) dl.innerHTML = (appState.payItems || []).map(i =>`<option value="${esc(i.name)}">`).join('');
 }
 
 // ── Modal: Input Manual ──
@@ -121,7 +121,7 @@ function closeBiMassal() {
 // ══════════════════════════════════════════
 function biItemRowHTML() {
   const bulanOpts = ['<option value="">— Bulan (opsional) —</option>']
-    .concat(MONTHS.map(m => `<option value="${m}">${esc(MONTH_FULL[m] || m)}</option>`)).join('');
+    .concat(MONTHS.map(m =>`<option value="${m}">${esc(MONTH_FULL[m] || m)}</option>`)).join('');
   return `<div class="bi-item-row" style="display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center;">
     <input type="text" class="bi-item-name" list="bi_item_names" placeholder="Nama item (mis. SPP)"
       style="padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
@@ -198,7 +198,7 @@ async function biSubmitManual() {
     return { item_id: r.item_id, name: r.name, amount: it.nominal, bulan: biNormalizeBulan(it.bulan) };
   });
 
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Menyimpan...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<svg class="ic"><use href="#i-clock"/></svg> Menyimpan...'; }
   try {
     const seq = (await indukBaseSeq()) + 1;
     const row = {
@@ -251,8 +251,8 @@ function biRenderSession() {
       <td>${esc(s.ta_label || '—')}</td>
       <td class="text-right fw-700">${rp(s.total)}</td>
       <td>${s.incomplete
-        ? `<span class="pill pill-warn" title="${esc(s.masalah)}">⚠️ Tidak lengkap</span>`
-        : '<span class="pill pill-ok">✅ Lengkap</span>'}</td>
+        ? `<span class="pill pill-warn" title="${esc(s.masalah)}"><svg class="ic"><use href="#i-alert"/></svg> Tidak lengkap</span>`
+        : '<span class="pill pill-ok"><svg class="ic"><use href="#i-check"/></svg> Lengkap</span>'}</td>
     </tr>`).join('')}</tbody></table></div>`;
 }
 
@@ -355,7 +355,7 @@ function indukRenderPreview() {
   wrap.innerHTML = `
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
       <span style="background:var(--primary-pale);color:var(--primary);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;">${indukBuffer.length} baris terbaca</span>
-      ${tidakLengkap ? `<span style="background:#fef3c7;color:#b45309;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;">⚠️ ${tidakLengkap} baris tidak lengkap</span>` : '<span style="background:#dcfce7;color:#166534;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;">✅ Semua lengkap</span>'}
+      ${tidakLengkap ? `<span style="background:#fef3c7;color:#b45309;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-alert"/></svg> ${tidakLengkap} baris tidak lengkap</span>` : '<span style="background:#dcfce7;color:#166534;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-check"/></svg> Semua lengkap</span>'}
     </div>
     <div class="table-wrap" style="max-height:340px;overflow:auto;"><table class="data-table">
       <thead><tr><th>#</th><th>TA</th><th>Nama</th><th>Kelas</th><th>Item</th><th class="text-right">Nominal</th><th>Bulan</th><th>Status</th></tr></thead>
@@ -368,8 +368,8 @@ function indukRenderPreview() {
         <td class="text-right">${r.nominal ? rp(r.nominal) : '—'}</td>
         <td>${esc(r.bulan ? (MONTH_FULL[r.bulan] || r.bulan) : '—')}</td>
         <td>${r.reasons.length
-          ? `<span class="pill pill-warn" title="${esc(r.reasons.join('; '))}">⚠️ ${esc(r.reasons.join('; '))}</span>`
-          : '<span class="pill pill-ok">✅ Lengkap</span>'}</td>
+          ? `<span class="pill pill-warn" title="${esc(r.reasons.join('; '))}"><svg class="ic"><use href="#i-alert"/></svg> ${esc(r.reasons.join('; '))}</span>`
+          : '<span class="pill pill-ok"><svg class="ic"><use href="#i-check"/></svg> Lengkap</span>'}</td>
       </tr>`).join('')}</tbody></table></div>`;
   if (btn) { btn.style.display = 'inline-flex'; btn.disabled = false; btn.innerHTML = `<svg class="ic"><use href="#i-save"/></svg> Simpan ${indukBuffer.length} Entri ke Buku Induk`; }
 }
@@ -377,7 +377,7 @@ function indukRenderPreview() {
 async function confirmImportInduk() {
   if (!indukBuffer.length) { toast('⚠️ Tidak ada data untuk disimpan'); return; }
   const btn = document.getElementById('bi_confirm_btn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Menyimpan...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<svg class="ic"><use href="#i-clock"/></svg> Menyimpan...'; }
   try {
     let seq = await indukBaseSeq();
     const payload = indukBuffer.map(r => {
@@ -403,7 +403,7 @@ async function confirmImportInduk() {
     const n = payload.length;
     indukBuffer = [];
     document.getElementById('bi_preview_wrap').innerHTML =
-      `<div style="text-align:center;padding:24px;color:var(--primary);font-weight:700;">✅ ${n} entri berhasil disimpan ke Buku Induk.</div>`;
+      `<div style="text-align:center;padding:24px;color:var(--primary);font-weight:700;"><svg class="ic"><use href="#i-check"/></svg> ${n} entri berhasil disimpan ke Buku Induk.</div>`;
     if (btn) btn.style.display = 'none';
     const fileEl = document.getElementById('bi_massal_file');
     if (fileEl) fileEl.value = '';
@@ -475,7 +475,7 @@ function closeIndukDetail() {
 }
 function renderIndukDetail(r) {
   const tgl = r.tgl_bayar || (r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '—');
-  const metodeLabel = r.metode === 'transfer' ? '🏦 Transfer' : (r.metode === 'tunai' ? '💵 Tunai' : '');
+  const metodeLabel = r.metode === 'transfer' ? '<svg class="ic"><use href="#i-bank"/></svg> Transfer' : (r.metode === 'tunai' ? '<svg class="ic"><use href="#i-cash"/></svg> Tunai' : '');
   const incomplete = indukIncomplete(r);
   const masalah = indukMasalah(r);
   const catatan = indukCatatanAsli(r);
@@ -484,13 +484,13 @@ function renderIndukDetail(r) {
 
   const warning = incomplete ? `
     <div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-      <div style="font-weight:800;font-size:13px;color:var(--danger);margin-bottom:3px;">⚠️ Data tidak lengkap</div>
+      <div style="font-weight:800;font-size:13px;color:var(--danger);margin-bottom:3px;"><svg class="ic"><use href="#i-alert"/></svg> Data tidak lengkap</div>
       <div style="font-size:12.5px;color:var(--text);">${esc(masalah || 'Sebagian data pembayaran ini tidak tercatat lengkap dari arsip lama.')}</div>
     </div>` : '';
 
   const badges = `
-    ${induk ? '<span class="tag-primary">📖 Buku Induk</span>' : ''}
-    ${incomplete ? '<span style="background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;">⚠️ Tidak lengkap</span>' : ''}`;
+    ${induk ? '<span class="tag-primary"><svg class="ic"><use href="#i-book"/></svg> Buku Induk</span>' : ''}
+    ${incomplete ? '<span style="background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-alert"/></svg> Tidak lengkap</span>' : ''}`;
 
   const rowsHtml = items.length ? items.map(it => `<tr>
       <td>${esc(it.name || '—')}${it.bulan ? ` <span class="hint">(${esc(MONTH_FULL[it.bulan] || it.bulan)})</span>` : ''}</td>
@@ -510,7 +510,7 @@ function renderIndukDetail(r) {
       ${metodeLabel ? `<div><div class="hint">Metode</div><div class="fw-700">${metodeLabel}</div></div>` : ''}
       ${r.dibayar_oleh ? `<div><div class="hint">Dibayar oleh</div><div class="fw-700">${esc(r.dibayar_oleh)}</div></div>` : ''}
     </div>
-    <div class="sub-title mb-6">📋 Rincian Pembayaran</div>
+    <div class="sub-title mb-6"><svg class="ic"><use href="#i-clip"/></svg> Rincian Pembayaran</div>
     <div class="table-wrap" style="margin-bottom:12px;"><table class="data-table">
       <thead><tr><th>Item</th><th class="text-right">Nominal</th></tr></thead>
       <tbody>${rowsHtml}</tbody>

@@ -37,15 +37,15 @@ function onPromosiTaChange() {
   const btn  = document.getElementById('promosiConfirmBtn');
   let pesan = '';
   if (raw.trim() && !ta) {
-    pesan = '⚠️ Format tahun ajaran belum benar — tulis seperti 2025/2026 (tahun kedua = tahun pertama + 1).';
+    pesan = '<svg class="ic"><use href="#i-alert"/></svg> Format tahun ajaran belum benar — tulis seperti 2025/2026 (tahun kedua = tahun pertama + 1).';
   } else if (ta && !document.getElementById('promosiSetProfilTA')?.checked
              && typeof isTaBerjalanAtauSesudah === 'function' && isTaBerjalanAtauSesudah(ta)) {
     // TA arsip sama dengan TA berjalan sementara TA di Profil tidak ikut maju →
     // tahun yang sama akan tampil dua kali (SPP berjalan + tunggakan TA lalu).
-    pesan = `⚠️ TA ${ta} masih menjadi TA berjalan di Profil. Centang "Setel TA berjalan di Profil" `
+    pesan = `<svg class="ic"><use href="#i-alert"/></svg> TA ${ta} masih menjadi TA berjalan di Profil. Centang "Setel TA berjalan di Profil" `
           + 'atau perbaiki label di atas, agar tahun ini tidak terhitung dua kali.';
   }
-  if (warn) { warn.textContent = pesan; warn.style.display = pesan ? 'block' : 'none'; }
+  if (warn) { setIconText(warn, pesan); warn.style.display = pesan ? 'block' : 'none'; }
   if (btn) btn.disabled = !promosiMap.size || !ta;   // label TA wajib & harus sah
 }
 
@@ -77,7 +77,7 @@ function renderPromosiStudentList() {
     const nextKelas = s.kelas === '7' ? '8' : s.kelas === '8' ? '9' : null;
     const nextLabel = nextKelas
       ? `<span style="color:var(--primary);font-weight:600;">→ Kelas ${nextKelas}</span>`
-      : `<span style="color:var(--accent);font-weight:600;">→ Lulus 🎓</span>`;
+      : `<span style="color:var(--accent);font-weight:600;">→ Lulus <svg class="ic"><use href="#i-grad"/></svg></span>`;
 
     html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
       <input type="checkbox" ${sel?'checked':''} onchange="togglePromosiStudent('${nameSafe}',this.checked)"
@@ -149,7 +149,7 @@ function updatePromosiSummary() {
   }
   el.innerHTML = `<strong>${promosiMap.size} santri</strong> dipilih — `
     + `<span style="color:var(--primary);">${naik} naik kelas</span>`
-    + (lulus ? ` <span class="text-accent">(${lulus} di antaranya lulus 🎓)</span>` : '')
+    + (lulus ? ` <span class="text-accent">(${lulus} di antaranya lulus <svg class="ic"><use href="#i-grad"/></svg>)</span>` : '')
     + (tinggal ? `, <span class="text-danger">${tinggal} tinggal kelas</span>` : '');
   btn.disabled = false;
   onPromosiTaChange();   // label TA juga menentukan tombol boleh ditekan

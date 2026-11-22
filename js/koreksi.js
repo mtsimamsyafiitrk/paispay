@@ -98,7 +98,7 @@ async function loadKoreksiKwtList(nama) {
               : `<div style="font-size:12px;color:var(--primary-light);">Klik untuk pilih →</div>`}
           </div>
         </div>
-        ${r.catatan ? `<div style="font-size:12px;color:#666;margin-top:6px;">💬 ${esc(r.catatan)}</div>` : ''}
+        ${r.catatan ? `<div style="font-size:12px;color:#666;margin-top:6px;"><svg class="ic"><use href="#i-msg"/></svg> ${esc(r.catatan)}</div>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
@@ -163,10 +163,10 @@ async function selectKoreksiKwt(id) {
           if (isPangkal && infoEl) {
             if (aksiEl.value === 'batalkan') {
               infoEl.style.display = 'block';
-              infoEl.innerHTML = '⚠️ Pembayaran pangkal sebesar <strong>Rp ' + fmt(item.amount) + '</strong> akan dikurangi dari total yang tercatat.';
+              infoEl.innerHTML = '<svg class="ic"><use href="#i-alert"/></svg> Pembayaran pangkal sebesar <strong>Rp ' + fmt(item.amount) + '</strong> akan dikurangi dari total yang tercatat.';
             } else if (aksiEl.value === 'koreksi_nilai') {
               infoEl.style.display = 'block';
-              infoEl.innerHTML = '✏️ Isikan nominal pangkal yang <strong>benar</strong> untuk kuitansi ini. Selisih akan disesuaikan otomatis.';
+              infoEl.innerHTML = '<svg class="ic"><use href="#i-edit"/></svg> Isikan nominal pangkal yang <strong>benar</strong> untuk kuitansi ini. Selisih akan disesuaikan otomatis.';
             } else {
               infoEl.style.display = 'none';
             }

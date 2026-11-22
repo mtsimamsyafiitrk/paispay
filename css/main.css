@@ -332,8 +332,10 @@ textarea { resize: vertical; min-height: 80px; }
 .search-bar { position: relative; }
 .search-bar input { padding-left: 38px; }
 .search-bar::before {
-  content: '🔍'; position: absolute; left: 11px; top: 50%;
-  transform: translateY(-50%); font-size: 14px; pointer-events: none; z-index: 1;
+  /* ikon kaca pembesar garis (sama dengan sprite #i-search), warna abu */
+  content: ''; position: absolute; left: 12px; top: 50%; width: 16px; height: 16px;
+  transform: translateY(-50%); pointer-events: none; z-index: 1;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat center / contain;
 }
 
 /* ══ MODALS ══ */
@@ -960,3 +962,8 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .mt-2 { margin-top: 2px; } .mt-4 { margin-top: 4px; } .mt-6 { margin-top: 6px; }
 .mb-0 { margin-bottom: 0; } .mb-4 { margin-bottom: 4px; } .mb-6 { margin-bottom: 6px; } .mb-10 { margin-bottom: 10px; } .mb-12 { margin-bottom: 12px; }
 .mb-16 { margin-bottom: 16px; } .mb-20 { margin-bottom: 20px; }
+
+/* Status koneksi di topbar (dulu emoji 🟡/🟢/🔴) */
+.status-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #e0a800; }
+.status-dot.ok { background: #22a05a; }
+.status-dot.off { background: var(--danger); }

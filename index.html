@@ -42,6 +42,18 @@
   <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/></symbol>
   <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 3h6l-1 7 4 4H6l4-4z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
 </svg>
 <div id="loginScreen">
   <div class="login-card">
@@ -150,7 +162,7 @@
     <div style="display:flex;align-items:center;gap:10px;">
       <span id="syncIndicator" style="font-size:12px;color:var(--text-muted);transition:opacity .4s;opacity:0;white-space:nowrap;"></span>
 <div id="gasBtn" style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--primary-light);font-weight:600;" title="Status koneksi Supabase">
-        <span id="gasIcon">🟡</span><span id="gasLabel">Connecting...</span>
+        <span id="gasIcon" class="status-dot"></span><span id="gasLabel">Connecting...</span>
         <span id="lastSyncTime" style="font-size:12px;color:rgba(255,255,255,.5);margin-left:4px;"></span>
       </div>
       <button id="syncNowBtn" onclick="manualSync()" title="Ambil data terbaru dari server (semua device dibuat sama)"
@@ -367,9 +379,9 @@
         <select id="filterStatusKelulusan" onchange="renderSiswaTable()" style="max-width:200px;">
           <option value="">Aktif saja</option>
           <option value="semua">Semua (termasuk tidak aktif)</option>
-          <option value="lulus">🎓 Lulus</option>
-          <option value="pindah">🔄 Pindah</option>
-          <option value="keluar">🚪 Keluar</option>
+          <option value="lulus">Lulus</option>
+          <option value="pindah">Pindah</option>
+          <option value="keluar">Keluar</option>
         </select>
         <button class="btn btn-primary btn-sm" onclick="openTambahChoice()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -479,7 +491,7 @@
           onkeydown="onTunggakanKeydown(event)"
           autocomplete="off"
           style="padding-left:42px;font-size:14px;">
-        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:17px;pointer-events:none;">🔍</span>
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:17px;pointer-events:none;"><svg class="ic"><use href="#i-search"/></svg></span>
         <!-- Dropdown suggestions -->
         <div id="tunggakanDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--primary-light);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;max-height:280px;overflow-y:auto;"></div>
       </div>
@@ -511,7 +523,7 @@
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Aktifkan item yang tersedia di form input pembayaran</div>
         <div id="itemList"></div>
         <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
-          <div style="font-weight:700;font-size:14px;margin-bottom:12px;">➕ Tambah Item Baru</div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:12px;"><svg class="ic"><use href="#i-plus"/></svg> Tambah Item Baru</div>
           <div class="form-grid">
             <div class="form-group">
               <label>Nama Item</label>
@@ -666,28 +678,28 @@
 
         <!-- Export Siswa -->
         <div class="soft-panel">
-          <div class="label-strong">👥 Data Santri</div>
+          <div class="label-strong"><svg class="ic"><use href="#i-users"/></svg> Data Santri</div>
           <div class="hint mb-12">Nama, kelas, NISN, SPP, pangkal, status bulan, tunggakan — semua data gabungan</div>
           <button class="btn btn-primary btn-sm" onclick="exportSiswaExcel()"><svg class="ic"><use href="#i-download"/></svg> Export Data Santri</button>
         </div>
 
         <!-- Export Transaksi -->
         <div class="soft-panel">
-          <div class="label-strong">💳 Riwayat Transaksi</div>
+          <div class="label-strong"><svg class="ic"><use href="#i-card"/></svg> Riwayat Transaksi</div>
           <div class="hint mb-12">Semua transaksi pembayaran yang tercatat</div>
           <button class="btn btn-primary btn-sm" onclick="exportTransaksiExcel()"><svg class="ic"><use href="#i-download"/></svg> Export Transaksi</button>
         </div>
 
         <!-- Export Kuitansi -->
         <div class="soft-panel">
-          <div class="label-strong">🧾 Riwayat Kuitansi</div>
+          <div class="label-strong"><svg class="ic"><use href="#i-file"/></svg> Riwayat Kuitansi</div>
           <div class="hint mb-12">Semua kuitansi yang pernah diterbitkan</div>
           <button class="btn btn-primary btn-sm" onclick="exportKuitansiExcel()"><svg class="ic"><use href="#i-download"/></svg> Export Kuitansi</button>
         </div>
 
         <!-- Export Lengkap -->
         <div style="background:var(--primary-pale);border:1px solid var(--primary-light);border-radius:12px;padding:16px;">
-          <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--primary);">📦 Backup Lengkap</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--primary);"><svg class="ic"><use href="#i-box"/></svg> Backup Lengkap</div>
           <div class="hint mb-12">Satu file Excel berisi semua sheet: Siswa, Transaksi, Kuitansi, Tunggakan</div>
           <button class="btn btn-primary" onclick="exportBackupLengkap()">
             <svg class="ic"><use href="#i-box"/></svg> Download Backup Lengkap
@@ -820,7 +832,7 @@
                 <div id="kt_ttd_preview" onclick="document.getElementById('kt_ttd_input').click()"
                   style="width:160px;height:70px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;overflow:hidden;flex-shrink:0;transition:.2s;"
                   title="Klik untuk upload TTD">
-                  <span style="font-size:12px;color:var(--text-muted);text-align:center;">✍️ Klik upload<br>gambar TTD</span>
+                  <span style="font-size:12px;color:var(--text-muted);text-align:center;"><svg class="ic"><use href="#i-edit"/></svg> Klik upload<br>gambar TTD</span>
                 </div>
                 <div class="flex-1">
                   <div style="font-size:12px;color:#555;margin-bottom:6px;">Format: PNG/JPG transparan disarankan<br>Ukuran maks 1MB</div>
@@ -915,7 +927,7 @@
 <div class="modal-overlay" id="auditModal">
   <div class="modal" style="max-width:820px;">
     <div class="modal-header">
-      <div class="modal-title">🩺 Periksa &amp; Pulihkan Data</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-pulse"/></svg> Periksa &amp; Pulihkan Data</div>
       <button class="modal-close" onclick="closeAuditModal()">✕</button>
     </div>
     <div id="auditBody"></div>
@@ -931,7 +943,7 @@
 <div class="modal-overlay" id="biManualModal">
   <div class="modal" style="max-width:660px;">
     <div class="modal-header">
-      <div class="modal-title">✍️ Input Manual — Buku Induk</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-edit"/></svg> Input Manual — Buku Induk</div>
       <button class="modal-close" onclick="closeBiManual()">✕</button>
     </div>
     <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -965,7 +977,7 @@
 <div class="modal-overlay" id="biMassalModal">
   <div class="modal" style="max-width:760px;">
     <div class="modal-header">
-      <div class="modal-title">📤 Upload Massal — Buku Induk</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-upload"/></svg> Upload Massal — Buku Induk</div>
       <button class="modal-close" onclick="closeBiMassal()">✕</button>
     </div>
     <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
@@ -975,7 +987,7 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
       <button class="btn btn-outline btn-sm" onclick="downloadTemplateInduk()">⬇️ Download Template</button>
       <label class="btn btn-primary btn-sm" style="cursor:pointer;">
-        📁 Pilih File
+        <svg class="ic"><use href="#i-folder"/></svg> Pilih File
         <input type="file" id="bi_massal_file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleIndukFile(this)">
       </label>
     </div>
@@ -988,7 +1000,7 @@
 <div class="modal-overlay" id="indukDetailModal">
   <div class="modal mw-560">
     <div class="modal-header">
-      <div class="modal-title">📖 Detail Pembayaran</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-book"/></svg> Detail Pembayaran</div>
       <button class="modal-close" onclick="closeIndukDetail()">✕</button>
     </div>
     <div id="bi_detail_body"></div>
@@ -1000,20 +1012,20 @@
 <div class="modal-overlay" id="editPembayaranModal">
   <div class="modal" style="max-width:540px;">
     <div class="modal-header">
-      <div class="modal-title">✏️ Edit Pembayaran Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-edit"/></svg> Edit Pembayaran Santri</div>
       <button class="modal-close" onclick="document.getElementById('editPembayaranModal').classList.remove('open')">✕</button>
     </div>
     <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:16px;" id="ep_namaLabel">—</div>
 
     <!-- Tagihan items -->
     <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;">
-      <div class="sub-title">📋 Tagihan Item</div>
+      <div class="sub-title"><svg class="ic"><use href="#i-clip"/></svg> Tagihan Item</div>
       <div id="ep_tagihan_wrap"></div>
     </div>
 
     <!-- SPP bulan -->
     <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:16px;">
-      <div class="sub-title">📅 Bulan SPP yang Sudah Dibayar</div>
+      <div class="sub-title"><svg class="ic"><use href="#i-cal"/></svg> Bulan SPP yang Sudah Dibayar</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;" id="ep_months_wrap">
         <label class="check-chip"><input type="checkbox" value="Jul" style="accent-color:var(--primary);"> Juli</label>
         <label class="check-chip"><input type="checkbox" value="Agt" style="accent-color:var(--primary);"> Agustus</label>
@@ -1044,7 +1056,7 @@
   <div style="background:#fff;border-radius:20px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.25);font-family:'Plus Jakarta Sans',sans-serif;overflow:hidden;">
     <!-- Header merah -->
     <div style="background:linear-gradient(135deg,#dc2626,#ef4444);padding:24px;text-align:center;">
-      <div style="width:56px;height:56px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px;">🗑️</div>
+      <div style="width:56px;height:56px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px;"><svg class="ic"><use href="#i-trash"/></svg></div>
       <div style="font-weight:800;font-size:18px;color:#fff;">Hapus Kuitansi</div>
     </div>
     <!-- Body -->
@@ -1054,7 +1066,7 @@
         <div style="font-size:13px;color:#666;" id="modalHapusKwtDetail">—</div>
       </div>
       <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:14px 16px;margin-bottom:20px;">
-        <div style="font-weight:700;font-size:13px;color:#dc2626;margin-bottom:6px;">⚠️ Perhatian</div>
+        <div style="font-weight:700;font-size:13px;color:#dc2626;margin-bottom:6px;"><svg class="ic"><use href="#i-alert"/></svg> Perhatian</div>
         <div style="font-size:12px;color:#7f1d1d;line-height:1.6;">
           Menghapus kuitansi koreksi ini akan <strong>membatalkan efek koreksi</strong> dan mengembalikan data ke kondisi sebelum dikoreksi:
           <ul style="margin:6px 0 0 16px;padding:0;">
@@ -1077,7 +1089,7 @@
 </div>
 <div id="modalCetakKwt" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:20px;padding:32px;width:100%;max-width:400px;margin:16px;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center;font-family:'Plus Jakarta Sans',sans-serif;">
-    <div style="font-size:48px;margin-bottom:12px;">🖨️</div>
+    <div style="font-size:48px;margin-bottom:12px;"><svg class="ic"><use href="#i-print"/></svg></div>
     <div style="font-weight:800;font-size:18px;color:var(--primary);margin-bottom:8px;">Pembayaran Berhasil!</div>
     <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px;" id="modalCetakNama">—</div>
     <div style="font-size:22px;font-weight:800;color:var(--primary-light);margin-bottom:20px;" id="modalCetakTotal">—</div>
@@ -1108,7 +1120,7 @@
 <div class="modal-overlay" id="profilModal">
   <div class="modal" style="max-width:620px;">
     <div class="modal-header">
-      <div class="modal-title">🏫 Edit Profil Madrasah</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-bank"/></svg> Edit Profil Madrasah</div>
       <button class="modal-close" onclick="closeProfilModal()">✕</button>
     </div>
     <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:20px;background:var(--primary-pale);padding:10px 14px;border-radius:10px;">
@@ -1181,7 +1193,7 @@
         <input type="text" id="pf_akreditasi" placeholder="A">
       </div>
       <div style="border-top:1px solid var(--border);padding-top:14px;grid-column:1/-1;">
-        <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:12px;">👤 Pejabat Penandatangan</div>
+        <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:12px;"><svg class="ic"><use href="#i-user"/></svg> Pejabat Penandatangan</div>
       </div>
       <div class="form-group">
         <label>Nama Kepala Madrasah</label>
@@ -1211,7 +1223,7 @@
 <div class="modal-overlay" id="tambahChoiceModal">
   <div class="modal mw-480">
     <div class="modal-header">
-      <div class="modal-title">➕ Tambah Data Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-plus"/></svg> Tambah Data Santri</div>
       <button class="modal-close" onclick="document.getElementById('tambahChoiceModal').classList.remove('open')">✕</button>
     </div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Pilih metode penambahan data santri:</p>
@@ -1221,7 +1233,7 @@
       <div onclick="openAddSiswaModal()" style="cursor:pointer;border:2px solid var(--border);border-radius:14px;padding:24px 16px;text-align:center;transition:all .2s;" 
         onmouseenter="this.style.borderColor='var(--primary)';this.style.background='var(--primary-pale)'"
         onmouseleave="this.style.borderColor='var(--border)';this.style.background=''">
-        <div style="font-size:40px;margin-bottom:12px;">👤</div>
+        <div style="font-size:40px;margin-bottom:12px;"><svg class="ic"><use href="#i-user"/></svg></div>
         <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:6px;">Tambah Perorangan</div>
         <div class="hint lh-15">Input satu santri langsung melalui form isian</div>
       </div>
@@ -1230,7 +1242,7 @@
       <div onclick="openImportModal()" style="cursor:pointer;border:2px solid var(--border);border-radius:14px;padding:24px 16px;text-align:center;transition:all .2s;"
         onmouseenter="this.style.borderColor='var(--accent)';this.style.background='var(--accent-pale)'"
         onmouseleave="this.style.borderColor='var(--border)';this.style.background=''">
-        <div style="font-size:40px;margin-bottom:12px;">📊</div>
+        <div style="font-size:40px;margin-bottom:12px;"><svg class="ic"><use href="#i-chart"/></svg></div>
         <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:6px;">Tambah Massal</div>
         <div class="hint lh-15">Upload file Excel berisi banyak santri sekaligus</div>
       </div>
@@ -1243,7 +1255,7 @@
 <div class="modal-overlay" id="addSiswaModal">
   <div class="modal" style="max-width:580px;">
     <div class="modal-header">
-      <div class="modal-title">➕ Tambah Data Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-plus"/></svg> Tambah Data Santri</div>
       <button class="modal-close" onclick="document.getElementById('addSiswaModal').classList.remove('open')">✕</button>
     </div>
     <div class="form-grid">
@@ -1308,7 +1320,7 @@
 <div class="modal-overlay" id="editSiswaModal">
   <div class="modal mw-480">
     <div class="modal-header">
-      <div class="modal-title">✏️ Edit Data Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-edit"/></svg> Edit Data Santri</div>
       <button class="modal-close" onclick="document.getElementById('editSiswaModal').classList.remove('open')">✕</button>
     </div>
     <div class="form-grid">
@@ -1347,7 +1359,7 @@
       </div>
     </div>
     <div style="margin-top:14px;padding:10px 14px;background:var(--primary-pale);border-radius:10px;font-size:12px;color:var(--primary);display:flex;align-items:center;gap:8px;">
-      <span>ℹ️</span>
+      <span><svg class="ic"><use href="#i-info"/></svg></span>
       <span>Edit pembayaran SPP & tagihan tersedia di menu <strong>Tunggakan → Detail Santri</strong></span>
     </div>
     <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -1367,7 +1379,7 @@
   <div class="modal" style="max-width:760px;max-height:92vh;overflow-y:auto;">
     <div class="modal-header" style="position:sticky;top:0;background:#fff;z-index:2;">
       <div>
-        <div class="modal-title">🗓️ Tunggakan SPP Tahun Ajaran Sebelumnya</div>
+        <div class="modal-title"><svg class="ic"><use href="#i-cal"/></svg> Tunggakan SPP Tahun Ajaran Sebelumnya</div>
         <div id="thNamaLabel" style="font-size:13px;color:var(--text-muted);margin-top:3px;"></div>
       </div>
       <button class="modal-close" onclick="closeTunggakanLamaModal()">✕</button>
@@ -1395,7 +1407,7 @@
 <div class="modal-overlay" id="importTunggakanModal">
   <div class="modal" style="max-width:900px;max-height:92vh;overflow-y:auto;">
     <div class="modal-header" style="position:sticky;top:0;background:#fff;z-index:2;">
-      <div class="modal-title">📥 Import Data Tunggakan &amp; Riwayat Pembayaran</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-download"/></svg> Import Data Tunggakan &amp; Riwayat Pembayaran</div>
       <button class="modal-close" onclick="closeImportTunggakanModal()">✕</button>
     </div>
 
@@ -1417,7 +1429,7 @@
       </div>
       <div class="import-zone" id="tgZone" onclick="document.getElementById('tgFile').click()"
         style="border:2px dashed var(--border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);">
-        <div style="font-size:40px;margin-bottom:10px;">🗂️</div>
+        <div style="font-size:40px;margin-bottom:10px;"><svg class="ic"><use href="#i-folder"/></svg></div>
         <p style="font-weight:700;font-size:14px;margin-bottom:4px;">Klik untuk pilih file rekap tunggakan</p>
         <p style="font-size:12px;color:var(--text-muted);">atau drag &amp; drop di sini • Format: .json, .csv, .xlsx</p>
         <input type="file" id="tgFile" accept=".json,.csv,.xlsx,.xls" style="display:none" onchange="handleTunggakanFile(this)">
@@ -1442,7 +1454,7 @@
 <div class="modal-overlay" id="importModal">
   <div class="modal" style="max-width:680px;max-height:90vh;overflow-y:auto;">
     <div class="modal-header" style="position:sticky;top:0;background:#fff;z-index:2;border-radius:var(--radius) var(--radius) 0 0;">
-      <div class="modal-title">📥 Import Massal Data Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-download"/></svg> Import Massal Data Santri</div>
       <button class="modal-close" onclick="document.getElementById('importModal').classList.remove('open')">✕</button>
     </div>
 
@@ -1456,7 +1468,7 @@
     <!-- Step 1: Download template -->
     <div id="imp_step1">
       <div style="background:var(--accent-pale);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-weight:700;font-size:14px;color:#7a5c10;margin-bottom:8px;">📋 Langkah 1 — Unduh Format Excel</div>
+        <div style="font-weight:700;font-size:14px;color:#7a5c10;margin-bottom:8px;"><svg class="ic"><use href="#i-clip"/></svg> Langkah 1 — Unduh Format Excel</div>
         <p style="font-size:13px;color:#7a5c10;line-height:1.6;margin-bottom:12px;">
           Download template Excel, isi data santri sesuai kolom yang tersedia, lalu upload kembali file tersebut.
         </p>
@@ -1497,11 +1509,11 @@
     <!-- Step 2: Upload -->
     <div id="imp_step2" style="display:none;">
       <div style="background:var(--primary-pale);border-radius:12px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--primary);">
-        <strong>💡 Pastikan</strong> file yang diupload sudah diisi data santri sesuai format template.
+        <strong><svg class="ic"><use href="#i-info"/></svg> Pastikan</strong> file yang diupload sudah diisi data santri sesuai format template.
       </div>
       <div class="import-zone" id="importZone" onclick="document.getElementById('importFile').click()"
         style="border:2px dashed var(--border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);">
-        <div style="font-size:40px;margin-bottom:10px;">📂</div>
+        <div style="font-size:40px;margin-bottom:10px;"><svg class="ic"><use href="#i-folder"/></svg></div>
         <p style="font-weight:700;font-size:14px;margin-bottom:4px;">Klik untuk pilih file Excel</p>
         <p style="font-size:12px;color:var(--text-muted);">atau drag &amp; drop di sini • Format: .xlsx, .xls, .csv</p>
         <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
@@ -1537,7 +1549,7 @@
 <div class="modal-overlay" id="gasSetupModal">
   <div class="modal mw-560">
     <div class="modal-header">
-      <div class="modal-title">🔗 Koneksi Google Sheets</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-link"/></svg> Koneksi Google Sheets</div>
       <button class="modal-close" onclick="document.getElementById('gasSetupModal').classList.remove('open')">✕</button>
     </div>
     <div style="background:var(--primary-pale);border-radius:12px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:var(--primary);line-height:1.6;">
@@ -1572,7 +1584,7 @@
 <!-- ═══ LOGOUT<!-- ═══ LOGOUT CONFIRM OVERLAY ═══ -->
 <div class="logout-overlay" id="logoutOverlay" onclick="if(event.target===this)closeLogoutConfirm()">
   <div class="logout-card">
-    <div class="logout-icon">👋</div>
+    <div class="logout-icon"><svg class="ic"><use href="#i-info"/></svg></div>
     <div class="logout-title">Keluar dari SiPay?</div>
     <div class="logout-sub">Sesi admin akan diakhiri.<br>Anda perlu login kembali untuk mengakses aplikasi.</div>
     <div class="logout-actions">
@@ -1586,7 +1598,7 @@
 <div class="modal-overlay" id="editAkunModal">
   <div class="modal mw-480">
     <div class="modal-header">
-      <div class="modal-title">✏️ Edit Profil Akun</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-edit"/></svg> Edit Profil Akun</div>
       <button class="modal-close" onclick="document.getElementById('editAkunModal').classList.remove('open')">✕</button>
     </div>
     <div class="form-grid">
@@ -1614,7 +1626,7 @@
 <div class="modal-overlay" id="gantiPassModal">
   <div class="modal mw-440">
     <div class="modal-header">
-      <div class="modal-title">🔐 Ganti Password</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-lock"/></svg> Ganti Password</div>
       <button class="modal-close" onclick="closeGantiPass()">✕</button>
     </div>
 
@@ -1644,7 +1656,7 @@
 <div class="modal-overlay" id="promosiKelasModal">
   <div class="modal" style="max-width:660px;max-height:88vh;display:flex;flex-direction:column;padding:0;">
     <div class="modal-header" style="padding:18px 20px 14px;flex-shrink:0;">
-      <div class="modal-title">🎓 Promosi Kelas</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-grad"/></svg> Promosi Kelas</div>
       <button class="modal-close" onclick="document.getElementById('promosiKelasModal').classList.remove('open')">✕</button>
     </div>
     <div style="padding:0 20px 10px;font-size:13px;color:var(--text-muted);flex-shrink:0;">
@@ -1691,26 +1703,26 @@
 <div class="modal-overlay" id="bulkStatusModal">
   <div class="modal" style="max-width:420px;">
     <div class="modal-header">
-      <div class="modal-title">📋 Ubah Status Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-clip"/></svg> Ubah Status Santri</div>
       <button class="modal-close" onclick="document.getElementById('bulkStatusModal').classList.remove('open')">✕</button>
     </div>
     <p id="bulkStatusMsg" style="font-size:14px;color:var(--text);margin-bottom:16px;line-height:1.6;"></p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
       <label class="choice-opt" onclick="selectBulkStatus('aktif')">
         <input type="radio" name="bulkStatus" value="aktif" style="accent-color:var(--primary);">
-        <span>✅ <strong>Aktif</strong> — Santri masih terdaftar aktif</span>
+        <span><svg class="ic"><use href="#i-check"/></svg> <strong>Aktif</strong> — Santri masih terdaftar aktif</span>
       </label>
       <label class="choice-opt" onclick="selectBulkStatus('lulus')">
         <input type="radio" name="bulkStatus" value="lulus" style="accent-color:var(--primary);">
-        <span>🎓 <strong>Lulus</strong> — Santri telah menyelesaikan pendidikan</span>
+        <span><svg class="ic"><use href="#i-grad"/></svg> <strong>Lulus</strong> — Santri telah menyelesaikan pendidikan</span>
       </label>
       <label class="choice-opt" onclick="selectBulkStatus('pindah')">
         <input type="radio" name="bulkStatus" value="pindah" style="accent-color:var(--primary);">
-        <span>🔄 <strong>Pindah</strong> — Santri pindah ke sekolah lain</span>
+        <span><svg class="ic"><use href="#i-refresh"/></svg> <strong>Pindah</strong> — Santri pindah ke sekolah lain</span>
       </label>
       <label class="choice-opt" onclick="selectBulkStatus('keluar')">
         <input type="radio" name="bulkStatus" value="keluar" style="accent-color:var(--primary);">
-        <span>🚪 <strong>Keluar</strong> — Santri mengundurkan diri</span>
+        <span><svg class="ic"><use href="#i-logout"/></svg> <strong>Keluar</strong> — Santri mengundurkan diri</span>
       </label>
     </div>
     <div class="row-10 justify-end">
@@ -1724,7 +1736,7 @@
 <div class="modal-overlay" id="deleteModal">
   <div class="modal" style="max-width:420px;">
     <div class="modal-header">
-      <div class="modal-title text-danger">🗑️ Konfirmasi Hapus</div>
+      <div class="modal-title text-danger"><svg class="ic"><use href="#i-trash"/></svg> Konfirmasi Hapus</div>
       <button class="modal-close" onclick="document.getElementById('deleteModal').classList.remove('open')">✕</button>
     </div>
     <p id="deleteMsg" style="font-size:14px;color:var(--text);margin-bottom:20px;line-height:1.6;"></p>
@@ -1746,7 +1758,7 @@
       Anda akan menonaktifkan item: <strong id="deactivateItemName"></strong>
     </p>
     <div id="deactivateTagihanWarn" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;font-size:12px;color:#856404;margin-bottom:16px;">
-      ⚠️ Ada record tagihan santri yang terkait item ini. Pilih tindakan:
+      <svg class="ic"><use href="#i-alert"/></svg> Ada record tagihan santri yang terkait item ini. Pilih tindakan:
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
       <button class="btn btn-outline" style="text-align:left;padding:12px 16px;" onclick="confirmDeactivateKeep()">
@@ -1768,7 +1780,7 @@
 <div class="modal-overlay" id="addCalonModal">
   <div class="modal mw-480">
     <div class="modal-header">
-      <div class="modal-title">⭐ Tambah Calon Santri SPMB</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-star"/></svg> Tambah Calon Santri SPMB</div>
       <button class="modal-close" onclick="document.getElementById('addCalonModal').classList.remove('open')">✕</button>
     </div>
     <div class="form-grid">
@@ -1803,7 +1815,7 @@
       </div>
     </div>
     <div style="background:var(--primary-pale);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--primary);margin-bottom:16px;margin-top:4px;">
-      💡 Pembayaran Uang Pendaftaran & Pangkal dicatat via menu <strong>Input Pembayaran</strong> setelah calon santri ditambahkan.
+      <svg class="ic"><use href="#i-info"/></svg> Pembayaran Uang Pendaftaran & Pangkal dicatat via menu <strong>Input Pembayaran</strong> setelah calon santri ditambahkan.
     </div>
     <div class="row-10 justify-end">
       <button class="btn btn-outline" onclick="document.getElementById('addCalonModal').classList.remove('open')">Batal</button>
@@ -1816,7 +1828,7 @@
 <div class="modal-overlay" id="editCalonModal">
   <div class="modal mw-480">
     <div class="modal-header">
-      <div class="modal-title">✏️ Edit Calon Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-edit"/></svg> Edit Calon Santri</div>
       <button class="modal-close" onclick="document.getElementById('editCalonModal').classList.remove('open')">✕</button>
     </div>
     <input type="hidden" id="edit_calon_original_nama">
@@ -1862,7 +1874,7 @@
 <div class="modal-overlay" id="promosiCalonModal">
   <div class="modal mw-440">
     <div class="modal-header">
-      <div class="modal-title">🎓 Promosikan Calon Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-grad"/></svg> Promosikan Calon Santri</div>
       <button class="modal-close" onclick="document.getElementById('promosiCalonModal').classList.remove('open')">✕</button>
     </div>
     <div style="background:var(--primary-pale);border-radius:12px;padding:14px 16px;margin-bottom:18px;">
@@ -1894,7 +1906,7 @@
 <div class="modal-overlay" id="promosiMassalModal">
   <div class="modal" style="max-width:460px;">
     <div class="modal-header">
-      <div class="modal-title">🎓 Promosi Massal Calon Santri</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-grad"/></svg> Promosi Massal Calon Santri</div>
       <button class="modal-close" onclick="document.getElementById('promosiMassalModal').classList.remove('open')">✕</button>
     </div>
     <div style="background:var(--primary-pale);border-radius:12px;padding:14px 16px;margin-bottom:18px;">
@@ -1925,7 +1937,7 @@
 <div class="modal-overlay" id="importCalonModal">
   <div class="modal" style="max-width:640px;max-height:88vh;display:flex;flex-direction:column;padding:0;">
     <div class="modal-header" style="padding:18px 20px 14px;flex-shrink:0;">
-      <div class="modal-title">📂 Import Calon Santri SPMB</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-folder"/></svg> Import Calon Santri SPMB</div>
       <button class="modal-close" onclick="document.getElementById('importCalonModal').classList.remove('open')">✕</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:20px;">
@@ -1936,7 +1948,7 @@
           Upload file Excel (.xlsx) atau CSV dengan kolom: <strong>NAMA, KELAS, NISN, UANG_PENDAFTARAN, PANGKAL</strong>
         </div>
         <label style="display:block;border:2px dashed var(--border);border-radius:14px;padding:32px;text-align:center;cursor:pointer;background:var(--bg);transition:.2s;" id="spmbImportZone">
-          <div style="font-size:32px;margin-bottom:8px;">📂</div>
+          <div style="font-size:32px;margin-bottom:8px;"><svg class="ic"><use href="#i-folder"/></svg></div>
           <div style="font-size:14px;font-weight:600;color:var(--primary);margin-bottom:4px;">Klik atau drag file ke sini</div>
           <div class="hint">Format: .xlsx atau .csv</div>
           <input type="file" id="spmbImportFile" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleSpmbImportFile(this)">
@@ -1966,13 +1978,13 @@
 <div class="modal-overlay" id="koreksiModal" onclick="if(event.target===this)closeKoreksiModal()">
   <div class="modal mw-560">
     <div class="modal-header">
-      <div class="modal-title">🔄 Koreksi Kuitansi</div>
+      <div class="modal-title"><svg class="ic"><use href="#i-refresh"/></svg> Koreksi Kuitansi</div>
       <button class="modal-close" onclick="closeKoreksiModal()">✕</button>
     </div>
     <div style="font-size:13px;color:var(--primary);font-weight:600;margin-bottom:12px;" id="koreksiRefLabel">—</div>
     <div id="koreksiItemList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:50vh;overflow-y:auto;"></div>
     <div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#854d0e;">
-      ⚠️ Pastikan item yang dipilih benar. Sistem akan membatalkan item lama dan mencatat nilai koreksi baru.
+      <svg class="ic"><use href="#i-alert"/></svg> Pastikan item yang dipilih benar. Sistem akan membatalkan item lama dan mencatat nilai koreksi baru.
     </div>
     <div class="form-group mb-16">
       <label>Catatan Koreksi (opsional)</label>
@@ -1983,7 +1995,7 @@
       <svg class="ic"><use href="#i-refresh"/></svg> Proses Koreksi & Buat Kuitansi Koreksi
     </button>
     <div id="koreksiLoading" style="display:none;text-align:center;padding:30px;">
-      <div style="font-size:36px;margin-bottom:10px;">⏳</div>
+      <div style="font-size:36px;margin-bottom:10px;"><svg class="ic"><use href="#i-clock"/></svg></div>
       <div style="font-weight:600;color:var(--primary);">Memproses koreksi...</div>
       <div class="hint mt-4">Mohon tunggu sebentar</div>
     </div>

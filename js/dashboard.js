@@ -36,10 +36,10 @@ function _renderDashboard() {
     : `${all.length} santri aktif`;
 
   document.getElementById('statGrid').innerHTML = `
-    <div class="stat-card green" title="${esc(judulSantri)}"><div class="stat-label">Total Santri</div><div class="stat-value">${ss.length}</div><div class="stat-sub">${subSantri}</div><div class="stat-icon">🎓</div></div>
-    <div class="stat-card gold"><div class="stat-label">Total Terkumpul</div><div class="stat-value fs-18">${rp(totalBayarSPP+totalBayarTagihan)}</div><div class="stat-sub">SPP + Semua Pembayaran</div><div class="stat-icon">💰</div></div>
-    <div class="stat-card red"><div class="stat-label">Total Tunggakan</div><div class="stat-value fs-18">${rp(totalTunggak)}</div><div class="stat-sub">${belumLunas} dari ${ss.length} santri aktif belum lunas${tunggakNonAktif > 0 ? ` &nbsp;·&nbsp; ${rp(tunggakNonAktif)} non-aktif` : ''}</div><div class="stat-icon">⚠️</div></div>
-    <div class="stat-card blue"><div class="stat-label">Santri Lunas</div><div class="stat-value">${ss.length - belumLunas}</div><div class="stat-sub">dari ${ss.length} santri aktif tanpa tunggakan</div><div class="stat-icon">✅</div></div>
+    <div class="stat-card green" title="${esc(judulSantri)}"><div class="stat-label">Total Santri</div><div class="stat-value">${ss.length}</div><div class="stat-sub">${subSantri}</div><div class="stat-icon"><svg class="ic"><use href="#i-grad"/></svg></div></div>
+    <div class="stat-card gold"><div class="stat-label">Total Terkumpul</div><div class="stat-value fs-18">${rp(totalBayarSPP+totalBayarTagihan)}</div><div class="stat-sub">SPP + Semua Pembayaran</div><div class="stat-icon"><svg class="ic"><use href="#i-cash"/></svg></div></div>
+    <div class="stat-card red"><div class="stat-label">Total Tunggakan</div><div class="stat-value fs-18">${rp(totalTunggak)}</div><div class="stat-sub">${belumLunas} dari ${ss.length} santri aktif belum lunas${tunggakNonAktif > 0 ? ` &nbsp;·&nbsp; ${rp(tunggakNonAktif)} non-aktif` : ''}</div><div class="stat-icon"><svg class="ic"><use href="#i-alert"/></svg></div></div>
+    <div class="stat-card blue"><div class="stat-label">Santri Lunas</div><div class="stat-value">${ss.length - belumLunas}</div><div class="stat-sub">dari ${ss.length} santri aktif tanpa tunggakan</div><div class="stat-icon"><svg class="ic"><use href="#i-check"/></svg></div></div>
   `;
 
   // Kelas table
@@ -105,7 +105,7 @@ function _renderDashboard() {
         <td style="text-align:right;color:var(--danger);font-weight:700;">${rp(tk)}</td>
         <td class="text-right"><button class="btn btn-primary btn-sm" onclick="quickInput('${escJs(s.nama)}')"><svg class="ic"><use href="#i-card"/></svg> Bayar</button></td>
       </tr>`).join('')
-    : '<tr><td class="empty-row" colspan="4">🎉 Tidak ada tunggakan</td></tr>';
+    : '<tr><td class="empty-row" colspan="4"><svg class="ic"><use href="#i-check"/></svg> Tidak ada tunggakan</td></tr>';
 
   // Recent transactions
   const tbody2 = document.querySelector('#recentTable tbody');

@@ -424,7 +424,7 @@ function tgRenderPreview() {
 
   const warnBlocks = [];
   if (duplikat.length) warnBlocks.push(`<div style="background:var(--danger-pale);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6;">
-    ⚠️ <strong>${duplikat.length} nama santri kembar</strong> — di file ini ada santri berbeda dengan nama persis sama.
+    <svg class="ic"><use href="#i-alert"/></svg> <strong>${duplikat.length} nama santri kembar</strong> — di file ini ada santri berbeda dengan nama persis sama.
     Aplikasi menyimpan satu baris per nama, jadi keduanya harus dibedakan atau akan tergabung.
     <div style="margin-top:6px;color:var(--text-muted);">
       ${duplikat.slice(0, 5).map(g => esc(g.nama) + ' → ' +
@@ -439,20 +439,20 @@ function tgRenderPreview() {
     ${pisah ? '' : '<div style="margin-top:6px;color:var(--danger);font-weight:600;">Tanpa dipisah, tunggakan kedua santri akan digabung menjadi satu data.</div>'}
   </div>`);
   if (mirip.length) warnBlocks.push(`<div class="note-yellow">
-    ⚠️ <strong>${mirip.length} nama dicocokkan berdasarkan kemiripan</strong> (bukan tulisan persis sama).
+    <svg class="ic"><use href="#i-alert"/></svg> <strong>${mirip.length} nama dicocokkan berdasarkan kemiripan</strong> (bukan tulisan persis sama).
     Periksa daftar berikut — bila ternyata orang yang berbeda, perbaiki ejaan nama di file lalu import ulang.
     <div style="margin-top:6px;color:var(--text-muted);">
       ${mirip.slice(0, 6).map(r => esc(r.namaFinal) + ' → ' + esc(appState.students[targets.get(r).idx].nama) + ' (' + targets.get(r).skor + '%)').join('<br>')}${mirip.length > 6 ? '<br>…' : ''}
     </div>
   </div>`);
   if (sebagianCurTA.length) warnBlocks.push(`<div class="note-yellow">
-    ⚠️ <strong>${sebagianCurTA.length} bulan pada TA berjalan terbayar sebagian.</strong>
+    <svg class="ic"><use href="#i-alert"/></svg> <strong>${sebagianCurTA.length} bulan pada TA berjalan terbayar sebagian.</strong>
     Alur SPP tahun berjalan hanya mengenal status lunas/belum per bulan, jadi bulan ini akan
     tercatat <em>belum lunas</em> (nominal penuh). Sesuaikan lewat menu Koreksi bila perlu.
     <div style="margin-top:6px;color:var(--text-muted);">${sebagianCurTA.slice(0, 5).map(esc).join('<br>')}${sebagianCurTA.length > 5 ? '<br>…' : ''}</div>
   </div>`);
   if (S.warnNegatif.length) warnBlocks.push(`<div class="note-yellow">
-    ⚠️ <strong>${S.warnNegatif.length} nilai tunggakan negatif</strong> (kelebihan bayar) — dianggap <strong>0</strong>.
+    <svg class="ic"><use href="#i-alert"/></svg> <strong>${S.warnNegatif.length} nilai tunggakan negatif</strong> (kelebihan bayar) — dianggap <strong>0</strong>.
     <div style="margin-top:6px;color:var(--text-muted);">${S.warnNegatif.slice(0, 5).map(esc).join('<br>')}${S.warnNegatif.length > 5 ? '<br>…' : ''}</div>
   </div>`);
 
@@ -480,7 +480,7 @@ function tgRenderPreview() {
     <div class="form-group" style="margin-bottom:14px;">
       <label>Tahun Ajaran Berjalan</label>
       <select id="tgCurrentTA" onchange="tgRenderPreview()">
-        ${S.taList.map(ta => `<option value="${esc(ta)}"${ta === curTA ? ' selected' : ''}>${esc(ta)}</option>`).join('')}
+        ${S.taList.map(ta =>`<option value="${esc(ta)}"${ta === curTA ? ' selected' : ''}>${esc(ta)}</option>`).join('')}
       </select>
       <div style="font-size:12px;color:var(--text-muted);margin-top:5px;line-height:1.5;">
         TA ini masuk ke alur SPP normal (kolom SPP &amp; bulan dibayar).
@@ -506,12 +506,12 @@ function tgRenderPreview() {
 
     <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;">
       <div>
-        <div class="sub-title mb-6">📅 Tunggakan SPP per Tahun Ajaran</div>
+        <div class="sub-title mb-6"><svg class="ic"><use href="#i-cal"/></svg> Tunggakan SPP per Tahun Ajaran</div>
         <div class="table-wrap"><table><thead><tr><th>TA</th><th class="text-right">Santri</th><th class="text-right">Bulan</th><th class="text-right">Tunggakan</th></tr></thead>
         <tbody>${taRows}</tbody></table></div>
       </div>
       <div>
-        <div class="sub-title mb-6">📋 Tunggakan Item Lain</div>
+        <div class="sub-title mb-6"><svg class="ic"><use href="#i-clip"/></svg> Tunggakan Item Lain</div>
         <div class="table-wrap"><table><thead><tr><th>Item</th><th class="text-right">Total</th></tr></thead>
         <tbody>${itemRows || '<tr><td class="text-muted" colspan="2">Tidak ada</td></tr>'}</tbody></table></div>
       </div>
@@ -519,7 +519,7 @@ function tgRenderPreview() {
 
     ${warnBlocks.join('')}
 
-    <div style="font-weight:700;font-size:13px;color:var(--primary);margin:16px 0 6px;">👥 25 Tunggakan Terbesar</div>
+    <div style="font-weight:700;font-size:13px;color:var(--primary);margin:16px 0 6px;"><svg class="ic"><use href="#i-users"/></svg> 25 Tunggakan Terbesar</div>
     <div class="table-wrap" style="max-height:280px;overflow-y:auto;">
       <table><thead><tr><th>#</th><th>Nama</th><th>Kelas</th><th>Status</th>
         <th class="text-right">SPP</th><th class="text-right">Item lain</th><th class="text-right">Total</th></tr></thead>
@@ -547,7 +547,7 @@ async function confirmImportTunggakan() {
   tgApplyDedup(pisahDup);
 
   const btn = document.getElementById('tgConfirmBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Menyimpan...'; }
+  if (btn) { btn.disabled = true; setIconText(btn, '⏳ Menyimpan...'); }
   showSyncIndicator('⏳ Menerapkan data tunggakan...');
   // Tahan sinkronisasi latar belakang selama proses panjang ini: menarik ulang
   // data di tengah jalan bisa membuang perubahan yang belum tersimpan.

@@ -52,7 +52,7 @@ async function renderLogSiswa(resetPage = true) {
     const listHtml = Object.entries(grouped).map(([tgl, txns]) => `
       <div style="margin-bottom:20px;">
         <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
-          📅 ${tgl}
+          <svg class="ic"><use href="#i-cal"/></svg> ${tgl}
         </div>
         ${txns.map(r => {
           const jam = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : r.time?.split(' ')[1] || '—';
@@ -61,7 +61,7 @@ async function renderLogSiswa(resetPage = true) {
             <div class="flex-1 minw-0">
               <div style="font-weight:700;font-size:13px;">${esc(r.nama)} <span style="font-weight:400;color:var(--text-muted);">— ${esc(r.kelas)}</span></div>
               <div style="font-size:12px;color:#555;margin-top:2px;">${esc(r.jenis)}</div>
-              ${r.catatan ? `<div class="hint mt-2">💬 ${esc(r.catatan)}</div>` : ''}
+              ${r.catatan ? `<div class="hint mt-2"><svg class="ic"><use href="#i-msg"/></svg> ${esc(r.catatan)}</div>` : ''}
             </div>
             <div style="text-align:right;white-space:nowrap;">
               <div style="font-weight:700;font-size:14px;color:var(--primary-light);">Rp ${fmt(r.nominal)}</div>
@@ -93,9 +93,9 @@ let siswaPage = 1;
 const SISWA_PER_PAGE = 50;
 
 const STATUS_KELULUSAN_BADGE = {
-  lulus:  { label: 'Lulus',  cls: 'badge-green',  icon: '🎓' },
-  pindah: { label: 'Pindah', cls: 'badge-yellow', icon: '🔄' },
-  keluar: { label: 'Keluar', cls: 'badge-red',    icon: '🚪' },
+  lulus:  { label: 'Lulus',  cls: 'badge-green',  icon: '<svg class="ic"><use href="#i-grad"/></svg>' },
+  pindah: { label: 'Pindah', cls: 'badge-yellow', icon: '<svg class="ic"><use href="#i-refresh"/></svg>' },
+  keluar: { label: 'Keluar', cls: 'badge-red',    icon: '<svg class="ic"><use href="#i-logout"/></svg>' },
 };
 
 // withTagihanIndex: selama menggambar, pencarian tagihan per santri memakai
@@ -143,7 +143,7 @@ function _renderSiswaTable(resetPage) {
         // santri masuk di tengah tahun) tidak keliru dianggap menunggak.
         const lunas = !sppHistMonths(history[ta]).some(x => x.sisa > 0);
         const short = ta.replace(/20(\d\d)\/20(\d\d)/, '$1/$2');
-        return `<span style="font-size:12px;padding:2px 7px;border-radius:5px;margin:1px;background:${lunas?'var(--primary-pale)':'var(--accent-pale)'};color:${lunas?'var(--primary)':'#7a5c10'};">${short}: ${lunas?'✅':'⚠️'}</span>`;
+        return `<span style="font-size:12px;padding:2px 7px;border-radius:5px;margin:1px;background:${lunas?'var(--primary-pale)':'var(--accent-pale)'};color:${lunas?'var(--primary)':'#7a5c10'};">${short}: ${lunas?'<svg class="ic"><use href="#i-check"/></svg>':'<svg class="ic"><use href="#i-alert"/></svg>'}</span>`;
       }).join('');
     } else {
       // Lunas = hijau, menunggak (sudah jatuh tempo) = merah,
@@ -240,7 +240,7 @@ function _renderTunggakan() {
       <div class="stat-label">Tunggakan ${esc(it.name)}</div>
       <div class="stat-value fs-18">${rp(it.total)}</div>
       <div class="stat-sub">${it.count} santri</div>
-      <div class="stat-icon">📋</div>
+      <div class="stat-icon"><svg class="ic"><use href="#i-clip"/></svg></div>
     </div>`).join('');
 
   el.innerHTML = `
@@ -248,20 +248,20 @@ function _renderTunggakan() {
       <div class="stat-label">Total Tunggakan</div>
       <div class="stat-value fs-18">${rp(totalTk)}</div>
       <div class="stat-sub">${withTk.length} santri belum lunas</div>
-      <div class="stat-icon">⚠️</div>
+      <div class="stat-icon"><svg class="ic"><use href="#i-alert"/></svg></div>
     </div>
     <div class="stat-card gold">
       <div class="stat-label">Tunggakan SPP</div>
       <div class="stat-value fs-18">${rp(sppTk)}</div>
       <div class="stat-sub">${ss.filter(s=>sppTunggakan(s)>0).length} santri${sppDueMonthLabel() ? ' · s/d ' + esc(sppDueMonthLabel()) : ''}</div>
-      <div class="stat-icon">📅</div>
+      <div class="stat-icon"><svg class="ic"><use href="#i-cal"/></svg></div>
     </div>
     ${sppPrevTk > 0 ? `
     <div class="stat-card red">
       <div class="stat-label">Tunggakan SPP Th. Lalu</div>
       <div class="stat-value fs-18">${rp(sppPrevTk)}</div>
       <div class="stat-sub">${ss.filter(s=>sppTunggakanPrev(s)>0).length} santri</div>
-      <div class="stat-icon">🗓️</div>
+      <div class="stat-icon"><svg class="ic"><use href="#i-cal"/></svg></div>
     </div>` : ''}
     ${itemCards}
   `;
@@ -285,7 +285,7 @@ function _renderTunggakan() {
           </td>
         </tr>`;
       }).join('')
-    : '<tr><td class="empty-row" colspan="6">🎉 Semua santri aktif sudah lunas</td></tr>';
+    : '<tr><td class="empty-row" colspan="6"><svg class="ic"><use href="#i-check"/></svg> Semua santri aktif sudah lunas</td></tr>';
   const inp = document.getElementById('searchTunggakan');
   if (inp) inp.value = '';
   hideTunggakanDropdown();
@@ -416,13 +416,13 @@ function renderTunggakanDetail(s) {
   const taBentrok = (typeof sppHistTaBentrok === 'function') ? sppHistTaBentrok(s) : [];
   const bentrokNote = taBentrok.length ? `
     <div style="background:#fef3c7;border:1.5px solid var(--warning,#d97706);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#92400e;">
-      ⚠️ <strong>Riwayat TA ${taBentrok.map(esc).join(', ')}</strong> berlabel tahun ajaran berjalan, jadi <strong>tidak dihitung</strong> sebagai tunggakan TA sebelumnya —
-      tagihan tahun berjalan sudah dihitung lewat SPP di atas. Rapikan lewat tombol <strong>🗓️ Tunggakan TA Lama</strong>.
+      <svg class="ic"><use href="#i-alert"/></svg> <strong>Riwayat TA ${taBentrok.map(esc).join(', ')}</strong> berlabel tahun ajaran berjalan, jadi <strong>tidak dihitung</strong> sebagai tunggakan TA sebelumnya —
+      tagihan tahun berjalan sudah dihitung lewat SPP di atas. Rapikan lewat tombol <strong><svg class="ic"><use href="#i-cal"/></svg> Tunggakan TA Lama</strong>.
     </div>` : '';
 
   // Rincian tunggakan SPP tiap tahun ajaran sebelumnya (bulan + nominal sisa)
   const prevGrids = bentrokNote + (prevList.length ? `
-    <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--danger);">🗓️ Tunggakan SPP Tahun Ajaran Sebelumnya</div>
+    <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--danger);"><svg class="ic"><use href="#i-cal"/></svg> Tunggakan SPP Tahun Ajaran Sebelumnya</div>
     ${prevList.map(y => `
       <div style="background:var(--danger-pale);border-radius:12px;padding:12px 14px;margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
@@ -442,7 +442,7 @@ function renderTunggakanDetail(s) {
     const lunas = sisa <= 0;
     const pctPaid = pct(t.paid_amount, t.nominal);
     return `<div style="margin-bottom:8px;">
-      <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:8px;">📋 ${esc(t.item_name)}</div>
+      <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:8px;"><svg class="ic"><use href="#i-clip"/></svg> ${esc(t.item_name)}</div>
       <div style="background:var(--bg);border-radius:12px;padding:14px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
           <span>Tagihan</span><strong>${rp(t.nominal)}</strong>
@@ -451,7 +451,7 @@ function renderTunggakanDetail(s) {
           <span>Dibayar</span><strong class="text-primary-light">${rp(t.paid_amount)}</strong>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;">
-          <span>Sisa</span><strong style="color:${lunas?'var(--primary-light)':'var(--danger)'};">${lunas?'✅ Lunas':rp(sisa)}</strong>
+          <span>Sisa</span><strong style="color:${lunas?'var(--primary-light)':'var(--danger)'};">${lunas?'<svg class="ic"><use href="#i-check"/></svg> Lunas':rp(sisa)}</strong>
         </div>
         <div class="progress-wrap" style="height:8px;">
           <div class="progress-bar ${pctPaid>=100?'green':'yellow'}" style="width:${pctPaid}%"></div>
@@ -462,13 +462,13 @@ function renderTunggakanDetail(s) {
 
   const totalBanner = totalT > 0
     ? `<div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
-        <div style="font-weight:800;font-size:15px;color:var(--danger);">⚠️ Total Tunggakan: ${rp(totalT)}</div>
+        <div style="font-weight:800;font-size:15px;color:var(--danger);"><svg class="ic"><use href="#i-alert"/></svg> Total Tunggakan: ${rp(totalT)}</div>
         ${sppT > 0  ? `<div style="font-size:13px;margin-top:4px;">SPP: ${rp(sppT)} (${bulanBelum.length} bulan belum lunas${sppDueMonthLabel() ? ' s/d ' + sppDueMonthLabel() : ''})</div>` : ''}
         ${prevT > 0 ? `<div style="font-size:13px;margin-top:2px;">SPP tahun lalu: ${rp(prevT)} (${prevList.map(y => 'TA ' + esc(y.ta) + ': ' + y.unpaid.length + ' bln').join(', ')})</div>` : ''}
         ${itemT > 0 ? `<div style="font-size:13px;margin-top:2px;">Item lain: ${rp(itemT)}</div>` : ''}
       </div>`
     : `<div style="background:var(--primary-pale);border-left:4px solid var(--primary-light);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
-        <div style="font-weight:800;font-size:15px;color:var(--primary-light);">✅ Semua Pembayaran Lunas</div>
+        <div style="font-weight:800;font-size:15px;color:var(--primary-light);"><svg class="ic"><use href="#i-check"/></svg> Semua Pembayaran Lunas</div>
       </div>`;
 
   document.getElementById('tunggakanDetail').innerHTML = `
@@ -489,7 +489,7 @@ function renderTunggakanDetail(s) {
           <div style="font-size:18px;font-weight:800;color:${itemT>0?'var(--danger)':'var(--primary-light)'};">${tagihanSiswa.length}</div>
         </div>
       </div>
-      <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);">📅 Status SPP per Bulan (TA berjalan)</div>
+      <div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--primary);"><svg class="ic"><use href="#i-cal"/></svg> Status SPP per Bulan (TA berjalan)</div>
       <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px;">${monthGrid}</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;">
         Tunggakan dihitung sampai bulan berjalan${sppDueMonthLabel() ? ' (<strong>' + esc(sppDueMonthLabel()) + '</strong>)' : ''} —

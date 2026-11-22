@@ -865,7 +865,7 @@ async function loadDataForTA(opts = {}) {
     appState.tagihan      = tagihan;
     simpanSalinanLokal(!silent);
     if (!silent) showSyncIndicator('✅ Data dimuat', 2000);
-    const gi = document.getElementById('gasIcon'); if(gi) gi.textContent='🟢';
+    const gi = document.getElementById('gasIcon'); if(gi) gi.className = 'status-dot ok';
     const gl = document.getElementById('gasLabel');
     // "Realtime" bila WebSocket aktif, "Terhubung" bila hanya polling.
     if (gl) gl.textContent = (typeof connStatusLabel === 'function') ? connStatusLabel() : 'Terhubung';
@@ -873,7 +873,7 @@ async function loadDataForTA(opts = {}) {
     if (syncEl) syncEl.textContent = 'Tersinkron ' + new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
   } catch(e) {
     if (!silent) showSyncIndicator('⚠️ Gagal memuat', 3000);
-    const gi2 = document.getElementById('gasIcon'); if(gi2) gi2.textContent='🔴';
+    const gi2 = document.getElementById('gasIcon'); if(gi2) gi2.className = 'status-dot off';
     const gl2 = document.getElementById('gasLabel'); if(gl2) gl2.textContent='Offline';
     throw e;
   }
@@ -916,7 +916,7 @@ function renderCetakNamaOptions() {
   if (!sel) return;
   const prev = sel.value;
   sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
-    appState.students.map(s => `<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
+    appState.students.map(s =>`<option value="${esc(s.nama)}">${esc(s.nama)} — ${esc(s.kelas)}</option>`).join('');
   if (prev && appState.students.some(s => s.nama === prev)) sel.value = prev;
 }
 
@@ -933,7 +933,7 @@ async function initApp() {
     await loadDataForTA();
   } catch(e) {
     console.error('loadDataForTA error:', e);
-    const gi2 = document.getElementById('gasIcon'); if(gi2) gi2.textContent='🔴';
+    const gi2 = document.getElementById('gasIcon'); if(gi2) gi2.className = 'status-dot off';
     const gl2 = document.getElementById('gasLabel'); if(gl2) gl2.textContent='Offline';
     // Salinan lokal hanya boleh dipulihkan untuk admin yang memegang sesi.
     // Dulu blok ini berjalan tanpa syarat: pengunjung tanpa login pun membuat

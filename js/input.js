@@ -140,7 +140,7 @@ function onInputNamaSearch() {
   const tunggakBadge = s => {
     const tk = totalTunggakan(s);
     return tk > 0
-      ? `<span style="font-size:12px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;">⚠️ ${rp(tk)}</span>`
+      ? `<span style="font-size:12px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;"><svg class="ic"><use href="#i-alert"/></svg> ${rp(tk)}</span>`
       : `<span style="font-size:12px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
   };
 
@@ -392,7 +392,7 @@ function renderPaymentItems(student) {
   const cont = document.getElementById('paymentItems');
   inputPrevArrears = student ? sppTunggakanPrevList(student) : [];
   if (!student) {
-    cont.innerHTML = `<div class="pos-empty">👆 Pilih santri dulu — tagihannya akan muncul di sini.</div>`;
+    cont.innerHTML = `<div class="pos-empty"><svg class="ic"><use href="#i-info"/></svg> Pilih santri dulu — tagihannya akan muncul di sini.</div>`;
     syncChips(); calcTotal();
     return;
   }
@@ -424,10 +424,10 @@ function renderPaymentItems(student) {
           dibayar > 0 ? 'sisa ' + rp(sppInputSisa(student, m)) : '', (due ? 'due' : 'ahead') + (dibayar > 0 ? ' partial' : ''));
       };
       return `<div class="pos-card">${head(rp(rate) + '/bln')}
-        ${mulaiSpp ? `<div class="pos-note">📅 Santri masuk di tengah tahun ajaran — SPP dihitung mulai <strong>${esc(mulaiSpp)}</strong>.</div>` : ''}
+        ${mulaiSpp ? `<div class="pos-note"><svg class="ic"><use href="#i-cal"/></svg> Santri masuk di tengah tahun ajaran — SPP dihitung mulai <strong>${esc(mulaiSpp)}</strong>.</div>` : ''}
         ${tunggak.length
           ? `<div class="pos-label danger">Menunggak · ${tunggak.length} bulan</div><div class="pos-chips">${tunggak.map(m => mchip(m, true)).join('')}</div>`
-          : `<div class="pos-note ok">✅ Tidak ada tunggakan SPP s/d bulan berjalan</div>`}
+          : `<div class="pos-note ok"><svg class="ic"><use href="#i-check"/></svg> Tidak ada tunggakan SPP s/d bulan berjalan</div>`}
         ${dimuka.length ? `<details class="pos-more"><summary>Bayar di muka · ${dimuka.length} bulan</summary>
           <div class="pos-chips">${dimuka.map(m => mchip(m, false)).join('')}</div></details>` : ''}
       </div>`;
@@ -469,7 +469,7 @@ function renderPaymentItems(student) {
 // Item yang tak perlu tindakan (lunas / nominal belum diatur): satu baris tipis.
 function doneRow(name, kind, text) {
   return `<div class="pay-item-done ${kind === 'warn' ? 'is-warn' : 'is-lunas'}">
-    <span class="pid-mark">${kind === 'warn' ? '⚠️' : '✓'}</span>
+    <span class="pid-mark">${kind === 'warn' ? '<svg class="ic"><use href="#i-alert"/></svg>' : '✓'}</span>
     <span class="pid-name">${esc(name)}</span>
     <span class="pid-note">${esc(text)}</span>
   </div>`;
@@ -486,7 +486,7 @@ function renderArrearsBanner(student, prevList) {
     .filter(t => t.nama === student.nama && Math.max(0, (t.nominal || 0) - (t.paid_amount || 0)) > 0)
     .forEach(t => baris.push({ label: t.item_name, amount: Math.max(0, t.nominal - t.paid_amount) }));
   const total = baris.reduce((a, r) => a + r.amount, 0);
-  if (total <= 0) return `<div class="pos-banner ok">✅ Tidak ada tunggakan — seluruh kewajiban ${esc(student.nama)} sudah lunas</div>`;
+  if (total <= 0) return `<div class="pos-banner ok"><svg class="ic"><use href="#i-check"/></svg> Tidak ada tunggakan — seluruh kewajiban ${esc(student.nama)} sudah lunas</div>`;
   return `<div class="pos-banner">
     <div class="pos-banner-top">
       <div><div class="pos-banner-label">Total tunggakan</div><div class="pos-banner-total">${rp(total)}</div></div>
@@ -499,7 +499,7 @@ function renderArrearsBanner(student, prevList) {
 // Tunggakan SPP tahun ajaran sebelumnya: chip per bulan per TA.
 function renderPrevArrearsBlock(list, chip) {
   return `<div class="pos-card prev">
-    <div class="pos-card-head"><div class="pos-card-name danger">⚠️ Tunggakan SPP TA sebelumnya</div>
+    <div class="pos-card-head"><div class="pos-card-name danger"><svg class="ic"><use href="#i-alert"/></svg> Tunggakan SPP TA sebelumnya</div>
       <div class="pos-card-meta">${rp(list.reduce((a, y) => a + y.amount, 0))}</div></div>
     ${list.map(y => `<div class="pos-label">TA ${esc(y.ta)}${y.kelas ? ' · Kelas ' + esc(y.kelas) : ''}</div>
       <div class="pos-chips">${y.detail.map(d => chip('prev|' + y.ta + '|' + d.m,
@@ -658,7 +658,7 @@ function renderCart() {
   }
   if (!box) return;
   if (!inputCart.length) {
-    box.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">🛒</div>Keranjang kosong<br><small>Klik bulan atau tombol <b>Lunas</b> di daftar tagihan</small></div>`;
+    box.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon"><svg class="ic"><use href="#i-cart"/></svg></div>Keranjang kosong<br><small>Klik bulan atau tombol <b>Lunas</b> di daftar tagihan</small></div>`;
     _cartBaru = '';
     return;
   }

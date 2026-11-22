@@ -261,7 +261,7 @@ function xlsxReady(cb) {
 function showSyncIndicator(msg, hideAfter = 0) {
   const ind = document.getElementById('syncIndicator');
   if (!ind) return;
-  ind.textContent = msg;
+  setIconText(ind, msg);
   ind.style.opacity = '1';
   if (hideAfter) setTimeout(() => ind.style.opacity = '0', hideAfter);
 }

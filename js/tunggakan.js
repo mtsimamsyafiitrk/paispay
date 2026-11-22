@@ -14,7 +14,7 @@ function renderItemList() {
 
     if (editingItemIdx === idx) {
       return `<div style="background:var(--primary-pale);border-radius:12px;padding:14px;margin-bottom:8px;border:1.5px solid var(--primary-light);">
-        <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px;">✏️ Edit Item #${idx+1}</div>
+        <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px;"><svg class="ic"><use href="#i-edit"/></svg> Edit Item #${idx+1}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="form-group">
             <label>Nama Item</label>
@@ -69,7 +69,7 @@ function renderItemList() {
       <span class="badge ${item.active?'badge-green':'badge-gray'} nowrap">${item.active?'Aktif':'Nonaktif'}</span>
       <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
       ${BAKU_ITEMS.includes(item.id)
-        ? `<span title="Item baku — tidak bisa dihapus, hanya bisa diedit" style="color:var(--text-muted);font-size:15px;padding:0 6px;cursor:default;">🔒</span>`
+        ? `<span title="Item baku — tidak bisa dihapus, hanya bisa diedit" style="color:var(--text-muted);font-size:15px;padding:0 6px;cursor:default;"><svg class="ic"><use href="#i-lock"/></svg></span>`
         : `<button class="btn btn-danger btn-sm act-del" onclick="confirmRemoveItem(${idx})" title="Hapus item"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>`}
     </div>`;
   }).join('');

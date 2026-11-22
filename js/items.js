@@ -19,7 +19,7 @@ function showDetail(nama) {
   // Warning nama mirip
   const dupesHtml = dupes.length ? `
     <div style="background:#fef9c3;border-radius:8px;padding:8px 12px;margin-top:10px;font-size:12px;">
-      ⚠️ Nama mirip ditemukan: ${dupes.map(d => `<strong>${esc(d.a === s.nama ? d.b : d.a)}</strong> (${d.score}%)`).join(', ')}
+      <svg class="ic"><use href="#i-alert"/></svg> Nama mirip ditemukan: ${dupes.map(d => `<strong>${esc(d.a === s.nama ? d.b : d.a)}</strong> (${d.score}%)`).join(', ')}
       — Periksa apakah ini siswa yang sama.
     </div>` : '';
 

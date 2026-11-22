@@ -46,14 +46,14 @@ function _renderSpmbStats(list) {
 
   el.innerHTML = `
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--accent-pale);color:var(--accent);">⭐</div>
+      <div class="stat-icon" style="background:var(--accent-pale);color:var(--accent);"><svg class="ic"><use href="#i-star"/></svg></div>
       <div class="stat-info">
         <div class="stat-label">Total Calon Santri</div>
         <div class="stat-value">${totalCalon} orang</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--primary-pale);color:var(--primary-light);">💳</div>
+      <div class="stat-icon" style="background:var(--primary-pale);color:var(--primary-light);"><svg class="ic"><use href="#i-card"/></svg></div>
       <div class="stat-info">
         <div class="stat-label">Terkumpul Pendaftaran</div>
         <div class="stat-value" style="font-size:15px;">${rp(totalPendaftaran)}</div>
@@ -61,7 +61,7 @@ function _renderSpmbStats(list) {
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--primary-pale);color:var(--primary-light);">🏛️</div>
+      <div class="stat-icon" style="background:var(--primary-pale);color:var(--primary-light);"><svg class="ic"><use href="#i-bank"/></svg></div>
       <div class="stat-info">
         <div class="stat-label">Terkumpul Pangkal</div>
         <div class="stat-value" style="font-size:15px;">${rp(totalPangkal)}</div>
@@ -95,14 +95,14 @@ function _renderSpmbTable(list) {
 
     const pendaftaranBadge = _pd.nominal > 0
       ? (pendaftaranOk
-        ? `<span style="font-size:12px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
+        ? `<span style="font-size:12px;font-weight:700;color:var(--primary-light);"><svg class="ic"><use href="#i-check"/></svg> Lunas</span>`
         : `<div class="fs-12">${rp(_pd.paid)} / ${rp(_pd.nominal)}</div>
            <div style="font-size:12px;color:var(--danger);">Sisa ${rp(sisaPendaftaran)}</div>`)
       : `<span class="hint">—</span>`;
 
     const pangkalBadge = _pk.nominal > 0
       ? (pangkalOk
-        ? `<span style="font-size:12px;font-weight:700;color:var(--primary-light);">✅ Lunas</span>`
+        ? `<span style="font-size:12px;font-weight:700;color:var(--primary-light);"><svg class="ic"><use href="#i-check"/></svg> Lunas</span>`
         : `<div class="fs-12">${rp(_pk.paid)} / ${rp(_pk.nominal)}</div>
            <div style="font-size:12px;color:var(--danger);">Sisa ${rp(sisaPangkal)}</div>`)
       : `<span class="hint">—</span>`;
@@ -506,7 +506,7 @@ function _parseSpmbRows(rows) {
 
   document.getElementById('spmbImportPreview').innerHTML = `
     <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px;">
-      ✅ ${spmbImportBuffer.length} calon santri siap diimport:
+      <svg class="ic"><use href="#i-check"/></svg> ${spmbImportBuffer.length} calon santri siap diimport:
     </div>
     <div class="table-wrap">
       <table>

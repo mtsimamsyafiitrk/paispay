@@ -19,8 +19,8 @@ function renderAkunPage() {
   if (!el('akunAvatar')) return;
   el('akunAvatar').textContent      = (a.user || 'A')[0].toUpperCase();
   el('akunNamaDisplay').textContent = a.user  || 'Admin';
-  el('akunEmailDisplay').textContent = a.email ? '✉️ ' + a.email : '✉️ Belum diisi';
-  el('akunHpDisplay').textContent    = a.hp    ? '📱 ' + a.hp    : '📱 Belum diisi';
+  setIconText(el('akunEmailDisplay'), a.email ? '✉️ ' + a.email : '✉️ Belum diisi');
+  setIconText(el('akunHpDisplay'), a.hp    ? '📱 ' + a.hp    : '📱 Belum diisi');
 }
 function openEditAkun() {
   const a = getAkunData();
@@ -64,13 +64,13 @@ async function saveNewPassword() {
   const p1 = document.getElementById('gp_newpass').value;
   const p2 = document.getElementById('gp_newpass2').value;
   const errEl = document.getElementById('gp_step3_error');
-  if (!p1) { errEl.textContent = '⚠️ Password baru tidak boleh kosong'; errEl.style.display='block'; return; }
-  if (p1.length < 6) { errEl.textContent = '⚠️ Password minimal 6 karakter'; errEl.style.display='block'; return; }
-  if (p1 !== p2) { errEl.textContent = '❌ Konfirmasi password tidak cocok'; errEl.style.display='block'; return; }
+  if (!p1) { setIconText(errEl, '⚠️ Password baru tidak boleh kosong'); errEl.style.display='block'; return; }
+  if (p1.length < 6) { setIconText(errEl, '⚠️ Password minimal 6 karakter'); errEl.style.display='block'; return; }
+  if (p1 !== p2) { setIconText(errEl, '❌ Konfirmasi password tidak cocok'); errEl.style.display='block'; return; }
   try {
     await sbUpdatePassword(p1);
   } catch (e) {
-    errEl.textContent = '❌ Gagal ubah password: ' + (e.message || 'coba lagi');
+    setIconText(errEl, '❌ Gagal ubah password: ' + (e.message || 'coba lagi'));
     errEl.style.display = 'block';
     return;
   }

@@ -158,7 +158,7 @@ function parseRows(rows) {
       : '<span class="text-muted">Aktif</span>';
     return `<tr><td>${i+1}</td><td>${esc(s.nama)}</td><td>${esc(s.ta||'—')}</td><td>${esc(s.kelas||'—')}</td><td>${statusLabel}</td><td>${esc(s.nisn||'—')}</td><td>${rp(s.spp)}</td><td>${bulanLabel}</td></tr>`;
   }).join('');
-  document.getElementById('importPreviewLabel').textContent = `✅ ${importBuffer.length} data santri siap diimport`;
+  setIconText(document.getElementById('importPreviewLabel'), `✅ ${importBuffer.length} data santri siap diimport`);
   impGoStep(3);
 }
 

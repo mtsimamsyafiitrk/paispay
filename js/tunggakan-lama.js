@@ -94,7 +94,7 @@ function thWarnHTML(y) {
   if (!thTaBentrok(y.ta)) return '';
   const taBerjalan = (typeof getProfil === 'function') ? (getProfil().ta || '') : '';
   return `<div style="background:var(--danger-pale);border:1.5px solid var(--danger);border-radius:9px;padding:8px 12px;font-size:12px;color:var(--danger);font-weight:600;margin-bottom:10px;">
-    ⚠️ TA ${esc(y.ta)} sama dengan tahun ajaran berjalan${taBerjalan ? ` (${esc(taBerjalan)})` : ''} atau sesudahnya.
+    <svg class="ic"><use href="#i-alert"/></svg> TA ${esc(y.ta)} sama dengan tahun ajaran berjalan${taBerjalan ? ` (${esc(taBerjalan)})` : ''} atau sesudahnya.
     <span style="font-weight:500;">Tahun berjalan sudah ditagih lewat SPP biasa, jadi baris ini tidak dihitung sebagai tunggakan TA lalu —
     kalau dihitung, nominalnya jadi ganda. Perbaiki labelnya menjadi tahun ajaran yang sudah lewat, atau hapus baris ini.</span>
   </div>`;
@@ -249,14 +249,14 @@ function thCardHTML(y, i) {
 function thSummaryHTML(t) {
   if (!t.bulan) {
     return `<div style="background:var(--danger-pale);border-radius:9px;padding:8px 12px;font-size:12px;color:var(--danger);font-weight:600;">
-      ⚠️ Belum ada bulan yang ditagih — centang minimal 1 bulan, atau hapus tahun ajaran ini.
+      <svg class="ic"><use href="#i-alert"/></svg> Belum ada bulan yang ditagih — centang minimal 1 bulan, atau hapus tahun ajaran ini.
     </div>`;
   }
   return `<div style="background:var(--bg);border-radius:9px;padding:8px 12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;">
     <span>Ditagih: <strong>${t.bulan} bln</strong></span>
     <span>Tagihan: <strong>${rp(t.tagihan)}</strong></span>
     <span>Terbayar: <strong class="text-primary-light">${rp(t.dibayar)}</strong></span>
-    <span>Sisa: <strong style="color:${t.sisa > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${t.sisa > 0 ? rp(t.sisa) + ` (${t.menunggak} bln)` : '✅ Lunas'}</strong></span>
+    <span>Sisa: <strong style="color:${t.sisa > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${t.sisa > 0 ? rp(t.sisa) + ` (${t.menunggak} bln)` : '<svg class="ic"><use href="#i-check"/></svg> Lunas'}</strong></span>
   </div>`;
 }
 

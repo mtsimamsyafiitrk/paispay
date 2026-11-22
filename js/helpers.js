@@ -43,9 +43,20 @@ function terbilangFull(n) {
   return terbilang(Math.floor(n)) + ' Rupiah';
 }
 
+// Emoji di awal pesan teks -> ikon garis dari sprite (index.html). Teks tetap
+// dimasukkan sebagai text node, jadi aman untuk isi dari pengguna.
+const EMOJI_ICON = {'💾':'save','🗑':'trash','✏':'edit','✍':'edit','🔄':'refresh','🎓':'grad','📥':'download','📤':'upload','🖨':'print','✅':'check','❌':'x','📋':'clip','💳':'card','📁':'folder','🔍':'search','➕':'plus','🔐':'lock','📄':'file','👁':'eye','🗓':'cal','💵':'cash','🏦':'bank','🛒':'cart','🩺':'pulse','📊':'chart','📦':'box','🧪':'flask','⚡':'zap','📌':'pin','⚠':'alert','⏳':'clock','⌛':'clock','📖':'book','✉':'mail','👥':'users','👤':'user','💡':'info','ℹ':'info','👆':'info','👋':'info','⭐':'star','📱':'phone','📞':'phone','🚪':'logout','💬':'msg','🔗':'link','📂':'folder','🗂':'folder','🧾':'file','🏫':'bank','🏛':'bank','💰':'cash','🎉':'check','📅':'cal','🔒':'lock'};
+function setIconText(el, msg) {
+  msg = String(msg ?? '');
+  const m = msg.match(/^(\p{Extended_Pictographic})\uFE0F?\s*/u);
+  const name = m && EMOJI_ICON[m[1]];
+  if (!name) { el.textContent = msg; return; }
+  el.innerHTML = `<svg class="ic"><use href="#i-${name}"/></svg> `;
+  el.append(msg.slice(m[0].length));
+}
 function toast(msg, dur=2500) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  setIconText(t, msg); t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), dur);
 }
 
@@ -374,7 +385,7 @@ function bulanBerjalanCode(ref) {
 function sppMulaiOptionsHtml(selected) {
   const sel = monthCode(selected);
   return '<option value="">Juli — awal tahun ajaran (penuh 12 bulan)</option>' +
-    MONTHS.map(m => `<option value="${m}"${m === sel ? ' selected' : ''}>${MONTH_FULL[m]}</option>`).join('');
+    MONTHS.map(m =>`<option value="${m}"${m === sel ? ' selected' : ''}>${MONTH_FULL[m]}</option>`).join('');
 }
 
 // Peringatan di dekat pemilih "SPP mulai bulan": tanpa kolom penandanya di
@@ -388,7 +399,7 @@ function renderSppMulaiWarn(elId) {
   el.style.display = ada ? 'none' : 'block';
   el.innerHTML = ada ? '' : `
     <div style="background:var(--danger-pale);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px;line-height:1.5;color:var(--danger);">
-      ⚠️ ${esc(typeof SPP_MULAI_MIGRASI_MSG === 'string' ? SPP_MULAI_MIGRASI_MSG : '')}
+      <svg class="ic"><use href="#i-alert"/></svg> ${esc(typeof SPP_MULAI_MIGRASI_MSG === 'string' ? SPP_MULAI_MIGRASI_MSG : '')}
     </div>`;
 }
 

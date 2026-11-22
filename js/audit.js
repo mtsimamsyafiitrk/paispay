@@ -217,9 +217,9 @@ function closeAuditModal() {
 
 async function runAudit() {
   const btn = document.getElementById('auditRunBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memeriksa...'; }
+  if (btn) { btn.disabled = true; setIconText(btn, '⏳ Memeriksa...'); }
   document.getElementById('auditBody').innerHTML =
-    '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">⏳ Membaca buku besar kuitansi...</div>';
+    '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;"><svg class="ic"><use href="#i-clock"/></svg> Membaca buku besar kuitansi...</div>';
   pauseAutoSync();
   try {
     const r = await auditLedger();
@@ -227,7 +227,7 @@ async function runAudit() {
   } catch(e) {
     console.error('runAudit:', e);
     document.getElementById('auditBody').innerHTML =
-      `<div class="warn-box">⚠️ Gagal memeriksa: ${esc(e.message)}</div>`;
+      `<div class="warn-box"><svg class="ic"><use href="#i-alert"/></svg> Gagal memeriksa: ${esc(e.message)}</div>`;
   } finally {
     resumeAutoSync();
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="ic"><use href="#i-search"/></svg> Periksa Ulang'; }
@@ -246,7 +246,7 @@ function renderAuditResult(r) {
 
   if (bersih) {
     html += `<div class="info-box" style="background:#dcfce7;color:#166534;">
-      ✅ <strong>Tidak ada pembayaran yang hilang.</strong> Semua kuitansi cocok dengan data yang tercatat.
+      <svg class="ic"><use href="#i-check"/></svg> <strong>Tidak ada pembayaran yang hilang.</strong> Semua kuitansi cocok dengan data yang tercatat.
     </div>`;
     document.getElementById('auditBody').innerHTML = html;
     document.getElementById('auditApplyBtn').style.display = 'none';
@@ -255,7 +255,7 @@ function renderAuditResult(r) {
 
   if (totalBulan) {
     html += `<div class="group-title">
-      🗓️ Bulan SPP berkuitansi tapi belum tercatat lunas — <span class="text-danger">${totalBulan} bulan</span>
+      <svg class="ic"><use href="#i-cal"/></svg> Bulan SPP berkuitansi tapi belum tercatat lunas — <span class="text-danger">${totalBulan} bulan</span>
     </div>
     <div style="max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:8px;">
     <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
@@ -276,10 +276,10 @@ function renderAuditResult(r) {
 
   if (r.temuanTagihan.length) {
     html += `<div class="group-title">
-      💳 Tagihan item: kuitansi mencatat lebih besar dari yang tersimpan — <span class="text-danger">${rp(totalRupiah)}</span>
+      <svg class="ic"><use href="#i-card"/></svg> Tagihan item: kuitansi mencatat lebih besar dari yang tersimpan — <span class="text-danger">${rp(totalRupiah)}</span>
     </div>
     <div class="warn-box" style="margin-bottom:8px;">
-      ⚠️ Periksa bagian ini dulu sebelum diterapkan. Bila Anda pernah memakai
+      <svg class="ic"><use href="#i-alert"/></svg> Periksa bagian ini dulu sebelum diterapkan. Bila Anda pernah memakai
       <strong>Import Tunggakan</strong>, nominal terbayar sebagian santri disetel
       langsung dari file (bukan dari kuitansi), sehingga selisih di sini bisa saja
       <em>bukan</em> data hilang. Centang penerapannya hanya jika angkanya masuk akal.
@@ -306,7 +306,7 @@ function renderAuditResult(r) {
   }
 
   if (r.histTanpaRecord.length) {
-    html += `<div class="group-title">📌 Perlu diperiksa sendiri</div>
+    html += `<div class="group-title"><svg class="ic"><use href="#i-pin"/></svg> Perlu diperiksa sendiri</div>
     <div class="warn-box">
     Ada ${r.histTanpaRecord.length} bulan SPP berkuitansi yang <strong>tidak bisa dipastikan</strong>
     milik tahun ajaran mana, dan santrinya belum punya entri riwayat SPP untuk tahun tersebut.
@@ -361,7 +361,7 @@ async function applyAuditFix() {
   if (!fixSpp && !fixTagihan) { toast('⚠️ Pilih dulu yang mau dipulihkan'); return; }
 
   const btn = document.getElementById('auditApplyBtn');
-  btn.disabled = true; btn.textContent = '⏳ Memulihkan...';
+  btn.disabled = true; setIconText(btn, '⏳ Memulihkan...');
   pauseAutoSync();
 
   let okSpp = 0, okTagihan = 0, gagal = 0;
