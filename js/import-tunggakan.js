@@ -397,14 +397,14 @@ function tgRenderPreview() {
   }));
 
   const itemRows = Object.entries(S.itemTotal)
-    .map(([id, tot]) => `<tr><td>${esc(TG_ITEM_LABEL[id] || id)}</td><td style="text-align:right;font-weight:700;color:var(--danger);">${rp(tot)}</td></tr>`)
+    .map(([id, tot]) => `<tr><td>${esc(TG_ITEM_LABEL[id] || id)}</td><td class="text-right fw-700 text-danger">${rp(tot)}</td></tr>`)
     .join('');
 
   const taRows = S.taList.map(ta => {
     const a = S.taStat.get(ta);
     const isCur = ta === curTA;
     return `<tr${isCur ? ' style="background:var(--primary-pale);"' : ''}>
-      <td>${esc(ta)}${isCur ? ' <span style="font-size:12px;font-weight:700;color:var(--primary);">TA BERJALAN</span>' : ''}</td>
+      <td>${esc(ta)}${isCur ? ' <span class="fs-12 fw-700 text-primary">TA BERJALAN</span>' : ''}</td>
       <td class="text-right">${a.santri}</td>
       <td class="text-right">${a.bulan}</td>
       <td style="text-align:right;font-weight:700;color:${a.sisa > 0 ? 'var(--danger)' : 'var(--primary-light)'};">${rp(a.sisa)}</td>
@@ -423,25 +423,25 @@ function tgRenderPreview() {
   </tr>`).join('');
 
   const warnBlocks = [];
-  if (duplikat.length) warnBlocks.push(`<div style="background:var(--danger-pale);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:12px;line-height:1.6;">
+  if (duplikat.length) warnBlocks.push(`<div class="bg-danger-pale rounded-8 p-10-12 mt-10 fs-12 lh-16">
     <svg class="ic"><use href="#i-alert"/></svg> <strong>${duplikat.length} nama santri kembar</strong> — di file ini ada santri berbeda dengan nama persis sama.
     Aplikasi menyimpan satu baris per nama, jadi keduanya harus dibedakan atau akan tergabung.
-    <div style="margin-top:6px;color:var(--text-muted);">
+    <div class="mt-6 text-muted">
       ${duplikat.slice(0, 5).map(g => esc(g.nama) + ' → ' +
         g.anggota.map(r => esc(r.namaFinal) + ' (' + esc(r.status_kelulusan || 'aktif') + ', s.d. ' + esc(r.taAkhir || '—') + ')').join(' &nbsp;•&nbsp; ')
       ).join('<br>')}${duplikat.length > 5 ? '<br>…' : ''}
     </div>
-    <label style="display:flex;align-items:center;gap:7px;margin-top:8px;cursor:pointer;font-weight:600;">
-      <input type="checkbox" id="tgPisahDuplikat"${pisah ? ' checked' : ''} onchange="tgRenderPreview()"
-        style="accent-color:var(--primary);width:15px;height:15px;">
+    <label class="flex items-center gap-7 mt-8 pointer fw-600">
+      <input class="accent-primary w-15 h-15" type="checkbox" id="tgPisahDuplikat"${pisah ? ' checked' : ''} onchange="tgRenderPreview()"
+       >
       Pisahkan sebagai santri berbeda (tambahkan keterangan angkatan pada nama)
     </label>
-    ${pisah ? '' : '<div style="margin-top:6px;color:var(--danger);font-weight:600;">Tanpa dipisah, tunggakan kedua santri akan digabung menjadi satu data.</div>'}
+    ${pisah ? '' : '<div class="mt-6 text-danger fw-600">Tanpa dipisah, tunggakan kedua santri akan digabung menjadi satu data.</div>'}
   </div>`);
   if (mirip.length) warnBlocks.push(`<div class="note-yellow">
     <svg class="ic"><use href="#i-alert"/></svg> <strong>${mirip.length} nama dicocokkan berdasarkan kemiripan</strong> (bukan tulisan persis sama).
     Periksa daftar berikut — bila ternyata orang yang berbeda, perbaiki ejaan nama di file lalu import ulang.
-    <div style="margin-top:6px;color:var(--text-muted);">
+    <div class="mt-6 text-muted">
       ${mirip.slice(0, 6).map(r => esc(r.namaFinal) + ' → ' + esc(appState.students[targets.get(r).idx].nama) + ' (' + targets.get(r).skor + '%)').join('<br>')}${mirip.length > 6 ? '<br>…' : ''}
     </div>
   </div>`);
@@ -449,56 +449,56 @@ function tgRenderPreview() {
     <svg class="ic"><use href="#i-alert"/></svg> <strong>${sebagianCurTA.length} bulan pada TA berjalan terbayar sebagian.</strong>
     Alur SPP tahun berjalan hanya mengenal status lunas/belum per bulan, jadi bulan ini akan
     tercatat <em>belum lunas</em> (nominal penuh). Sesuaikan lewat menu Koreksi bila perlu.
-    <div style="margin-top:6px;color:var(--text-muted);">${sebagianCurTA.slice(0, 5).map(esc).join('<br>')}${sebagianCurTA.length > 5 ? '<br>…' : ''}</div>
+    <div class="mt-6 text-muted">${sebagianCurTA.slice(0, 5).map(esc).join('<br>')}${sebagianCurTA.length > 5 ? '<br>…' : ''}</div>
   </div>`);
   if (S.warnNegatif.length) warnBlocks.push(`<div class="note-yellow">
     <svg class="ic"><use href="#i-alert"/></svg> <strong>${S.warnNegatif.length} nilai tunggakan negatif</strong> (kelebihan bayar) — dianggap <strong>0</strong>.
-    <div style="margin-top:6px;color:var(--text-muted);">${S.warnNegatif.slice(0, 5).map(esc).join('<br>')}${S.warnNegatif.length > 5 ? '<br>…' : ''}</div>
+    <div class="mt-6 text-muted">${S.warnNegatif.slice(0, 5).map(esc).join('<br>')}${S.warnNegatif.length > 5 ? '<br>…' : ''}</div>
   </div>`);
 
   document.getElementById('tgPreview').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+    <div class="grid cols-4 gap-10 mb-16">
       <div class="stat-box">
         <div class="hint">Santri di file</div>
-        <div style="font-size:18px;font-weight:800;color:var(--primary);">${tgBuffer.length}</div>
+        <div class="fs-18 fw-800 text-primary">${tgBuffer.length}</div>
         <div class="hint">${cocok} cocok · ${baru} baru</div>
       </div>
       <div class="stat-box">
         <div class="hint">Tunggakan SPP TA lalu</div>
-        <div style="font-size:18px;font-weight:800;color:var(--danger);">${rp(sppPrev)}</div>
+        <div class="fs-18 fw-800 text-danger">${rp(sppPrev)}</div>
       </div>
       <div class="stat-box">
         <div class="hint">SPP TA berjalan belum lunas</div>
-        <div style="font-size:18px;font-weight:800;color:var(--accent);">${rp(sppCur)}</div>
+        <div class="fs-18 fw-800 text-accent">${rp(sppCur)}</div>
       </div>
       <div class="stat-box">
         <div class="hint">Tunggakan item lain</div>
-        <div style="font-size:18px;font-weight:800;color:var(--danger);">${rp(Object.values(S.itemTotal).reduce((a, b) => a + b, 0))}</div>
+        <div class="fs-18 fw-800 text-danger">${rp(Object.values(S.itemTotal).reduce((a, b) => a + b, 0))}</div>
       </div>
     </div>
 
-    <div class="form-group" style="margin-bottom:14px;">
+    <div class="form-group mb-14">
       <label>Tahun Ajaran Berjalan</label>
       <select id="tgCurrentTA" onchange="tgRenderPreview()">
         ${S.taList.map(ta =>`<option value="${esc(ta)}"${ta === curTA ? ' selected' : ''}>${esc(ta)}</option>`).join('')}
       </select>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:5px;line-height:1.5;">
+      <div class="fs-12 text-muted mt-5 lh-15">
         TA ini masuk ke alur SPP normal (kolom SPP &amp; bulan dibayar).
         Semua tahun ajaran lain disimpan sebagai <strong>tunggakan SPP tahun ajaran sebelumnya</strong>.
       </div>
     </div>
-    <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;margin-bottom:6px;cursor:pointer;">
-      <input type="checkbox" id="tgSetProfilTA"${keepProfilTA ? ' checked' : ''} style="accent-color:var(--primary);width:15px;height:15px;">
+    <label class="flex items-center gap-7 fs-12-5 mb-6 pointer">
+      <input class="accent-primary w-15 h-15" type="checkbox" id="tgSetProfilTA"${keepProfilTA ? ' checked' : ''}>
       Set tahun ajaran madrasah ke <strong>${esc(curTA)}</strong> (Profil Madrasah)
     </label>
-    <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;margin-bottom:6px;cursor:pointer;">
-      <input type="checkbox" id="tgSetStatus"${keepStatus ? ' checked' : ''} style="accent-color:var(--primary);width:15px;height:15px;">
+    <label class="flex items-center gap-7 fs-12-5 mb-6 pointer">
+      <input class="accent-primary w-15 h-15" type="checkbox" id="tgSetStatus"${keepStatus ? ' checked' : ''}>
       Perbarui status santri (aktif / lulus / pindah / keluar) sesuai file
     </label>
-    <label style="display:flex;align-items:flex-start;gap:7px;font-size:12.5px;margin-bottom:14px;cursor:pointer;">
-      <input type="checkbox" id="tgTimpaItem"${keepTimpa ? ' checked' : ''} style="accent-color:var(--primary);width:15px;height:15px;margin-top:2px;">
+    <label class="flex items-start gap-7 fs-12-5 mb-14 pointer">
+      <input class="accent-primary w-15 h-15 mt-2" type="checkbox" id="tgTimpaItem"${keepTimpa ? ' checked' : ''}>
       <span>Timpa nominal tagihan item yang <strong>sudah ada</strong> (pangkal, pembangunan, dll)
-        <span style="display:block;color:var(--text-muted);font-size:12px;line-height:1.5;">
+        <span class="block text-muted fs-12 lh-15">
           Biarkan mati bila ini import ulang: file hanya memuat sisa saat file dibuat, sehingga
           menimpanya akan memunculkan kembali tunggakan yang sudah dilunasi lewat aplikasi.
           Tagihan yang belum ada tetap dibuat.</span></span>
@@ -520,7 +520,7 @@ function tgRenderPreview() {
     ${warnBlocks.join('')}
 
     <div style="font-weight:700;font-size:13px;color:var(--primary);margin:16px 0 6px;"><svg class="ic"><use href="#i-users"/></svg> 25 Tunggakan Terbesar</div>
-    <div class="table-wrap" style="max-height:280px;overflow-y:auto;">
+    <div class="table-wrap mh-280 overflow-y-auto">
       <table><thead><tr><th>#</th><th>Nama</th><th>Kelas</th><th>Status</th>
         <th class="text-right">SPP</th><th class="text-right">Item lain</th><th class="text-right">Total</th></tr></thead>
       <tbody>${sampleRows}</tbody></table>

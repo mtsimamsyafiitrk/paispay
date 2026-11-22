@@ -398,7 +398,7 @@ function renderSppMulaiWarn(elId) {
   const ada = (typeof sppMulaiKolomAda !== 'function') || sppMulaiKolomAda();
   el.style.display = ada ? 'none' : 'block';
   el.innerHTML = ada ? '' : `
-    <div style="background:var(--danger-pale);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px;line-height:1.5;color:var(--danger);">
+    <div class="bg-danger-pale rounded-8 p-8-10 mt-6 fs-12 lh-15 text-danger">
       <svg class="ic"><use href="#i-alert"/></svg> ${esc(typeof SPP_MULAI_MIGRASI_MSG === 'string' ? SPP_MULAI_MIGRASI_MSG : '')}
     </div>`;
 }

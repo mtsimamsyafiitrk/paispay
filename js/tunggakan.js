@@ -13,9 +13,9 @@ function renderItemList() {
     const itemKelas = item.kelas || [];
 
     if (editingItemIdx === idx) {
-      return `<div style="background:var(--primary-pale);border-radius:12px;padding:14px;margin-bottom:8px;border:1.5px solid var(--primary-light);">
-        <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px;"><svg class="ic"><use href="#i-edit"/></svg> Edit Item #${idx+1}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      return `<div class="bg-primary-pale rounded-12 p-14 mb-8 border-1-5-primary-light">
+        <div class="fs-12 fw-700 text-primary mb-10"><svg class="ic"><use href="#i-edit"/></svg> Edit Item #${idx+1}</div>
+        <div class="grid cols-2 gap-10">
           <div class="form-group">
             <label>Nama Item</label>
             <input type="text" id="ei_name" value="${esc(item.name)}">
@@ -34,9 +34,9 @@ function renderItemList() {
           </div>
           <div class="form-group">
             <label>Aktif untuk Kelas</label>
-            <div style="display:flex;gap:10px;margin-top:6px;">
-              ${KELAS_ALL.map(k => `<label style="display:flex;align-items:center;gap:5px;font-size:13px;font-weight:500;cursor:pointer;">
-                <input type="checkbox" id="ei_kelas_${k}" value="${k}" ${(item.kelas||[]).includes(k)?'checked':''} style="accent-color:var(--primary);width:15px;height:15px;">
+            <div class="flex gap-10 mt-6">
+              ${KELAS_ALL.map(k => `<label class="flex items-center gap-5 fs-13 fw-500 pointer">
+                <input class="accent-primary w-15 h-15" type="checkbox" id="ei_kelas_${k}" value="${k}" ${(item.kelas||[]).includes(k)?'checked':''}>
                 ${kelasLabel(k)}
               </label>`).join('')}
             </div>
@@ -62,9 +62,9 @@ function renderItemList() {
       <span title="Seret untuk mengubah urutan" style="cursor:grab;color:var(--text-muted);font-size:18px;line-height:1;user-select:none;flex-shrink:0;">⠿</span>
       <label class="toggle"><input type="checkbox" ${item.active?'checked':''} onchange="toggleItem(${idx})"><span class="toggle-slider"></span></label>
       <div class="flex-1 minw-0">
-        <div style="font-weight:600;font-size:13.5px;">${esc(item.name)}</div>
+        <div class="fw-600 fs-13-5">${esc(item.name)}</div>
         <div class="hint mt-2">${typeLabel} • ${rp(item.amount)}${isDefault?' • <span class="text-accent">Default</span>':''}</div>
-        <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">${kelasBadge}</div>
+        <div class="mt-5 flex gap-4 flex-wrap">${kelasBadge}</div>
       </div>
       <span class="badge ${item.active?'badge-green':'badge-gray'} nowrap">${item.active?'Aktif':'Nonaktif'}</span>
       <button class="btn btn-outline btn-sm" onclick="startEditItem(${idx})" title="Edit item"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>

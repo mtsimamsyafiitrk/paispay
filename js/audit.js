@@ -205,7 +205,7 @@ async function auditLedger() {
 function openAuditModal() {
   document.getElementById('auditModal').classList.add('open');
   document.getElementById('auditBody').innerHTML =
-    '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">'
+    '<div class="p-24 text-center text-muted fs-13">'
     + 'Klik <strong>Mulai Periksa</strong> untuk membaca ulang seluruh kuitansi dan '
     + 'membandingkannya dengan data yang tercatat.<br><br>'
     + 'Pemeriksaan ini <strong>hanya membaca</strong> — tidak mengubah apa pun.</div>';
@@ -219,7 +219,7 @@ async function runAudit() {
   const btn = document.getElementById('auditRunBtn');
   if (btn) { btn.disabled = true; setIconText(btn, '⏳ Memeriksa...'); }
   document.getElementById('auditBody').innerHTML =
-    '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;"><svg class="ic"><use href="#i-clock"/></svg> Membaca buku besar kuitansi...</div>';
+    '<div class="p-24 text-center text-muted fs-13"><svg class="ic"><use href="#i-clock"/></svg> Membaca buku besar kuitansi...</div>';
   pauseAutoSync();
   try {
     const r = await auditLedger();
@@ -239,7 +239,7 @@ function renderAuditResult(r) {
   const totalRupiah = r.temuanTagihan.reduce((a, t) => a + t.selisih, 0);
   const bersih = !totalBulan && !r.temuanTagihan.length && !r.tanpaSantri.length && !r.histTanpaRecord.length;
 
-  let html = `<div class="info-box" style="margin-bottom:14px;">
+  let html = `<div class="info-box mb-14">
     Diperiksa <strong>${r.diperiksa}</strong> kuitansi
     ${r.dilewatiBI ? `(<strong>${r.dilewatiBI}</strong> kuitansi Buku Induk dilewati — murni arsip)` : ''}.
   </div>`;
@@ -259,16 +259,16 @@ function renderAuditResult(r) {
     </div>
     <div style="max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:8px;">
     <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
-      <thead><tr style="background:var(--bg);position:sticky;top:0;">
-        <th style="text-align:left;padding:6px 10px;">Santri</th>
-        <th style="text-align:left;padding:6px 10px;">Tahun Ajaran</th>
-        <th style="text-align:left;padding:6px 10px;">Bulan</th>
+      <thead><tr class="bg-bg sticky top-0">
+        <th class="text-left p-6-10">Santri</th>
+        <th class="text-left p-6-10">Tahun Ajaran</th>
+        <th class="text-left p-6-10">Bulan</th>
       </tr></thead><tbody>`;
     r.temuanSpp.forEach(t => {
-      html += `<tr style="border-top:1px solid var(--border);">
-        <td style="padding:6px 10px;">${esc(t.nama)}</td>
-        <td style="padding:6px 10px;">${t.ta ? esc(t.ta) : 'Berjalan'}</td>
-        <td style="padding:6px 10px;">${esc(t.bulan.map(b => MONTH_FULL[b] || b).join(', '))}</td>
+      html += `<tr class="border-t-1-border">
+        <td class="p-6-10">${esc(t.nama)}</td>
+        <td class="p-6-10">${t.ta ? esc(t.ta) : 'Berjalan'}</td>
+        <td class="p-6-10">${esc(t.bulan.map(b => MONTH_FULL[b] || b).join(', '))}</td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -278,7 +278,7 @@ function renderAuditResult(r) {
     html += `<div class="group-title">
       <svg class="ic"><use href="#i-card"/></svg> Tagihan item: kuitansi mencatat lebih besar dari yang tersimpan — <span class="text-danger">${rp(totalRupiah)}</span>
     </div>
-    <div class="warn-box" style="margin-bottom:8px;">
+    <div class="warn-box mb-8">
       <svg class="ic"><use href="#i-alert"/></svg> Periksa bagian ini dulu sebelum diterapkan. Bila Anda pernah memakai
       <strong>Import Tunggakan</strong>, nominal terbayar sebagian santri disetel
       langsung dari file (bukan dari kuitansi), sehingga selisih di sini bisa saja
@@ -286,20 +286,20 @@ function renderAuditResult(r) {
     </div>
     <div style="max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:8px;">
     <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
-      <thead><tr style="background:var(--bg);position:sticky;top:0;">
-        <th style="text-align:left;padding:6px 10px;">Santri</th>
-        <th style="text-align:left;padding:6px 10px;">Item</th>
-        <th style="text-align:right;padding:6px 10px;">Tercatat</th>
-        <th style="text-align:right;padding:6px 10px;">Menurut kuitansi</th>
-        <th style="text-align:right;padding:6px 10px;">Selisih</th>
+      <thead><tr class="bg-bg sticky top-0">
+        <th class="text-left p-6-10">Santri</th>
+        <th class="text-left p-6-10">Item</th>
+        <th class="text-right p-6-10">Tercatat</th>
+        <th class="text-right p-6-10">Menurut kuitansi</th>
+        <th class="text-right p-6-10">Selisih</th>
       </tr></thead><tbody>`;
     r.temuanTagihan.forEach(t => {
-      html += `<tr style="border-top:1px solid var(--border);">
-        <td style="padding:6px 10px;">${esc(t.nama)}</td>
-        <td style="padding:6px 10px;">${esc(t.item_name)}</td>
-        <td style="padding:6px 10px;text-align:right;">${rp(t.tercatat)}</td>
-        <td style="padding:6px 10px;text-align:right;">${rp(t.seharusnya)}</td>
-        <td style="padding:6px 10px;text-align:right;color:var(--danger);font-weight:600;">+${rp(t.selisih)}</td>
+      html += `<tr class="border-t-1-border">
+        <td class="p-6-10">${esc(t.nama)}</td>
+        <td class="p-6-10">${esc(t.item_name)}</td>
+        <td class="p-6-10 text-right">${rp(t.tercatat)}</td>
+        <td class="p-6-10 text-right">${rp(t.seharusnya)}</td>
+        <td class="p-6-10 text-right text-danger fw-600">+${rp(t.selisih)}</td>
       </tr>`;
     });
     html += '</tbody></table></div>';
@@ -324,24 +324,24 @@ function renderAuditResult(r) {
   }
 
   if (r.tanpaSantri.length) {
-    html += `<div class="warn-box" style="margin-top:12px;">
+    html += `<div class="warn-box mt-12">
       ${r.tanpaSantri.length} kuitansi atas nama yang tidak ada lagi di data santri
       (kemungkinan santri sudah dihapus atau namanya diubah):
       ${esc(r.tanpaSantri.slice(0, 8).join(', '))}${r.tanpaSantri.length > 8 ? ', …' : ''}
     </div>`;
   }
 
-  html += `<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
-    <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Pilih yang akan dipulihkan:</div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:6px;">
-      <input type="checkbox" id="auditFixSpp" ${totalBulan ? 'checked' : 'disabled'} style="accent-color:var(--primary);">
+  html += `<div class="mt-16 border-t-1-border pt-12">
+    <div class="fw-700 fs-13 mb-8">Pilih yang akan dipulihkan:</div>
+    <label class="flex items-center gap-8 fs-13 pointer mb-6">
+      <input class="accent-primary" type="checkbox" id="auditFixSpp" ${totalBulan ? 'checked' : 'disabled'}>
       Tandai lunas ${totalBulan} bulan SPP di atas
     </label>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-      <input type="checkbox" id="auditFixTagihan" ${r.temuanTagihan.length ? '' : 'disabled'} style="accent-color:var(--primary);">
+    <label class="flex items-center gap-8 fs-13 pointer">
+      <input class="accent-primary" type="checkbox" id="auditFixTagihan" ${r.temuanTagihan.length ? '' : 'disabled'}>
       Tambahkan ${rp(totalRupiah)} ke nominal terbayar tagihan item <span class="text-muted">(baca peringatan di atas)</span>
     </label>
-    <div style="font-size:12px;color:var(--text-muted);margin-top:10px;">
+    <div class="fs-12 text-muted mt-10">
       Pemulihan hanya <strong>menambah</strong>: tidak ada bulan yang dibatalkan dan
       tidak ada nominal yang diturunkan.
     </div>

@@ -89,8 +89,8 @@ function _renderDashboard() {
     // wajar (belum ditagih), jadi jangan diberi warna "merah".
     const due = isSppDue(m);
     return `<div style="margin-bottom:10px;${due?'':'opacity:.6;'}">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
-        <span class="fw-600">${MONTH_FULL[m]}${due?'':' <span style="font-weight:400;font-size:12px;color:var(--text-muted);">(belum jatuh tempo)</span>'}</span><span class="text-muted">${paid}/${total}</span>
+      <div class="flex justify-between fs-12 mb-3">
+        <span class="fw-600">${MONTH_FULL[m]}${due?'':' <span class="fw-400 fs-12 text-muted">(belum jatuh tempo)</span>'}</span><span class="text-muted">${paid}/${total}</span>
       </div>
       <div class="progress-wrap"><div class="progress-bar ${!due?'yellow':p>80?'green':p>40?'yellow':'red'}" style="width:${p}%"></div></div>
     </div>`;
@@ -102,7 +102,7 @@ function _renderDashboard() {
   document.querySelector('#dashTopTunggak tbody').innerHTML = top.length
     ? top.map(({ s, tk }) => `<tr>
         <td><strong>${esc(s.nama)}</strong></td><td>${esc(kelasLabel(s))}</td>
-        <td style="text-align:right;color:var(--danger);font-weight:700;">${rp(tk)}</td>
+        <td class="text-right text-danger fw-700">${rp(tk)}</td>
         <td class="text-right"><button class="btn btn-primary btn-sm" onclick="quickInput('${escJs(s.nama)}')"><svg class="ic"><use href="#i-card"/></svg> Bayar</button></td>
       </tr>`).join('')
     : '<tr><td class="empty-row" colspan="4"><svg class="ic"><use href="#i-check"/></svg> Tidak ada tunggakan</td></tr>';

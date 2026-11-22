@@ -859,6 +859,9 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
     color: var(--text-muted); font-size: 12.5px; font-weight: 600; text-align: left; flex-shrink: 0; margin-right: auto;
   }
   #siswaTable td[colspan], #spmbTable td[colspan] { justify-content: center; }
+  /* Baris "tidak ada data": jangan ikut gaya sel kartu (padding/rata kanan) */
+  #siswaTable tr td[colspan] { padding: 20px; text-align: center; }
+  #spmbTable tr td[colspan] { padding: 32px; text-align: center; }
   /* Kotak centang di pojok kanan atas, nomor urut disembunyikan, nama jadi judul kartu */
   #siswaTable td:nth-child(1), #spmbTable td:nth-child(1) { position: absolute; top: 12px; right: 14px; padding: 0; }
   #siswaTable td:nth-child(2), #spmbTable td:nth-child(2) { display: none; }
@@ -1001,7 +1004,8 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .items-center { align-items: center; }
 .items-end { align-items: flex-end; }
 .align-end { align-items: end; }
-.items-start { align-items: start; }
+.items-start { align-items: flex-start; }
+.align-start { align-items: start; }
 .justify-between { justify-content: space-between; }
 .justify-center { justify-content: center; }
 .lh-16 { line-height: 1.6; }
@@ -1076,6 +1080,61 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
 .transition-all { transition: all .2s; }
 .w-full { width: 100%; }
 .z-2 { z-index: 2; }
+/* utilitas tambahan untuk template JS */
+.align-middle { vertical-align: middle; }
+.bg-card { background: var(--card); }
+.bg-danger-pale { background: var(--danger-pale); }
+.block { display: block; }
+.border-1-5-border { border: 1.5px solid var(--border); }
+.border-1-5-danger { border: 1.5px solid var(--danger); }
+.border-1-5-primary-light { border: 1.5px solid var(--primary-light); }
+.border-2-primary-light { border: 2px solid var(--primary-light); }
+.border-b-1-border { border-bottom: 1px solid var(--border); }
+.box-border { box-sizing: border-box; }
+.cols-4 { grid-template-columns: repeat(4,1fr); }
+.font-inherit { font-family: inherit; }
+.fs-13-5 { font-size: 13.5px; }
+.fs-20 { font-size: 20px; }
+.fs-22 { font-size: 22px; }
+.fw-500 { font-weight: 500; }
+.gap-4 { gap: 4px; }
+.gap-7 { gap: 7px; }
+.h-15 { height: 15px; }
+.h-16 { height: 16px; }
+.h-8 { height: 8px; }
+.lh-155 { line-height: 1.55; }
+.mb-3 { margin-bottom: 3px; }
+.mh-280 { max-height: 280px; }
+.minw-40 { min-width: 40px; }
+.minw-90 { min-width: 90px; }
+.ml-4 { margin-left: 4px; }
+.mt-1 { margin-top: 1px; }
+.mt-3 { margin-top: 3px; }
+.mt-5 { margin-top: 5px; }
+.outline-none { outline: none; }
+.p-1-6 { padding: 1px 6px; }
+.p-10-12 { padding: 10px 12px; }
+.p-10-16 { padding: 10px 16px; }
+.p-18 { padding: 18px; }
+.p-2-8 { padding: 2px 8px; }
+.p-3-8 { padding: 3px 8px; }
+.p-5-8 { padding: 5px 8px; }
+.p-6-10 { padding: 6px 10px; }
+.p-6-12 { padding: 6px 12px; }
+.p-8-10 { padding: 8px 10px; }
+.p-8-12 { padding: 8px 12px; }
+.p-9-11 { padding: 9px 11px; }
+.pb-6 { padding-bottom: 6px; }
+.rounded-20 { border-radius: 20px; }
+.rounded-5 { border-radius: 5px; }
+.rounded-6 { border-radius: 6px; }
+.rounded-7 { border-radius: 7px; }
+.rounded-9 { border-radius: 9px; }
+.text-border { color: var(--border); }
+.text-primary-light { color: var(--primary-light); }
+.w-110 { width: 110px; }
+.w-15 { width: 15px; }
+.w-16 { width: 16px; }
 /* Jarak: ditaruh paling akhir supaya menimpa margin bawaan komponen di atas */
 .mt-2 { margin-top: 2px; } .mt-4 { margin-top: 4px; } .mt-6 { margin-top: 6px; }
 .mb-0 { margin-bottom: 0; } .mb-4 { margin-bottom: 4px; } .mb-6 { margin-bottom: 6px; } .mb-10 { margin-bottom: 10px; } .mb-12 { margin-bottom: 12px; }

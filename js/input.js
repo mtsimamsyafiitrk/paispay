@@ -108,7 +108,7 @@ function onInputNamaSearch() {
   // Bila toggle dicentang tapi memang tak ada satu pun santri non-aktif,
   // jelaskan penyebabnya (bukan sekadar "tidak ditemukan").
   if (showNonAktif && !appState.students.some(isNonAktif)) {
-    dd.innerHTML = `<div style="padding:14px 16px;font-size:12.5px;color:var(--text-muted);line-height:1.55;">
+    dd.innerHTML = `<div class="p-14-16 fs-12-5 text-muted lh-155">
       Belum ada santri berstatus <strong>lulus / pindah / keluar</strong>.<br>
       Tandai dulu lewat menu <strong>Data Santri</strong> (pilih santri → ubah status)
       atau <strong>Promosi Kelas</strong>, lalu mereka akan muncul di sini.
@@ -132,7 +132,7 @@ function onInputNamaSearch() {
   }
 
   if (!list.length) {
-    dd.innerHTML = `<div style="padding:14px 16px;font-size:13px;color:var(--text-muted);">Tidak ditemukan</div>`;
+    dd.innerHTML = `<div class="p-14-16 fs-13 text-muted">Tidak ditemukan</div>`;
     dd.style.display = 'block';
     return;
   }
@@ -140,8 +140,8 @@ function onInputNamaSearch() {
   const tunggakBadge = s => {
     const tk = totalTunggakan(s);
     return tk > 0
-      ? `<span style="font-size:12px;font-weight:700;color:var(--danger);background:var(--danger-pale);padding:2px 8px;border-radius:20px;"><svg class="ic"><use href="#i-alert"/></svg> ${rp(tk)}</span>`
-      : `<span style="font-size:12px;font-weight:700;color:var(--primary-light);background:var(--primary-pale);padding:2px 8px;border-radius:20px;">✓ Lunas</span>`;
+      ? `<span class="fs-12 fw-700 text-danger bg-danger-pale p-2-8 rounded-20"><svg class="ic"><use href="#i-alert"/></svg> ${rp(tk)}</span>`
+      : `<span class="fs-12 fw-700 text-primary-light bg-primary-pale p-2-8 rounded-20">✓ Lunas</span>`;
   };
 
   // Highlight karakter yang cocok (tiap potongan di-escape agar aman dari XSS)
@@ -160,7 +160,7 @@ function onInputNamaSearch() {
       onmouseenter="hoverInputNamaItem(${i})"
       style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">
       <div>
-        <div style="font-weight:600;font-size:13.5px;">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span style="font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-pale);border-radius:5px;padding:1px 6px;vertical-align:middle;">${esc(kelasLabel(s))}</span>` : ''}</div>
+        <div class="fw-600 fs-13-5">${highlight(s.nama, q)}${isNonAktif(s) ? ` <span class="fs-12 fw-700 text-accent bg-accent-pale rounded-5 p-1-6 align-middle">${esc(kelasLabel(s))}</span>` : ''}</div>
         <div class="hint mt-2">${esc(s.status_kelulusan ? kelasLabel(s) : 'Kelas ' + s.kelas)}${s.nisn ? ' · NISN ' + esc(s.nisn) : ''}</div>
       </div>
       ${tunggakBadge(s)}
@@ -268,9 +268,9 @@ function onStudentSelect() {
   document.getElementById('studentSummary').innerHTML = `
     <div style="margin-top:14px;padding:12px 14px;background:var(--primary-pale);border-radius:12px;display:grid;grid-template-columns:1fr auto;gap:7px 14px;align-items:baseline;">
       <div class="hint">SPP per bulan</div>
-      <div style="font-size:12.5px;font-weight:700;">${s.spp > 0 ? rp(s.spp) : '<span class="text-muted fw-400">Belum diisi</span>'}</div>
+      <div class="fs-12-5 fw-700">${s.spp > 0 ? rp(s.spp) : '<span class="text-muted fw-400">Belum diisi</span>'}</div>
       <div class="hint">Bulan SPP terbayar</div>
-      <div style="font-size:12.5px;font-weight:700;">${bulanTerbayar} <span style="font-weight:400;color:var(--text-muted);">dari ${bulanDitagih} bulan${sppMulaiLabel(s) ? ' (mulai ' + esc(sppMulaiLabel(s)) + ')' : ''}</span></div>
+      <div class="fs-12-5 fw-700">${bulanTerbayar} <span class="fw-400 text-muted">dari ${bulanDitagih} bulan${sppMulaiLabel(s) ? ' (mulai ' + esc(sppMulaiLabel(s)) + ')' : ''}</span></div>
     </div>
   `;
   renderPaymentItems(s);

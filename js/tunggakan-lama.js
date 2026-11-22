@@ -93,9 +93,9 @@ function thTaBentrok(ta) {
 function thWarnHTML(y) {
   if (!thTaBentrok(y.ta)) return '';
   const taBerjalan = (typeof getProfil === 'function') ? (getProfil().ta || '') : '';
-  return `<div style="background:var(--danger-pale);border:1.5px solid var(--danger);border-radius:9px;padding:8px 12px;font-size:12px;color:var(--danger);font-weight:600;margin-bottom:10px;">
+  return `<div class="bg-danger-pale border-1-5-danger rounded-9 p-8-12 fs-12 text-danger fw-600 mb-10">
     <svg class="ic"><use href="#i-alert"/></svg> TA ${esc(y.ta)} sama dengan tahun ajaran berjalan${taBerjalan ? ` (${esc(taBerjalan)})` : ''} atau sesudahnya.
-    <span style="font-weight:500;">Tahun berjalan sudah ditagih lewat SPP biasa, jadi baris ini tidak dihitung sebagai tunggakan TA lalu —
+    <span class="fw-500">Tahun berjalan sudah ditagih lewat SPP biasa, jadi baris ini tidak dihitung sebagai tunggakan TA lalu —
     kalau dihitung, nominalnya jadi ganda. Perbaiki labelnya menjadi tahun ajaran yang sudah lewat, atau hapus baris ini.</span>
   </div>`;
 }
@@ -124,7 +124,7 @@ async function openTunggakanLamaModal(nama) {
   thNama = nama;
   document.getElementById('thNamaLabel').textContent = `${nama} — ${kelasLabel(s)}`;
   document.getElementById('thBody').innerHTML =
-    '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:13px;">Memuat riwayat...</div>';
+    '<div class="text-center text-muted p-32 fs-13">Memuat riwayat...</div>';
   document.getElementById('tunggakanLamaModal').classList.add('open');
 
   // Selalu mulai dari kondisi server, bukan salinan memori — supaya input dari
@@ -134,7 +134,7 @@ async function openTunggakanLamaModal(nama) {
     hist = await loadSppHistory(nama);
   } catch (e) {
     document.getElementById('thBody').innerHTML =
-      `<div style="color:var(--danger);font-size:13px;padding:16px;">Gagal memuat: ${esc(e.message)}</div>`;
+      `<div class="text-danger fs-13 p-16">Gagal memuat: ${esc(e.message)}</div>`;
     return;
   }
   if (hist == null) {
@@ -177,7 +177,7 @@ function thRender() {
   if (!thDraft.length) {
     body.innerHTML = `
       <div style="text-align:center;padding:28px 16px;border:1.5px dashed var(--border);border-radius:12px;">
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+        <div class="fs-13 text-muted mb-12">
           Belum ada riwayat tahun ajaran sebelumnya untuk santri ini.
         </div>
         <button class="btn btn-primary btn-sm" onclick="thAddTA()"><svg class="ic"><use href="#i-plus"/></svg> Tambah Tahun Ajaran</button>
@@ -186,7 +186,7 @@ function thRender() {
     return;
   }
   body.innerHTML = thDraft.map((y, i) => `<div id="th_card_${i}">${thCardHTML(y, i)}</div>`).join('') + `
-    <div style="text-align:center;margin-top:4px;">
+    <div class="text-center mt-4">
       <button class="btn btn-outline btn-sm" onclick="thAddTA()"><svg class="ic"><use href="#i-plus"/></svg> Tambah Tahun Ajaran</button>
     </div>`;
   thRenderFooter();
@@ -198,21 +198,21 @@ function thCardHTML(y, i) {
     const c = y.months[m];
     const off = !c.tagih;
     return `<div style="display:grid;grid-template-columns:118px 1fr 1fr;gap:8px;align-items:center;padding:4px 0;${off ? 'opacity:.45;' : ''}">
-      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;cursor:pointer;">
-        <input type="checkbox" ${c.tagih ? 'checked' : ''} onchange="thToggleMonth(${i},'${m}',this.checked)"
-          style="accent-color:var(--primary);width:15px;height:15px;">
+      <label class="flex items-center gap-6 fs-12-5 fw-600 pointer">
+        <input class="accent-primary w-15 h-15" type="checkbox" ${c.tagih ? 'checked' : ''} onchange="thToggleMonth(${i},'${m}',this.checked)"
+         >
         ${MONTH_FULL[m]}
       </label>
-      <input type="number" min="0" step="1000" value="${c.tagih ? c.n : ''}" ${off ? 'disabled' : ''}
+      <input class="p-5-8 border-1-5-border rounded-7 fs-12-5 font-inherit w-full" type="number" min="0" step="1000" value="${c.tagih ? c.n : ''}" ${off ? 'disabled' : ''}
         placeholder="nominal" oninput="thSetMonth(${i},'${m}','n',this.value)"
-        style="padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;font-family:inherit;width:100%;">
-      <input type="number" min="0" step="1000" value="${c.tagih ? c.d : ''}" ${off ? 'disabled' : ''}
+       >
+      <input class="p-5-8 border-1-5-border rounded-7 fs-12-5 font-inherit w-full" type="number" min="0" step="1000" value="${c.tagih ? c.d : ''}" ${off ? 'disabled' : ''}
         placeholder="dibayar" oninput="thSetMonth(${i},'${m}','d',this.value)"
-        style="padding:5px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;font-family:inherit;width:100%;">
+       >
     </div>`;
   }).join('');
 
-  return `<div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;background:var(--card);">
+  return `<div class="border-1-5-border rounded-12 p-14 mb-12 bg-card">
     <div id="th_warn_${i}">${thWarnHTML(y)}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;">
       <div class="form-group m-0">
@@ -230,7 +230,7 @@ function thCardHTML(y, i) {
       <button class="btn btn-danger btn-sm act-del" onclick="thRemoveTA(${i})" title="Hapus tahun ajaran ini"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
     </div>
 
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+    <div class="flex gap-6 flex-wrap mb-10">
       <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'tagih12')" title="Centang 12 bulan & isi nominalnya dengan SPP per bulan"><svg class="ic"><use href="#i-pin"/></svg> Tagih 12 bulan</button>
       <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'ratakan')" title="Samakan nominal semua bulan yang ditagih dengan SPP per bulan"><svg class="ic"><use href="#i-refresh"/></svg> Samakan nominal</button>
       <button class="btn btn-outline btn-sm" onclick="thQuick(${i},'lunas')"><svg class="ic"><use href="#i-check"/></svg> Semua lunas</button>
@@ -242,17 +242,17 @@ function thCardHTML(y, i) {
     </div>
     ${monthRows}
 
-    <div id="th_sum_${i}" style="margin-top:10px;">${thSummaryHTML(t)}</div>
+    <div class="mt-10" id="th_sum_${i}">${thSummaryHTML(t)}</div>
   </div>`;
 }
 
 function thSummaryHTML(t) {
   if (!t.bulan) {
-    return `<div style="background:var(--danger-pale);border-radius:9px;padding:8px 12px;font-size:12px;color:var(--danger);font-weight:600;">
+    return `<div class="bg-danger-pale rounded-9 p-8-12 fs-12 text-danger fw-600">
       <svg class="ic"><use href="#i-alert"/></svg> Belum ada bulan yang ditagih — centang minimal 1 bulan, atau hapus tahun ajaran ini.
     </div>`;
   }
-  return `<div style="background:var(--bg);border-radius:9px;padding:8px 12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;">
+  return `<div class="bg-bg rounded-9 p-8-12 flex gap-16 flex-wrap fs-12">
     <span>Ditagih: <strong>${t.bulan} bln</strong></span>
     <span>Tagihan: <strong>${rp(t.tagihan)}</strong></span>
     <span>Terbayar: <strong class="text-primary-light">${rp(t.dibayar)}</strong></span>

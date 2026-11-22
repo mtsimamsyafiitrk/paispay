@@ -123,11 +123,11 @@ function biItemRowHTML() {
   const bulanOpts = ['<option value="">— Bulan (opsional) —</option>']
     .concat(MONTHS.map(m =>`<option value="${m}">${esc(MONTH_FULL[m] || m)}</option>`)).join('');
   return `<div class="bi-item-row" style="display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center;">
-    <input type="text" class="bi-item-name" list="bi_item_names" placeholder="Nama item (mis. SPP)"
-      style="padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
-    <input type="text" class="bi-item-nominal" inputmode="numeric" placeholder="Nominal (Rp)" oninput="biRecalcTotal()"
-      style="padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
-    <select class="bi-item-bulan" style="padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;">${bulanOpts}</select>
+    <input type="text" class="bi-item-name p-9-11 border-1-5-border rounded-9 fs-13 font-inherit outline-none box-border" list="bi_item_names" placeholder="Nama item (mis. SPP)"
+     >
+    <input type="text" class="bi-item-nominal p-9-11 border-1-5-border rounded-9 fs-13 font-inherit outline-none box-border" inputmode="numeric" placeholder="Nominal (Rp)" oninput="biRecalcTotal()"
+     >
+    <select class="bi-item-bulan p-9-11 border-1-5-border rounded-9 fs-13 font-inherit outline-none">${bulanOpts}</select>
     <button type="button" class="btn btn-danger btn-sm" title="Hapus baris"
       onclick="this.closest('.bi-item-row').remove();biRecalcTotal()">✕</button>
   </div>`;
@@ -239,13 +239,13 @@ function biRenderSession() {
   const wrap = document.getElementById('bi_session_wrap');
   if (!wrap) return;
   if (!indukSession.length) {
-    wrap.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:18px;font-size:13px;">Belum ada entri pada sesi ini.</div>';
+    wrap.innerHTML = '<div class="text-center text-muted p-18 fs-13">Belum ada entri pada sesi ini.</div>';
     return;
   }
   wrap.innerHTML = `<div class="table-wrap"><table class="data-table">
     <thead><tr><th>No. Induk</th><th>Nama</th><th>Kelas</th><th>TA</th><th class="text-right">Total</th><th>Status</th></tr></thead>
     <tbody>${indukSession.map(s => `<tr>
-      <td style="font-weight:700;font-size:12px;color:var(--primary);">${esc(s.no_kuitansi)}</td>
+      <td class="fw-700 fs-12 text-primary">${esc(s.no_kuitansi)}</td>
       <td><strong>${esc(s.nama)}</strong></td>
       <td>${esc(s.kelas || '—')}</td>
       <td>${esc(s.ta_label || '—')}</td>
@@ -353,8 +353,8 @@ function indukRenderPreview() {
   if (!wrap) return;
   const tidakLengkap = indukBuffer.filter(r => r.reasons.length).length;
   wrap.innerHTML = `
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-      <span style="background:var(--primary-pale);color:var(--primary);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;">${indukBuffer.length} baris terbaca</span>
+    <div class="flex gap-10 flex-wrap mb-12">
+      <span class="bg-primary-pale text-primary rounded-8 p-6-12 fs-12 fw-700">${indukBuffer.length} baris terbaca</span>
       ${tidakLengkap ? `<span style="background:#fef3c7;color:#b45309;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-alert"/></svg> ${tidakLengkap} baris tidak lengkap</span>` : '<span style="background:#dcfce7;color:#166534;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;"><svg class="ic"><use href="#i-check"/></svg> Semua lengkap</span>'}
     </div>
     <div class="table-wrap" style="max-height:340px;overflow:auto;"><table class="data-table">
@@ -403,7 +403,7 @@ async function confirmImportInduk() {
     const n = payload.length;
     indukBuffer = [];
     document.getElementById('bi_preview_wrap').innerHTML =
-      `<div style="text-align:center;padding:24px;color:var(--primary);font-weight:700;"><svg class="ic"><use href="#i-check"/></svg> ${n} entri berhasil disimpan ke Buku Induk.</div>`;
+      `<div class="text-center p-24 text-primary fw-700"><svg class="ic"><use href="#i-check"/></svg> ${n} entri berhasil disimpan ke Buku Induk.</div>`;
     if (btn) btn.style.display = 'none';
     const fileEl = document.getElementById('bi_massal_file');
     if (fileEl) fileEl.value = '';
@@ -460,14 +460,14 @@ async function openIndukDetail(id) {
   const modal = document.getElementById('indukDetailModal');
   const body  = document.getElementById('bi_detail_body');
   if (!modal || !body) return;
-  body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;">Memuat...</div>';
+  body.innerHTML = '<div class="text-center text-muted p-24">Memuat...</div>';
   modal.classList.add('open');
   try {
     const rows = await sb('kuitansi?select=*&id=eq.' + id);
-    if (!rows.length) { body.innerHTML = '<div style="color:var(--danger);padding:16px;">Data tidak ditemukan.</div>'; return; }
+    if (!rows.length) { body.innerHTML = '<div class="text-danger p-16">Data tidak ditemukan.</div>'; return; }
     body.innerHTML = renderIndukDetail(rows[0]);
   } catch (e) {
-    body.innerHTML = `<div style="color:var(--danger);padding:16px;">Gagal memuat: ${esc(e.message || e)}</div>`;
+    body.innerHTML = `<div class="text-danger p-16">Gagal memuat: ${esc(e.message || e)}</div>`;
   }
 }
 function closeIndukDetail() {
@@ -484,8 +484,8 @@ function renderIndukDetail(r) {
 
   const warning = incomplete ? `
     <div style="background:var(--danger-pale);border-left:4px solid var(--danger);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-      <div style="font-weight:800;font-size:13px;color:var(--danger);margin-bottom:3px;"><svg class="ic"><use href="#i-alert"/></svg> Data tidak lengkap</div>
-      <div style="font-size:12.5px;color:var(--text);">${esc(masalah || 'Sebagian data pembayaran ini tidak tercatat lengkap dari arsip lama.')}</div>
+      <div class="fw-800 fs-13 text-danger mb-3"><svg class="ic"><use href="#i-alert"/></svg> Data tidak lengkap</div>
+      <div class="fs-12-5 text-text">${esc(masalah || 'Sebagian data pembayaran ini tidak tercatat lengkap dari arsip lama.')}</div>
     </div>` : '';
 
   const badges = `
@@ -498,9 +498,9 @@ function renderIndukDetail(r) {
     </tr>`).join('') : '<tr><td class="text-muted" colspan="2">Tidak ada rincian.</td></tr>';
 
   return `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">${badges}</div>
+    <div class="flex gap-8 flex-wrap mb-12">${badges}</div>
     ${warning}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+    <div class="grid cols-2 gap-10 mb-14">
       <div><div class="hint">Nama</div><div class="fw-700">${esc(r.nama || '—')}</div></div>
       <div><div class="hint">Kelas</div><div class="fw-700">${esc(r.kelas || '—')}</div></div>
       <div><div class="hint">Tahun Ajaran</div><div class="fw-700">${esc(r.ta_label || '—')}</div></div>
@@ -511,10 +511,10 @@ function renderIndukDetail(r) {
       ${r.dibayar_oleh ? `<div><div class="hint">Dibayar oleh</div><div class="fw-700">${esc(r.dibayar_oleh)}</div></div>` : ''}
     </div>
     <div class="sub-title mb-6"><svg class="ic"><use href="#i-clip"/></svg> Rincian Pembayaran</div>
-    <div class="table-wrap" style="margin-bottom:12px;"><table class="data-table">
+    <div class="table-wrap mb-12"><table class="data-table">
       <thead><tr><th>Item</th><th class="text-right">Nominal</th></tr></thead>
       <tbody>${rowsHtml}</tbody>
-      <tfoot><tr><td style="font-weight:800;">Total</td><td style="text-align:right;font-weight:800;color:var(--primary-light);">${rp(r.total)}</td></tr></tfoot>
+      <tfoot><tr><td class="fw-800">Total</td><td class="text-right fw-800 text-primary-light">${rp(r.total)}</td></tr></tfoot>
     </table></div>
-    ${catatan ? `<div style="background:var(--bg);border-radius:10px;padding:10px 12px;font-size:12.5px;"><strong>Catatan:</strong> ${esc(catatan)}</div>` : ''}`;
+    ${catatan ? `<div class="bg-bg rounded-10 p-10-12 fs-12-5"><strong>Catatan:</strong> ${esc(catatan)}</div>` : ''}`;
 }
