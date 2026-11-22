@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const adaSesi = hasAdminSession();
   if (adaSesi) {
     document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('adminLabel').textContent = getAdminCreds().user;
+    terapkanPeran();   // dari peran tersimpan; diperbarui dari server di bawah
     main.classList.add('app-loading');
     showPage('dashboard');
   }
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (isLoggedIn()) {
     document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('adminLabel').textContent = getAdminCreds().user;
+    await muatPeran();
     // Sinkron berkala + saat tab kembali aktif, supaya data yang diinput di
     // device lain langsung tampil tanpa perlu reload halaman.
     startAutoSync();

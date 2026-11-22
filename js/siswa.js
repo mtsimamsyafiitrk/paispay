@@ -178,8 +178,8 @@ function _renderSiswaTable(resetPage, keepSel) {
       <td>${tunggak>0?`<span class="badge badge-red">Tunggak ${rp(tunggak)}</span>`:'<span class="badge badge-green">✓ Lunas</span>'}</td>
       <td class="nowrap">
         <button class="btn btn-outline btn-sm" onclick="showDetail('${nama_safe}')" title="Detail"><svg class="ic"><use href="#i-clip"/></svg> Detail</button>
-        <button class="btn btn-accent btn-sm" onclick="openEditSiswa('${nama_safe}')" title="Edit data"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
-        <button class="btn btn-danger btn-sm act-del" onclick="deleteSingle('${nama_safe}')" title="Hapus"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
+        <button class="btn btn-accent btn-sm admin-only" onclick="openEditSiswa('${nama_safe}')" title="Edit data"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
+        <button class="btn btn-danger btn-sm act-del admin-only" onclick="deleteSingle('${nama_safe}')" title="Hapus"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
       </td>
     </tr>`;
   }).join('') || '<tr><td class="text-center p-20 text-muted" colspan="9">Tidak ada data</td></tr>';
@@ -391,8 +391,8 @@ function renderTunggakanDetail(s) {
       </div>
       <div class="flex gap-8 flex-wrap">
         <button class="btn btn-primary btn-sm" onclick="quickInput('${nameSafe}')"><svg class="ic"><use href="#i-card"/></svg> Bayar Sekarang</button>
-        <button class="btn btn-outline btn-sm" onclick="openEditPembayaran('${nameSafe}')"><svg class="ic"><use href="#i-edit"/></svg> Edit Pembayaran</button>
-        <button class="btn btn-outline btn-sm" onclick="openTunggakanLamaModal('${nameSafe}')"><svg class="ic"><use href="#i-cal"/></svg> Tunggakan TA Lama</button>
+        <button class="btn btn-outline btn-sm admin-only" onclick="openEditPembayaran('${nameSafe}')"><svg class="ic"><use href="#i-edit"/></svg> Edit Pembayaran</button>
+        <button class="btn btn-outline btn-sm admin-only" onclick="openTunggakanLamaModal('${nameSafe}')"><svg class="ic"><use href="#i-cal"/></svg> Tunggakan TA Lama</button>
         <button class="btn btn-outline btn-sm" onclick="showDetail('${nameSafe}')"><svg class="ic"><use href="#i-clip"/></svg> Detail Lengkap</button>
       </div>
     </div>`;
