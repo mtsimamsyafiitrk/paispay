@@ -956,9 +956,9 @@
     <div class="form-grid grid cols-2 gap-12">
       <div class="form-group"><label>Tahun Ajaran</label>
         <input type="text" id="bi_ta" list="bi_ta_list" placeholder="mis. 2024/2025">
-        <datalist id="bi_ta_list"><option value="2022/2023"><option value="2023/2024"><option value="2024/2025"><option value="2025/2026"></datalist>
+        <datalist id="bi_ta_list"></datalist>
       </div>
-      <div class="form-group"><label>Nama Santri *</label><input type="text" id="bi_nama" placeholder="Nama lengkap"></div>
+      <div class="form-group"><label>Nama Santri *</label><input type="text" id="bi_nama" list="bi_nama_list" placeholder="Ketik nama — pilih dari daftar bila ada" autocomplete="off" oninput="biIsiDariSantri()"><datalist id="bi_nama_list"></datalist></div>
       <div class="form-group"><label>Kelas</label><input type="text" id="bi_kelas" placeholder="mis. 9 / IX-A"></div>
       <div class="form-group"><label>NISN</label><input type="text" id="bi_nisn" placeholder="Opsional"></div>
     </div>
