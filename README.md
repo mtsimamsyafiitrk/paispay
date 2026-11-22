@@ -361,12 +361,13 @@ Akun yang boleh masuk (tabel `admin_users`) punya salah satu peran:
 | Fitur | Petugas | Admin |
 |-------|:-------:|:-----:|
 | Input pembayaran, cetak kuitansi & surat, Export | ✅ | ✅ |
-| Hapus / koreksi kuitansi, Buku Induk | ✅ | ✅ |
+| Hapus / koreksi kuitansi, lihat & cari Buku Induk | ✅ | ✅ |
 | Lihat Dashboard, Data Santri, Tunggakan, SPMB | ✅ | ✅ |
 | Ganti password sendiri | ✅ | ✅ |
 | Tambah / edit / hapus santri, promosi kelas, ubah status | ❌ | ✅ |
 | SPMB (tambah/edit/hapus/import/promosi calon) | ❌ | ✅ |
 | Import tunggakan, tunggakan TA lama, edit pembayaran | ❌ | ✅ |
+| Buku Induk: Input Manual & Upload Massal | ❌ | ✅ |
 | Kelola Item Bayar, Template Kuitansi, Profil madrasah & akun | ❌ | ✅ |
 
 Batasan ditegakkan **di server** oleh `supabase_migration_peran.sql` (aplikasi

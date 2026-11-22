@@ -8,8 +8,9 @@
 -- PERAN:
 --   admin   : semua fitur (tambah/edit/hapus santri, SPMB, import & input
 --             tunggakan, promosi kelas, item bayar, template, profil).
---   petugas : input pembayaran, hapus/koreksi/cetak kuitansi, Buku Induk,
+--   petugas : input pembayaran, hapus/koreksi/cetak kuitansi, lihat Buku Induk,
 --             lihat data, cetak & export, ganti password sendiri.
+--             (menambah arsip Buku Induk — Input Manual/Upload Massal — admin saja)
 --
 -- SESUDAH MIGRASI semua akun yang sudah terdaftar tetap ADMIN (tidak ada yang
 -- terkunci). Jadikan seseorang PETUGAS dengan:
@@ -76,8 +77,24 @@ BEGIN
     EXECUTE format('CREATE POLICY "tulis_admin" ON %I FOR ALL TO authenticated USING (is_admin_penuh()) WITH CHECK (is_admin_penuh());', t);
   END LOOP;
 END $$;
--- transactions & kuitansi tetap "admin_all" (semua akun terdaftar): input
--- pembayaran, hapus & koreksi kuitansi memang untuk umum.
+-- transactions tetap "admin_all" (semua akun terdaftar).
+-- kuitansi: input pembayaran, cetak, hapus & koreksi kuitansi untuk semua akun;
+-- MENAMBAH arsip Buku Induk (nomor berawalan "BI-") khusus admin.
+-- Catatan: jangan pakai "BI" sebagai prefix nomor kuitansi di Template Kuitansi.
+DO $$
+BEGIN
+  IF to_regclass('public.kuitansi') IS NULL THEN RETURN; END IF;
+  DROP POLICY IF EXISTS "admin_all"   ON kuitansi;
+  DROP POLICY IF EXISTS "baca"        ON kuitansi;
+  DROP POLICY IF EXISTS "tambah"      ON kuitansi;
+  DROP POLICY IF EXISTS "ubah"        ON kuitansi;
+  DROP POLICY IF EXISTS "hapus"       ON kuitansi;
+  CREATE POLICY "baca"   ON kuitansi FOR SELECT TO authenticated USING (is_admin());
+  CREATE POLICY "tambah" ON kuitansi FOR INSERT TO authenticated
+    WITH CHECK (is_admin_penuh() OR (is_admin() AND no_kuitansi NOT LIKE 'BI-%'));
+  CREATE POLICY "ubah"   ON kuitansi FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+  CREATE POLICY "hapus"  ON kuitansi FOR DELETE TO authenticated USING (is_admin());
+END $$;
 
 -- ── Petugas hanya boleh mengubah kolom PEMBAYARAN ──
 -- Berlaku untuk permintaan dari aplikasi (auth.uid() terisi). Perubahan lewat
