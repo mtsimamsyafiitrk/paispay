@@ -85,7 +85,8 @@
   // app.min.js dimuat) supaya tidak berkedip. init.js memunculkannya lagi bila
   // sesi ternyata ditolak server.
   try { if (JSON.parse(localStorage.getItem('sipay_session') || 'null')?.access_token)
-    document.getElementById('loginScreen').classList.add('hidden'); } catch (e) {}
+    document.getElementById('loginScreen').classList.add('hidden');
+    if (localStorage.getItem('sipay_peran') === 'petugas') document.documentElement.classList.add('peran-petugas'); } catch (e) {}
 </script>
 <div id="sidebarBackdrop" class="overlay-backdrop" onclick="closeSidebar()"></div>
 <div class="toast" id="toast"></div>
@@ -134,14 +135,14 @@
     <button type="button" class="nav-label nav-toggle" onclick="this.parentElement.classList.toggle('collapsed')" aria-controls="navPengaturan">Pengaturan <span class="nav-caret">▾</span></button>
     <a class="nav-item" onclick="showPage('akun')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      Akun Admin
+      Akun Saya
     </a>
 
-    <a class="nav-item" onclick="showPage('pengaturan')" href="#">
+    <a class="nav-item admin-only" onclick="showPage('pengaturan')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M21 12h-2M5 12H3M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg>
       Kelola Item Bayar
     </a>
-    <a class="nav-item" onclick="showPage('template-kuitansi')" href="#">
+    <a class="nav-item admin-only" onclick="showPage('template-kuitansi')" href="#">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
       Template Kuitansi
     </a>
@@ -190,7 +191,7 @@
           <p id="profilKontak"></p>
           <p id="profilAlamat" hidden></p>
         </div>
-        <button class="profil-edit-btn" onclick="openProfilModal()"><svg class="ic"><use href="#i-edit"/></svg> Edit Profil</button>
+        <button class="profil-edit-btn admin-only" onclick="openProfilModal()"><svg class="ic"><use href="#i-edit"/></svg> Edit Profil</button>
         <button class="btn dash-cta" onclick="showPage('input')">＋ Input Pembayaran</button>
       </div>
     </div>
@@ -363,7 +364,7 @@
     <div class="card mb-16">
       <!-- Filter Chips Kelas + Promosi -->
       <div class="flex items-center justify-between mb-8 gap-12 flex-wrap">
-        <button class="btn btn-accent btn-sm btn-promosi" onclick="openPromosiKelasModal()"><svg class="ic"><use href="#i-grad"/></svg> PROMOSI KELAS</button>
+        <button class="btn btn-accent btn-sm btn-promosi admin-only" onclick="openPromosiKelasModal()"><svg class="ic"><use href="#i-grad"/></svg> PROMOSI KELAS</button>
         <div class="flex items-center gap-8 flex-wrap">
           <span class="label-muted">Filter Kelas</span>
           <div class="kelas-chips mb-0" id="kelasChips">
@@ -390,7 +391,7 @@
           <option value="pindah">Pindah</option>
           <option value="keluar">Keluar</option>
         </select>
-        <button class="btn btn-primary btn-sm" onclick="openTambahChoice()">
+        <button class="btn btn-primary btn-sm admin-only" onclick="openTambahChoice()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Tambah Santri
         </button>
@@ -403,8 +404,8 @@
     <!-- Bulk action bar -->
     <div class="bulk-bar" id="bulkBar">
       <span id="bulkCount">0 dipilih</span>
-      <button class="btn btn-sm btn-on-dark" onclick="openBulkStatusModal()"><svg class="ic"><use href="#i-clip"/></svg> Ubah Status</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteSelected()"><svg class="ic"><use href="#i-trash"/></svg> Hapus Terpilih</button>
+      <button class="btn btn-sm btn-on-dark admin-only" onclick="openBulkStatusModal()"><svg class="ic"><use href="#i-clip"/></svg> Ubah Status</button>
+      <button class="btn btn-danger btn-sm admin-only" onclick="deleteSelected()"><svg class="ic"><use href="#i-trash"/></svg> Hapus Terpilih</button>
       <button class="btn btn-outline btn-sm btn-outline-on-dark" onclick="clearSelection()">✕ Batal</button>
     </div>
     <div class="card">
@@ -437,12 +438,12 @@
           <input type="text" id="searchSpmb" placeholder="Cari nama calon santri..." oninput="renderSpmbPage()">
         </div>
         <div class="flex gap-8 flex-wrap">
-          <button class="btn btn-outline btn-sm" onclick="openImportCalonModal()">
+          <button class="btn btn-outline btn-sm admin-only" onclick="openImportCalonModal()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Import Excel
           </button>
-          <button class="btn btn-accent btn-sm" id="spmbPromoteBtn" onclick="promoteSelectedCalon()" disabled><svg class="ic"><use href="#i-grad"/></svg> Promosikan Terpilih</button>
-          <button class="btn btn-primary btn-sm" onclick="openAddCalonModal()">
+          <button class="btn btn-accent btn-sm admin-only" id="spmbPromoteBtn" onclick="promoteSelectedCalon()" disabled><svg class="ic"><use href="#i-grad"/></svg> Promosikan Terpilih</button>
+          <button class="btn btn-primary btn-sm admin-only" onclick="openAddCalonModal()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Tambah Calon
           </button>
@@ -457,8 +458,8 @@
     <!-- Bulk action bar -->
     <div class="bulk-bar" id="spmbBulkBar">
       <span id="spmbBulkCount">0 dipilih</span>
-      <button class="btn btn-accent btn-sm" onclick="promoteSelectedCalon()"><svg class="ic"><use href="#i-grad"/></svg> Promosikan</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteSelectedCalon()"><svg class="ic"><use href="#i-trash"/></svg> Hapus Terpilih</button>
+      <button class="btn btn-accent btn-sm admin-only" onclick="promoteSelectedCalon()"><svg class="ic"><use href="#i-grad"/></svg> Promosikan</button>
+      <button class="btn btn-danger btn-sm admin-only" onclick="deleteSelectedCalon()"><svg class="ic"><use href="#i-trash"/></svg> Hapus Terpilih</button>
       <button class="btn btn-outline btn-sm btn-outline-on-dark" onclick="clearSpmbSelection()">✕ Batal</button>
     </div>
 
@@ -511,7 +512,7 @@
     <div class="card">
       <div class="flex items-center justify-between gap-12 flex-wrap mb-16">
         <div class="card-title mb-0">Daftar Santri Menunggak</div>
-        <button class="btn btn-outline btn-sm" onclick="openImportTunggakanModal()" title="Masukkan tunggakan lama dari file .json / .csv / .xlsx"><svg class="ic"><use href="#i-download"/></svg> Import Tunggakan Lama</button>
+        <button class="btn btn-outline btn-sm admin-only" onclick="openImportTunggakanModal()" title="Masukkan tunggakan lama dari file .json / .csv / .xlsx"><svg class="ic"><use href="#i-download"/></svg> Import Tunggakan Lama</button>
       </div>
       <div class="table-wrap">
         <table id="tunggakanTable">
@@ -601,7 +602,7 @@
           </div>
         </div>
         <div class="row-10">
-          <button class="btn btn-primary" onclick="openEditAkun()"><svg class="ic"><use href="#i-edit"/></svg> Edit Profil Akun</button>
+          <button class="btn btn-primary admin-only" onclick="openEditAkun()"><svg class="ic"><use href="#i-edit"/></svg> Edit Profil Akun</button>
           <button class="btn btn-outline btn-outline-danger" onclick="openGantiPassword()"><svg class="ic"><use href="#i-lock"/></svg> Ganti Password</button>
         </div>
       </div>

@@ -838,6 +838,8 @@ function clearLocalData() {
   localStorage.removeItem('sipay_state');   // data santri
   localStorage.removeItem('sipay_akun');    // email & HP admin
   localStorage.removeItem('sipay_admin');   // label nama admin
+  localStorage.removeItem('sipay_peran');   // peran akun (admin/petugas)
+  document.documentElement.classList.remove('peran-petugas');
   appState.students     = [];
   appState.transactions = [];
   appState.tagihan      = [];
@@ -929,7 +931,7 @@ async function initApp() {
   // logo, tahun ajaran) sampai halaman di-reload.
   if (typeof applyProfil === 'function') applyProfil();
   // Pastikan item baku (SPP/Pangkal/Pendaftaran) ada; persist bila admin login.
-  if (ensureBakuItems() && hasAdminSession()) saveSettings().catch(() => {});
+  if (ensureBakuItems() && hasAdminSession() && isAdminPenuh()) saveSettings().catch(() => {});
   try {
     await loadDataForTA();
   } catch(e) {

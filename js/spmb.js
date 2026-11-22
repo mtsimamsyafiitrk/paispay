@@ -125,9 +125,9 @@ function _renderSpmbTable(list) {
       <td>${pendaftaranBadge}</td>
       <td>${pangkalBadge}</td>
       <td class="nowrap">
-        <button class="btn btn-sm btn-accent fs-12" onclick="confirmPromoteSingle('${nameSafe}')" title="Promosikan ke siswa aktif"><svg class="ic"><use href="#i-grad"/></svg> Promosi</button>
-        <button class="btn btn-sm btn-outline fs-12" onclick="openEditCalonModal('${nameSafe}')" title="Edit data"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
-        <button class="btn btn-sm btn-danger act-del fs-12" onclick="deleteCalonSantri('${nameSafe}')" title="Hapus"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
+        <button class="btn btn-sm btn-accent fs-12 admin-only" onclick="confirmPromoteSingle('${nameSafe}')" title="Promosikan ke siswa aktif"><svg class="ic"><use href="#i-grad"/></svg> Promosi</button>
+        <button class="btn btn-sm btn-outline fs-12 admin-only" onclick="openEditCalonModal('${nameSafe}')" title="Edit data"><svg class="ic"><use href="#i-edit"/></svg> Edit</button>
+        <button class="btn btn-sm btn-danger act-del fs-12 admin-only" onclick="deleteCalonSantri('${nameSafe}')" title="Hapus"><svg class="ic"><use href="#i-trash"/></svg> Hapus</button>
       </td>
     </tr>`;
   }).join('');

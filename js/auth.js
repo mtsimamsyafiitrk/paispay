@@ -46,8 +46,9 @@ async function doLogin() {
     localStorage.setItem('sipay_admin', JSON.stringify({ user: label }));
     localStorage.setItem('sipay_auth', 'admin'); // penanda UI (otoritas ada di token)
     localStorage.removeItem('sipay_guest');
+    await muatPeran();
     document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('adminLabel').textContent = label;
+    terapkanPeran();
     // Muat ulang data dengan hak akses admin (token kini terpasang di sb())
     try { await loadDataForTA(); } catch { /* biarkan; UI tetap tampil */ }
     startAutoSync(); // jaga layar tetap pada kondisi data terakhir
@@ -60,3 +61,30 @@ async function doLogin() {
   }
 }
 // ══════════════════════════════════════════
+
+// ══════════════════════════════════════════
+// PERAN AKUN: 'admin' (semua fitur) | 'petugas' (input pembayaran, kuitansi,
+// Buku Induk, lihat & cetak). Batasan sesungguhnya ditegakkan SERVER
+// (supabase_migration_peran.sql); di sini hanya menyesuaikan tampilan.
+// ══════════════════════════════════════════
+function getPeran()     { return localStorage.getItem('sipay_peran') === 'petugas' ? 'petugas' : 'admin'; }
+function isAdminPenuh() { return getPeran() === 'admin'; }
+const HALAMAN_ADMIN = ['pengaturan', 'template-kuitansi'];
+
+function terapkanPeran() {
+  const petugas = !isAdminPenuh();
+  document.documentElement.classList.toggle('peran-petugas', petugas);
+  const lbl = document.getElementById('adminLabel');
+  if (lbl) lbl.textContent = getAdminCreds().user + (petugas ? ' · Petugas' : '');
+  if (petugas && HALAMAN_ADMIN.includes(activePageId())) showPage('dashboard');
+}
+
+// Ambil peran dari server. Gagal (offline) → pakai peran terakhir; belum pernah
+// ada (mis. migrasi peran belum dijalankan) → admin, seperti sebelum ada peran.
+async function muatPeran() {
+  try {
+    const r = await sb('rpc/peran_saya', 'POST', {});
+    localStorage.setItem('sipay_peran', r === 'petugas' ? 'petugas' : 'admin');
+  } catch { /* tetap pakai nilai tersimpan */ }
+  terapkanPeran();
+}

@@ -354,6 +354,47 @@ URL hasil     : https://<username>.github.io/<repo-name>/
 
 > **Catatan:** Tidak diperlukan file `_config.yml` karena tidak ada Jekyll. Jika ada masalah routing, tambahkan file kosong bernama `.nojekyll` di root repo.
 
+## Peran Akun: Admin & Petugas
+
+Akun yang boleh masuk (tabel `admin_users`) punya salah satu peran:
+
+| Fitur | Petugas | Admin |
+|-------|:-------:|:-----:|
+| Input pembayaran, cetak kuitansi & surat, Export | ✅ | ✅ |
+| Hapus / koreksi kuitansi, Buku Induk | ✅ | ✅ |
+| Lihat Dashboard, Data Santri, Tunggakan, SPMB | ✅ | ✅ |
+| Ganti password sendiri | ✅ | ✅ |
+| Tambah / edit / hapus santri, promosi kelas, ubah status | ❌ | ✅ |
+| SPMB (tambah/edit/hapus/import/promosi calon) | ❌ | ✅ |
+| Import tunggakan, tunggakan TA lama, edit pembayaran | ❌ | ✅ |
+| Kelola Item Bayar, Template Kuitansi, Profil madrasah & akun | ❌ | ✅ |
+
+Batasan ditegakkan **di server** oleh `supabase_migration_peran.sql` (aplikasi
+hanya menyembunyikan tombolnya). Petugas hanya bisa mengubah kolom pembayaran
+santri (`spp_paid_months`, `spp_angsur`, `spp_history`) dan `paid_amount` tagihan.
+
+**Memasang (sekali):** Supabase → SQL Editor → tempel isi
+`supabase_migration_peran.sql` → Run. Semua akun yang sudah ada tetap **admin**.
+
+**Menjadikan seseorang petugas / admin:**
+
+```sql
+UPDATE admin_users SET peran = 'petugas' WHERE email = 'petugas@contoh.com';
+UPDATE admin_users SET peran = 'admin'   WHERE email = 'petugas@contoh.com';
+SELECT email, peran FROM admin_users ORDER BY peran, email;
+```
+
+**Akun petugas baru:** Authentication → Users → Add user (centang *Auto Confirm
+User*), lalu:
+
+```sql
+INSERT INTO admin_users (user_id, email, peran)
+  SELECT id, email, 'petugas' FROM auth.users WHERE email = 'petugas.baru@contoh.com';
+```
+
+Peran dibaca saat login / membuka aplikasi — minta pengguna memuat ulang halaman
+setelah perannya diubah.
+
 ## Keamanan (RLS + Supabase Auth) — Admin Only
 
 Sejak versi ini, akses data ditegakkan **di sisi server** lewat Row Level Security,

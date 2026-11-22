@@ -1149,6 +1149,9 @@ input[type=checkbox].row-chk { width: 15px; height: 15px; accent-color: var(--pr
    style.display = 'block'/'flex' (gaya inline tetap menang). Komponen yang
    punya display sendiri perlu aturan ini supaya hidden tidak kalah. */
 .btn[hidden] { display: none; }
+/* Akun PETUGAS: sembunyikan fitur khusus admin (batasan sebenarnya ada di server). */
+.peran-petugas .admin-only, .peran-petugas .bulk-bar { display: none !important; }
+.peran-petugas #siswaTable .chk-col, .peran-petugas #spmbTable tr > :first-child { display: none; }
 .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; font-size: 13px; }
 
 /* ══ Komponen sekali pakai (dulu style inline) ══ */

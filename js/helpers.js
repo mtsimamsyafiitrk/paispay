@@ -62,6 +62,7 @@ function toast(msg, dur=2500) {
 
 // ── Nav ──
 function showPage(id) {
+  if (HALAMAN_ADMIN.includes(id) && !isAdminPenuh()) id = 'dashboard';   // khusus admin
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const pageEl = document.getElementById('page-'+id);
@@ -75,7 +76,7 @@ function showPage(id) {
   const titles = {dashboard:['Dashboard','Ringkasan pembayaran santri'],input:['Input Pembayaran','Catat pembayaran santri'],
     'rekap-siswa':['Data Santri','Seluruh data siswa & status bayar'],tunggakan:['Tunggakan','Daftar santri yang belum melunasi'],
     spmb:['SPMB','Sistem Penerimaan Murid Baru — kelola calon santri'],
-    pengaturan:['Kelola Item Bayar','Atur item pembayaran'],cetak:['Cetak / PDF','Export rekap dan surat tagihan'],'tahun-ajaran':['Tahun Ajaran','Kelola & pindah tahun ajaran'],akun:['Akun Admin','Pengaturan akun & keamanan'],
+    pengaturan:['Kelola Item Bayar','Atur item pembayaran'],cetak:['Cetak / PDF','Export rekap dan surat tagihan'],'tahun-ajaran':['Tahun Ajaran','Kelola & pindah tahun ajaran'],akun:['Akun Saya','Pengaturan akun & keamanan'],
     pengunjung:['Info Pembayaran','Detail pembayaran & tunggakan santri'],
     lapor:['Lapor Pembayaran','Laporkan pembayaran yang belum terdata'],
     'laporan-masuk':['Laporan Masuk','Verifikasi laporan pembayaran dari wali santri'],
