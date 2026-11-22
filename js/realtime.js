@@ -23,7 +23,10 @@
 // js/sync.js otomatis kembali ke polling 20 detik seperti biasa.
 // ══════════════════════════════════════════
 
-const RT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+// Versi dikunci (bukan "@2"): file berversi pasti disimpan lama di cache browser
+// dan rilis baru Supabase tidak bisa mengubah perilaku aplikasi diam-diam.
+// Naikkan versinya dengan sengaja, lalu uji realtime.
+const RT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js';
 const RT_TABLES     = ['students', 'tagihan', 'transactions', 'kuitansi', 'settings'];
 const RT_DEBOUNCE_MS = 400;    // gabungkan letupan event jadi satu tarikan data
 const RT_RETRY_MS    = 15000;  // jeda coba-sambung-ulang saat channel gagal

@@ -14,7 +14,7 @@ function onCetakNamaSearch() {
   cetakSuggIdx = -1;
   const q = document.getElementById('cetakNamaSearch').value.trim().toLowerCase();
   const dd = document.getElementById('cetakNamaDropdown');
-  const matches = appState.students.filter(s => s.nama.toLowerCase().includes(q)).slice(0, 10);
+  const matches = appState.students.filter(s => s.nama.toLowerCase().includes(q) || (s.nisn && s.nisn.includes(q))).slice(0, 10);
   dd.innerHTML = matches.length
     ? matches.map(s => `<div class="nama-sugg" data-nama="${esc(s.nama)}" onmousedown="pickCetakNama(this.dataset.nama)">
         <b>${esc(s.nama)}</b><span>${esc(kelasLabel(s))}</span></div>`).join('')
